@@ -1,0 +1,333 @@
+@page "/Platform/Dashboard"
+@model ConnectedOps.Web.Pages.Platform.DashboardModel
+@{
+    ViewData["Title"] = "Super Admin Dashboard";
+    ViewData["Subtitle"] = "Platform health, tenant operations, and global fleet ecosystem overview";
+}
+
+<!-- QUICK ACTIONS -->
+<div class="d-flex flex-wrap gap-2 mb-4 justify-content-between align-items-center">
+    <div class="d-flex gap-2">
+        <a href="/Platform/Tenants" class="btn btn-primary btn-sm d-flex align-items-center gap-2 shadow-sm">
+            <i class="bi bi-building-add"></i>
+            <span>Provision New Tenant</span>
+        </a>
+        <a href="/Platform/Users" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2">
+            <i class="bi bi-person-plus"></i>
+            <span>Invite Platform Admin</span>
+        </a>
+    </div>
+    <div class="text-secondary small d-flex align-items-center gap-2">
+        <i class="bi bi-clock-history"></i>
+        <span>Live Database Synced</span>
+    </div>
+</div>
+
+<!-- METRIC CARDS -->
+<div class="row g-3 mb-4">
+    <!-- Total Tenants -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="card metric-card h-100 p-3 bg-body">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-secondary small fw-semibold text-uppercase">Total Tenants</div>
+                    <h2 class="fw-bold my-1">@Model.Stats.TotalTenants</h2>
+                    <div class="small text-success d-flex align-items-center gap-1">
+                        <i class="bi bi-arrow-up-right"></i>
+                        <span>+@Model.Stats.NewTenantsThisMonth new this month</span>
+                    </div>
+                </div>
+                <div class="metric-icon bg-primary-subtle text-primary">
+                    <i class="bi bi-building"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Tenants -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="card metric-card h-100 p-3 bg-body">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-secondary small fw-semibold text-uppercase">Active Tenants</div>
+                    <h2 class="fw-bold my-1 text-success">@Model.Stats.ActiveTenants</h2>
+                    <div class="small text-secondary">
+                        @((Model.Stats.TotalTenants > 0 ? (Model.Stats.ActiveTenants * 100 / Model.Stats.TotalTenants) : 0))% active rate
+                    </div>
+                </div>
+                <div class="metric-icon bg-success-subtle text-success">
+                    <i class="bi bi-check2-circle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Users -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="card metric-card h-100 p-3 bg-body">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-secondary small fw-semibold text-uppercase">Total Users</div>
+                    <h2 class="fw-bold my-1">@Model.Stats.TotalUsers</h2>
+                    <div class="small text-info d-flex align-items-center gap-1">
+                        <i class="bi bi-people"></i>
+                        <span>+@Model.Stats.NewUsersThisMonth new this month</span>
+                    </div>
+                </div>
+                <div class="metric-icon bg-info-subtle text-info">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Platform Admins -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="card metric-card h-100 p-3 bg-body">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-secondary small fw-semibold text-uppercase">Platform Admins</div>
+                    <h2 class="fw-bold my-1 text-primary">@Model.Stats.PlatformUsers</h2>
+                    <div class="small text-secondary">
+                        <span>Across platform roles</span>
+                    </div>
+                </div>
+                <div class="metric-icon bg-warning-subtle text-warning">
+                    <i class="bi bi-shield-shaded"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CHARTS ROW -->
+<div class="row g-3 mb-4">
+    <!-- Growth Trend Area Chart -->
+    <div class="col-lg-8">
+        <div class="card h-100 p-3 bg-body border">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div>
+                    <h5 class="fw-bold mb-0">Tenant Growth Trend</h5>
+                    <div class="text-secondary small">Cumulative tenant sign-ups (last 6 months)</div>
+                </div>
+                <span class="badge bg-secondary-subtle text-body">Monthly</span>
+            </div>
+            <div style="height: 280px; position: relative;">
+                <canvas id="growthChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tenant Status Doughnut Chart -->
+    <div class="col-lg-4">
+        <div class="card h-100 p-3 bg-body border">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div>
+                    <h5 class="fw-bold mb-0">Status Breakdown</h5>
+                    <div class="text-secondary small">Tenant distribution by state</div>
+                </div>
+            </div>
+            <div style="height: 230px; position: relative;">
+                <canvas id="statusChart"></canvas>
+            </div>
+            <div class="d-flex justify-content-around text-center mt-3 pt-2 border-top">
+                <div>
+                    <div class="small text-secondary">Active</div>
+                    <div class="fw-bold text-success">@Model.Stats.ActiveTenants</div>
+                </div>
+                <div>
+                    <div class="small text-secondary">Pending</div>
+                    <div class="fw-bold text-warning">@Model.Stats.PendingTenants</div>
+                </div>
+                <div>
+                    <div class="small text-secondary">Suspended</div>
+                    <div class="fw-bold text-danger">@Model.Stats.SuspendedTenants</div>
+                </div>
+                <div>
+                    <div class="small text-secondary">Disabled</div>
+                    <div class="fw-bold text-secondary">@Model.Stats.DisabledTenants</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- RECENT ACTIVITY AND SECURITY ROW -->
+<div class="row g-3">
+    <!-- Recent Tenants -->
+    <div class="col-lg-6">
+        <div class="card h-100 bg-body border">
+            <div class="card-header bg-transparent py-3 d-flex align-items-center justify-content-between">
+                <h5 class="fw-bold mb-0">Recent Tenants</h5>
+                <a href="/Platform/Tenants" class="small text-decoration-none">View All</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr class="small text-secondary">
+                            <th>TENANT</th>
+                            <th>CODE</th>
+                            <th>STATUS</th>
+                            <th>CREATED</th>
+                            <th class="text-end">ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Stats.RecentTenants.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-secondary small">No tenants registered yet.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var tenant in Model.Stats.RecentTenants)
+                            {
+                                <tr>
+                                    <td class="fw-semibold">@tenant.Name</td>
+                                    <td><code>@tenant.Code</code></td>
+                                    <td>
+                                        <span class="status-badge @(tenant.Status switch {
+                                            TenantStatus.Active => "badge-active",
+                                            TenantStatus.Pending => "badge-pending",
+                                            TenantStatus.Suspended => "badge-suspended",
+                                            _ => "badge-disabled"
+                                        })">
+                                            @tenant.Status
+                                        </span>
+                                    </td>
+                                    <td class="small text-secondary">@tenant.CreatedAtUtc.ToString("MMM dd, yyyy")</td>
+                                    <td class="text-end">
+                                        <a href="/Platform/Tenants/@tenant.Id" class="btn btn-sm btn-outline-primary py-1 px-2">
+                                            <i class="bi bi-gear"></i> Manage
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Security Events -->
+    <div class="col-lg-6">
+        <div class="card h-100 bg-body border">
+            <div class="card-header bg-transparent py-3 d-flex align-items-center justify-content-between">
+                <h5 class="fw-bold mb-0">Live Security Events</h5>
+                <a href="/Platform/SecurityLogs" class="small text-decoration-none">Security Center</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr class="small text-secondary">
+                            <th>EVENT</th>
+                            <th>USER / TARGET</th>
+                            <th>STATUS</th>
+                            <th class="text-end">TIME</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.RecentSecurityLogs.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-secondary small">No security events logged today.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var log in Model.RecentSecurityLogs)
+                            {
+                                <tr>
+                                    <td class="small fw-semibold">
+                                        <i class="bi bi-shield-@(log.Succeeded ? "check text-success" : "exclamation text-danger") me-1"></i>
+                                        @log.EventType
+                                    </td>
+                                    <td class="small text-truncate" style="max-width: 160px;">@(log.Email ?? "Unknown")</td>
+                                    <td>
+                                        <span class="badge @(log.Succeeded ? "bg-success-subtle text-success" : "bg-danger-subtle text-danger")">
+                                            @(log.Succeeded ? "Success" : "Failed")
+                                        </span>
+                                    </td>
+                                    <td class="small text-secondary text-end">@log.CreatedAtUtc.ToString("HH:mm:ss")</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Growth Trend Area Chart
+            const growthData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Stats.TenantGrowthTrend));
+            const growthLabels = growthData.map(d => d.MonthLabel);
+            const growthCounts = growthData.map(d => d.TenantCount);
+
+            const growthCtx = document.getElementById('growthChart').getContext('2d');
+            new Chart(growthCtx, {
+                type: 'line',
+                data: {
+                    labels: growthLabels,
+                    datasets: [{
+                        label: 'Total Tenants',
+                        data: growthCounts,
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        fill: true,
+                        tension: 0.35,
+                        borderWidth: 2,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#2563eb'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 }
+                        }
+                    }
+                }
+            });
+
+            // Status Distribution Doughnut Chart
+            const statusCtx = document.getElementById('statusChart').getContext('2d');
+            new Chart(statusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Active', 'Pending', 'Suspended', 'Disabled'],
+                    datasets: [{
+                        data: [
+                            @Model.Stats.ActiveTenants,
+                            @Model.Stats.PendingTenants,
+                            @Model.Stats.SuspendedTenants,
+                            @Model.Stats.DisabledTenants
+                        ],
+                        backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#6b7280'],
+                        borderWidth: 2,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    },
+                    cutout: '70%'
+                }
+            });
+        });
+    </script>
+}

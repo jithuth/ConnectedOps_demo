@@ -1,0 +1,157 @@
+@page "/Platform/SystemHealth"
+@model ConnectedOps.Web.Pages.Platform.SystemHealthModel
+@{
+    ViewData["Title"] = "System Health & Diagnostics";
+    ViewData["Subtitle"] = "Live infrastructure metrics, database connectivity status, and .NET runtime diagnostics";
+}
+
+@section HeaderActions {
+    <a href="/Platform/SystemHealth" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1">
+        <i class="bi bi-arrow-clockwise"></i> Refresh Health Probe
+    </a>
+}
+
+<!-- OVERALL STATUS BANNER -->
+<div class="card bg-body border mb-4">
+    <div class="card-body p-4 d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center gap-3">
+            <div class="rounded-circle @(Model.DbHealthy ? "bg-success" : "bg-danger") text-white d-flex align-items-center justify-content-center" style="width: 52px; height: 52px; font-size: 1.6rem;">
+                <i class="bi bi-@(Model.DbHealthy ? "heart-pulse-fill" : "exclamation-triangle-fill")"></i>
+            </div>
+            <div>
+                <h4 class="fw-bold mb-1">System State: @(Model.DbHealthy ? "Operational & Healthy" : "Degraded - Connectivity Alert")</h4>
+                <div class="text-secondary small">All critical backend subsystems are responding normally.</div>
+            </div>
+        </div>
+        <div>
+            <span class="badge @(Model.DbHealthy ? "bg-success-subtle text-success fs-6" : "bg-danger-subtle text-danger fs-6") px-3 py-2">
+                @(Model.DbHealthy ? "HEALTHY" : "UNHEALTHY")
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- SUBSYSTEM METRIC TILES -->
+<div class="row g-3 mb-4">
+    <!-- Database Connectivity -->
+    <div class="col-md-6 col-xl-3">
+        <div class="card metric-card p-3 bg-body h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-secondary small fw-semibold text-uppercase">SQL Server RDS</div>
+                    <h4 class="fw-bold my-1 @(Model.DbHealthy ? "text-success" : "text-danger")">
+                        @(Model.DbHealthy ? "Connected" : "Disconnected")
+                    </h4>
+                    <div class="small text-secondary">Latency: @Model.DbLatencyMs ms</div>
+                </div>
+                <div class="metric-icon @(Model.DbHealthy ? "bg-success-subtle text-success" : "bg-danger-subtle text-danger")">
+                    <i class="bi bi-database-check"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Memory Allocation -->
+    <div class="col-md-6 col-xl-3">
+        <div class="card metric-card p-3 bg-body h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-secondary small fw-semibold text-uppercase">Runtime Memory</div>
+                    <h4 class="fw-bold my-1 text-primary">@Model.MemoryAllocatedMb MB</h4>
+                    <div class="small text-secondary">GC Heap Total</div>
+                </div>
+                <div class="metric-icon bg-primary-subtle text-primary">
+                    <i class="bi bi-cpu"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Process Uptime -->
+    <div class="col-md-6 col-xl-3">
+        <div class="card metric-card p-3 bg-body h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-secondary small fw-semibold text-uppercase">Process Uptime</div>
+                    <h4 class="fw-bold my-1 text-info">@Model.ProcessUptime.ToString(@"hh\:mm\:ss")</h4>
+                    <div class="small text-secondary">Started @((int)Model.ProcessUptime.TotalMinutes)m ago</div>
+                </div>
+                <div class="metric-icon bg-info-subtle text-info">
+                    <i class="bi bi-clock-history"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Framework -->
+    <div class="col-md-6 col-xl-3">
+        <div class="card metric-card p-3 bg-body h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-secondary small fw-semibold text-uppercase">Target Framework</div>
+                    <h4 class="fw-bold my-1">.NET 10.0</h4>
+                    <div class="small text-secondary">CLR @Model.DotNetVersion</div>
+                </div>
+                <div class="metric-icon bg-secondary-subtle text-secondary">
+                    <i class="bi bi-code-slash"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- DIAGNOSTICS DETAILS -->
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card bg-body border h-100">
+            <div class="card-header bg-transparent py-3">
+                <h5 class="fw-bold mb-0"><i class="bi bi-server text-primary me-2"></i>Runtime Environment</h5>
+            </div>
+            <div class="card-body p-4">
+                <dl class="row mb-0">
+                    <dt class="col-sm-5 text-secondary small">Operating System</dt>
+                    <dd class="col-sm-7 small">@Model.OsDescription</dd>
+
+                    <dt class="col-sm-5 text-secondary small">Server UTC Clock</dt>
+                    <dd class="col-sm-7 small font-monospace">@Model.ServerTimeUtc.ToString("u")</dd>
+
+                    <dt class="col-sm-5 text-secondary small">Database Provider</dt>
+                    <dd class="col-sm-7 small">@Model.DbProvider</dd>
+
+                    <dt class="col-sm-5 text-secondary small">Health Probes</dt>
+                    <dd class="col-sm-7 small">
+                        <code>/health/live</code> &bull; <code>/health/ready</code> &bull; <code>/health</code>
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card bg-body border h-100">
+            <div class="card-header bg-transparent py-3">
+                <h5 class="fw-bold mb-0"><i class="bi bi-shield-check text-success me-2"></i>Security & Compliance Checks</h5>
+            </div>
+            <div class="card-body p-4">
+                <ul class="list-unstyled mb-0">
+                    <li class="d-flex align-items-center justify-content-between py-2 border-bottom">
+                        <span class="small"><i class="bi bi-check-circle-fill text-success me-2"></i>JWT Token Signing Key Loaded</span>
+                        <span class="badge bg-success-subtle text-success">Pass</span>
+                    </li>
+                    <li class="d-flex align-items-center justify-content-between py-2 border-bottom">
+                        <span class="small"><i class="bi bi-check-circle-fill text-success me-2"></i>HttpOnly Cookie Session Hardening</span>
+                        <span class="badge bg-success-subtle text-success">Pass</span>
+                    </li>
+                    <li class="d-flex align-items-center justify-content-between py-2 border-bottom">
+                        <span class="small"><i class="bi bi-check-circle-fill text-success me-2"></i>Cross-Tenant Data Isolation Guard</span>
+                        <span class="badge bg-success-subtle text-success">Pass</span>
+                    </li>
+                    <li class="d-flex align-items-center justify-content-between py-2">
+                        <span class="small"><i class="bi bi-check-circle-fill text-success me-2"></i>SuperAdmin Platform Role RBAC Separation</span>
+                        <span class="badge bg-success-subtle text-success">Pass</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

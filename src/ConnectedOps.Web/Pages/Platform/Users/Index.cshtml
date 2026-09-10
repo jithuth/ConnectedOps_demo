@@ -1,0 +1,269 @@
+@page "/Platform/Users"
+@model ConnectedOps.Web.Pages.Platform.Users.IndexModel
+@{
+    ViewData["Title"] = "Platform Administrators";
+    ViewData["Subtitle"] = "Manage super administrators, platform engineers, and support staff";
+}
+
+@if (TempData["Feedback"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show small py-2 px-3 mb-3 d-flex align-items-center gap-2" role="alert">
+        <i class="bi bi-check-circle-fill fs-6"></i>
+        <div>@TempData["Feedback"]</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show small py-2 px-3 mb-3 d-flex align-items-center gap-2" role="alert">
+        <i class="bi bi-exclamation-triangle-fill fs-6"></i>
+        <div>@TempData["Error"]</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@section HeaderActions {
+    <button class="btn btn-primary btn-sm d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modal-new-user">
+        <i class="bi bi-person-plus"></i>
+        <span>Add Platform Admin</span>
+    </button>
+}
+
+<!-- FILTERS -->
+<div class="card bg-body border mb-4">
+    <div class="card-body p-3">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-md-5">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-transparent text-secondary"><i class="bi bi-search"></i></span>
+                    <input type="text" name="Search" value="@Model.Search" class="form-control" placeholder="Search by name or email..." />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select name="Role" class="form-select form-select-sm">
+                    <option value="">All Platform Roles</option>
+                    <option value="SuperAdmin" selected="@(Model.Role == PlatformRole.SuperAdmin)">SuperAdmin</option>
+                    <option value="PlatformAdmin" selected="@(Model.Role == PlatformRole.PlatformAdmin)">PlatformAdmin</option>
+                    <option value="SupportAdmin" selected="@(Model.Role == PlatformRole.SupportAdmin)">SupportAdmin</option>
+                    <option value="BillingAdmin" selected="@(Model.Role == PlatformRole.BillingAdmin)">BillingAdmin</option>
+                    <option value="ReadOnlyAdmin" selected="@(Model.Role == PlatformRole.ReadOnlyAdmin)">ReadOnlyAdmin</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="IsActive" class="form-select form-select-sm">
+                    <option value="">All Statuses</option>
+                    <option value="true" selected="@(Model.IsActive == true)">Active</option>
+                    <option value="false" selected="@(Model.IsActive == false)">Inactive</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-sm btn-secondary flex-grow-1">Filter</button>
+                <a href="/Platform/Users" class="btn btn-sm btn-outline-secondary">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- USERS TABLE -->
+<div class="card bg-body border">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr class="small text-secondary">
+                    <th>ADMINISTRATOR</th>
+                    <th>EMAIL</th>
+                    <th>PLATFORM ROLE</th>
+                    <th>STATUS</th>
+                    <th>LAST SIGN IN</th>
+                    <th>CREATED</th>
+                    <th class="text-end">ACTIONS</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.UsersPage.Items.Count == 0)
+                {
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-secondary">
+                            <i class="bi bi-person-x fs-1 d-block mb-2 text-muted"></i>
+                            <div>No platform users found matching your search.</div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var u in Model.UsersPage.Items)
+                    {
+                        <tr>
+                            <td>
+                                <div class="fw-bold">@u.FullName</div>
+                                <div class="small text-secondary">ID: @u.Id.ToString()[..8]...</div>
+                            </td>
+                            <td>@u.Email</td>
+                            <td>
+                                <span class="badge @(u.PlatformRole switch {
+                                    PlatformRole.SuperAdmin => "bg-danger-subtle text-danger",
+                                    PlatformRole.PlatformAdmin => "bg-primary-subtle text-primary",
+                                    PlatformRole.SupportAdmin => "bg-info-subtle text-info",
+                                    PlatformRole.BillingAdmin => "bg-success-subtle text-success",
+                                    _ => "bg-secondary-subtle text-secondary"
+                                })">
+                                    @u.PlatformRole
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge @(u.IsActive ? "bg-success-subtle text-success" : "bg-danger-subtle text-danger")">
+                                    @(u.IsActive ? "Active" : "Inactive")
+                                </span>
+                            </td>
+                            <td class="small text-secondary">
+                                @(u.LastLoginAtUtc.HasValue ? u.LastLoginAtUtc.Value.ToString("MMM dd, yyyy HH:mm") : "Never")
+                            </td>
+                            <td class="small text-secondary">
+                                @u.CreatedAtUtc.ToString("MMM dd, yyyy")
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-secondary" onclick="openRoleModal('@u.Id', '@u.FullName', '@u.PlatformRole')">
+                                        <i class="bi bi-shield"></i> Role
+                                    </button>
+                                    @if (u.IsActive)
+                                    {
+                                        <form method="post" asp-page-handler="Deactivate" asp-route-userId="@u.Id" class="d-inline" onsubmit="return confirm('Deactivate @u.FullName?');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-outline-warning">Deactivate</button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <form method="post" asp-page-handler="Activate" asp-route-userId="@u.Id" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-outline-success">Activate</button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (Model.UsersPage.TotalPages > 1)
+    {
+        <div class="card-footer bg-transparent py-3 d-flex justify-content-between align-items-center">
+            <div class="small text-secondary">
+                Showing @((Model.UsersPage.Page - 1) * Model.UsersPage.PageSize + 1) to @(Math.Min(Model.UsersPage.Page * Model.UsersPage.PageSize, Model.UsersPage.TotalCount)) of @Model.UsersPage.TotalCount administrators
+            </div>
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item @(!Model.UsersPage.HasPreviousPage ? "disabled" : "")">
+                        <a class="page-link" href="?PageIndex=@(Model.UsersPage.Page - 1)&Search=@Model.Search&Role=@Model.Role&IsActive=@Model.IsActive">Previous</a>
+                    </li>
+                    @for (var p = 1; p <= Model.UsersPage.TotalPages; p++)
+                    {
+                        <li class="page-item @(p == Model.UsersPage.Page ? "active" : "")">
+                            <a class="page-link" href="?PageIndex=@p&Search=@Model.Search&Role=@Model.Role&IsActive=@Model.IsActive">@p</a>
+                        </li>
+                    }
+                    <li class="page-item @(!Model.UsersPage.HasNextPage ? "disabled" : "")">
+                        <a class="page-link" href="?PageIndex=@(Model.UsersPage.Page + 1)&Search=@Model.Search&Role=@Model.Role&IsActive=@Model.IsActive">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    }
+</div>
+
+<!-- ADD USER MODAL -->
+<div class="modal fade" id="modal-new-user" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="Create">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-person-plus text-primary me-2"></i>Add Platform Administrator</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">First Name</label>
+                            <input type="text" name="FirstName" class="form-control form-control-sm" required />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Last Name</label>
+                            <input type="text" name="LastName" class="form-control form-control-sm" required />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Email Address</label>
+                        <input type="email" name="Email" class="form-control form-control-sm" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Platform Role</label>
+                        <select name="Role" class="form-select form-select-sm" required>
+                            <option value="PlatformAdmin">PlatformAdmin</option>
+                            <option value="SupportAdmin">SupportAdmin</option>
+                            <option value="BillingAdmin">BillingAdmin</option>
+                            <option value="ReadOnlyAdmin">ReadOnlyAdmin</option>
+                            <option value="SuperAdmin">SuperAdmin</option>
+                        </select>
+                    </div>
+                    <div class="alert alert-info small py-2 px-3 mb-0">
+                        <i class="bi bi-info-circle me-1"></i> A cryptographically secure initial temporary password will be automatically generated upon creation.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Create Administrator</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- CHANGE ROLE MODAL -->
+<div class="modal fade" id="modal-change-role" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="UpdateRole">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="userId" id="role-user-id" />
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Update Platform Role</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="small text-secondary mb-3">Updating platform role for: <strong id="role-user-name" class="text-body"></strong></p>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Select New Role</label>
+                        <select name="role" id="role-select" class="form-select form-select-sm" required>
+                            <option value="SuperAdmin">SuperAdmin</option>
+                            <option value="PlatformAdmin">PlatformAdmin</option>
+                            <option value="SupportAdmin">SupportAdmin</option>
+                            <option value="BillingAdmin">BillingAdmin</option>
+                            <option value="ReadOnlyAdmin">ReadOnlyAdmin</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Update Role</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openRoleModal(userId, userName, currentRole) {
+            document.getElementById('role-user-id').value = userId;
+            document.getElementById('role-user-name').textContent = userName;
+            document.getElementById('role-select').value = currentRole;
+            new bootstrap.Modal(document.getElementById('modal-change-role')).show();
+        }
+    </script>
+}

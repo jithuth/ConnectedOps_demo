@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ConnectedOps.Api/ConnectedOps.Api.csproj" />
+    <Project Path="src/ConnectedOps.Application/ConnectedOps.Application.csproj" />
+    <Project Path="src/ConnectedOps.Domain/ConnectedOps.Domain.csproj" />
+    <Project Path="src/ConnectedOps.Infrastructure/ConnectedOps.Infrastructure.csproj" />
+    <Project Path="src/ConnectedOps.Web/ConnectedOps.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ConnectedOps.Tests/ConnectedOps.Tests.csproj" />
+  </Folder>
+</Solution>

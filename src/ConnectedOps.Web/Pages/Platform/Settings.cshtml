@@ -1,0 +1,121 @@
+@page "/Platform/Settings"
+@model ConnectedOps.Web.Pages.Platform.SettingsModel
+@{
+    ViewData["Title"] = "Platform System Settings";
+    ViewData["Subtitle"] = "Global metadata, branding constants, localization, and operational defaults";
+}
+
+@if (TempData["Feedback"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show small py-2 px-3 mb-3 d-flex align-items-center gap-2" role="alert">
+        <i class="bi bi-check-circle-fill fs-6"></i>
+        <div>@TempData["Feedback"]</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show small py-2 px-3 mb-3 d-flex align-items-center gap-2" role="alert">
+        <i class="bi bi-exclamation-triangle-fill fs-6"></i>
+        <div>@TempData["Error"]</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="row g-4">
+    <!-- GENERAL SETTINGS FORM -->
+    <div class="col-lg-7">
+        <div class="card bg-body border">
+            <div class="card-header bg-transparent py-3">
+                <h5 class="fw-bold mb-0"><i class="bi bi-sliders text-primary me-2"></i>Global Platform Parameters</h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    @Html.AntiForgeryToken()
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Platform Brand Name</label>
+                        <input type="text" asp-for="SettingsForm.PlatformName" class="form-control" required />
+                        <div class="form-text small">Display name shown in titles, notification headers, and default emails.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Operating Company Legal Entity</label>
+                        <input type="text" asp-for="SettingsForm.CompanyName" class="form-control" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Support Desk Email</label>
+                        <input type="email" asp-for="SettingsForm.SupportEmail" class="form-control" required />
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-semibold">Default Language</label>
+                            <select asp-for="SettingsForm.DefaultLanguage" class="form-select">
+                                <option value="en">English (en)</option>
+                                <option value="ar">Arabic (ar - RTL)</option>
+                                <option value="ml">Malayalam (ml)</option>
+                                <option value="hi">Hindi (hi)</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-semibold">Default Timezone</label>
+                            <select asp-for="SettingsForm.DefaultTimeZone" class="form-select">
+                                <option value="UTC">UTC (Universal Coordinated Time)</option>
+                                <option value="Asia/Dubai">Asia/Dubai (GST, UTC+4)</option>
+                                <option value="Asia/Kolkata">Asia/Kolkata (IST, UTC+5:30)</option>
+                                <option value="America/New_York">America/New_York (EST/EDT)</option>
+                                <option value="Europe/London">Europe/London (GMT/BST)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-sm px-3">
+                        <i class="bi bi-check2 me-1"></i> Save Platform Settings
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ROADMAP & FUTURE EXTENSIONS (READ ONLY) -->
+    <div class="col-lg-5">
+        <div class="card bg-body border mb-3">
+            <div class="card-header bg-transparent py-3">
+                <h6 class="fw-bold mb-0 text-secondary small text-uppercase">Enterprise Customization Modules</h6>
+            </div>
+            <div class="card-body p-3">
+                <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
+                    <div>
+                        <div class="fw-semibold small">Custom Domain & SSL</div>
+                        <div class="text-secondary small">Wildcard certificate automated rotation</div>
+                    </div>
+                    <span class="badge bg-secondary-subtle text-secondary">CloudFront</span>
+                </div>
+                <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
+                    <div>
+                        <div class="fw-semibold small">AWS SES Email Delivery</div>
+                        <div class="text-secondary small">Dedicated bounce & complaint tracking</div>
+                    </div>
+                    <span class="badge bg-secondary-subtle text-secondary">AWS SES</span>
+                </div>
+                <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
+                    <div>
+                        <div class="fw-semibold small">AWS Secrets Manager Sync</div>
+                        <div class="text-secondary small">Dynamic credential injection</div>
+                    </div>
+                    <span class="badge bg-secondary-subtle text-secondary">AWS ASM</span>
+                </div>
+                <div class="d-flex align-items-center justify-content-between py-2">
+                    <div>
+                        <div class="fw-semibold small">Multi-region Replica Status</div>
+                        <div class="text-secondary small">RDS SQL Server high-availability cluster</div>
+                    </div>
+                    <span class="badge bg-success-subtle text-success">Healthy</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

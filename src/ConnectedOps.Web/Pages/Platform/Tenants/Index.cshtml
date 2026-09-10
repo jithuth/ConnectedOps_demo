@@ -1,0 +1,296 @@
+@page "/Platform/Tenants"
+@model ConnectedOps.Web.Pages.Platform.Tenants.IndexModel
+@{
+    ViewData["Title"] = "Tenant Management";
+    ViewData["Subtitle"] = "Provision, monitor, configure, and manage lifecycle of tenant fleet organizations";
+}
+
+@if (TempData["Feedback"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show small py-2 px-3 mb-3 d-flex align-items-center gap-2" role="alert">
+        <i class="bi bi-check-circle-fill fs-6"></i>
+        <div>@TempData["Feedback"]</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show small py-2 px-3 mb-3 d-flex align-items-center gap-2" role="alert">
+        <i class="bi bi-exclamation-triangle-fill fs-6"></i>
+        <div>@TempData["Error"]</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@section HeaderActions {
+    <button class="btn btn-primary btn-sm d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modal-new-tenant">
+        <i class="bi bi-building-add"></i>
+        <span>Provision Tenant</span>
+    </button>
+}
+
+<!-- FILTERS CARD -->
+<div class="card bg-body border mb-4">
+    <div class="card-body p-3">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-md-4">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-transparent text-secondary"><i class="bi bi-search"></i></span>
+                    <input type="text" name="Search" value="@Model.Search" class="form-control" placeholder="Search by name, code, or email..." />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select name="Status" class="form-select form-select-sm">
+                    <option value="">All Statuses</option>
+                    <option value="Active" selected="@(Model.Status == TenantStatus.Active)">Active</option>
+                    <option value="Pending" selected="@(Model.Status == TenantStatus.Pending)">Pending</option>
+                    <option value="Suspended" selected="@(Model.Status == TenantStatus.Suspended)">Suspended</option>
+                    <option value="Disabled" selected="@(Model.Status == TenantStatus.Disabled)">Disabled</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="text" name="Country" value="@Model.Country" class="form-control form-control-sm" placeholder="Country (e.g. US, AE)" maxlength="3" />
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-sm btn-secondary flex-grow-1">Filter</button>
+                <a href="/Platform/Tenants" class="btn btn-sm btn-outline-secondary">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- TENANTS TABLE CARD -->
+<div class="card bg-body border">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr class="small text-secondary">
+                    <th>TENANT ORGANIZATION</th>
+                    <th>CODE</th>
+                    <th>CONTACT</th>
+                    <th>USERS</th>
+                    <th>STATUS</th>
+                    <th>REGISTERED</th>
+                    <th class="text-end">ACTIONS</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.TenantsPage.Items.Count == 0)
+                {
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-secondary">
+                            <i class="bi bi-building-slash fs-1 d-block mb-2 text-muted"></i>
+                            <div>No tenants found matching your filter criteria.</div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var tenant in Model.TenantsPage.Items)
+                    {
+                        <tr>
+                            <td>
+                                <div class="fw-bold text-truncate" style="max-width: 220px;">@tenant.Name</div>
+                                <div class="small text-secondary">ID: @tenant.Id.ToString()[..8]...</div>
+                            </td>
+                            <td><code>@tenant.Code</code></td>
+                            <td>
+                                <div class="small text-truncate" style="max-width: 180px;">@(tenant.Email ?? "No email")</div>
+                                <div class="small text-secondary">@(tenant.Phone ?? "No phone")</div>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary-subtle text-body">@tenant.UserCount user@(tenant.UserCount == 1 ? "" : "s")</span>
+                            </td>
+                            <td>
+                                <span class="status-badge @(tenant.Status switch {
+                                    TenantStatus.Active => "badge-active",
+                                    TenantStatus.Pending => "badge-pending",
+                                    TenantStatus.Suspended => "badge-suspended",
+                                    _ => "badge-disabled"
+                                })">
+                                    @tenant.Status
+                                </span>
+                            </td>
+                            <td class="small text-secondary">
+                                @tenant.CreatedAtUtc.ToString("MMM dd, yyyy")
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="/Platform/Tenants/Detail?id=@tenant.Id" class="btn btn-outline-primary" title="Open Control Center">
+                                        <i class="bi bi-sliders"></i> Control
+                                    </a>
+                                    <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <span class="visually-hidden">Toggle Actions</span>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                        <li><a class="dropdown-item" href="/Platform/Tenants/Detail?id=@tenant.Id"><i class="bi bi-eye me-2"></i> View Details</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        @if (tenant.Status != TenantStatus.Active)
+                                        {
+                                            <li>
+                                                <button class="dropdown-item text-success" onclick="confirmAction('activate', '@tenant.Id', '@tenant.Name')">
+                                                    <i class="bi bi-check-circle me-2"></i> Activate Tenant
+                                                </button>
+                                            </li>
+                                        }
+                                        @if (tenant.Status == TenantStatus.Active)
+                                        {
+                                            <li>
+                                                <button class="dropdown-item text-warning" onclick="confirmAction('suspend', '@tenant.Id', '@tenant.Name')">
+                                                    <i class="bi bi-pause-circle me-2"></i> Suspend Tenant
+                                                </button>
+                                            </li>
+                                        }
+                                        @if (tenant.Status != TenantStatus.Disabled)
+                                        {
+                                            <li>
+                                                <button class="dropdown-item text-danger" onclick="confirmAction('disable', '@tenant.Id', '@tenant.Name')">
+                                                    <i class="bi bi-slash-circle me-2"></i> Disable Tenant
+                                                </button>
+                                            </li>
+                                        }
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- PAGINATION -->
+    @if (Model.TenantsPage.TotalPages > 1)
+    {
+        <div class="card-footer bg-transparent py-3 d-flex justify-content-between align-items-center">
+            <div class="small text-secondary">
+                Showing @((Model.TenantsPage.Page - 1) * Model.TenantsPage.PageSize + 1) to @(Math.Min(Model.TenantsPage.Page * Model.TenantsPage.PageSize, Model.TenantsPage.TotalCount)) of @Model.TenantsPage.TotalCount tenants
+            </div>
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item @(!Model.TenantsPage.HasPreviousPage ? "disabled" : "")">
+                        <a class="page-link" href="?PageIndex=@(Model.TenantsPage.Page - 1)&Search=@Model.Search&Status=@Model.Status&Country=@Model.Country">Previous</a>
+                    </li>
+                    @for (var p = 1; p <= Model.TenantsPage.TotalPages; p++)
+                    {
+                        <li class="page-item @(p == Model.TenantsPage.Page ? "active" : "")">
+                            <a class="page-link" href="?PageIndex=@p&Search=@Model.Search&Status=@Model.Status&Country=@Model.Country">@p</a>
+                        </li>
+                    }
+                    <li class="page-item @(!Model.TenantsPage.HasNextPage ? "disabled" : "")">
+                        <a class="page-link" href="?PageIndex=@(Model.TenantsPage.Page + 1)&Search=@Model.Search&Status=@Model.Status&Country=@Model.Country">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    }
+</div>
+
+<!-- CONFIRMATION ACTION MODAL -->
+<div class="modal fade" id="modal-confirm-action" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="confirm-modal-title">Confirm Action</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="confirm-modal-text">Are you sure you want to proceed with this operation?</p>
+                <div class="alert alert-warning small py-2 px-3 mb-0" id="confirm-warning">
+                    <i class="bi bi-exclamation-triangle me-1"></i> This action directly impacts tenant user access across all client devices.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" id="form-confirm-action">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="tenantId" id="confirm-tenant-id" />
+                    <button type="submit" class="btn btn-sm" id="confirm-submit-btn">Confirm</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PROVISION NEW TENANT MODAL -->
+<div class="modal fade" id="modal-new-tenant" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="Create">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-building-add text-primary me-2"></i>Provision New Tenant</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Organization Name</label>
+                        <input type="text" name="Name" class="form-control form-control-sm" placeholder="e.g. Apex Fleet Logistics" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Tenant Unique Code</label>
+                        <input type="text" name="Code" class="form-control form-control-sm text-uppercase" placeholder="e.g. APEXFLEET" maxlength="50" required />
+                        <div class="form-text small">Used for tenant identification and subdomain routing.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Primary Contact Email</label>
+                        <input type="email" name="Email" class="form-control form-control-sm" placeholder="contact@apexfleet.com" />
+                    </div>
+                    <div class="row g-2 mb-2">
+                        <div class="col-8">
+                            <label class="form-label small fw-semibold">Phone Number</label>
+                            <input type="tel" name="Phone" class="form-control form-control-sm" placeholder="+1 555 123 4567" />
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label small fw-semibold">Country Code</label>
+                            <input type="text" name="CountryCode" class="form-control form-control-sm text-uppercase" placeholder="US" maxlength="3" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Provision Organization</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function confirmAction(action, tenantId, tenantName) {
+            const modalEl = document.getElementById('modal-confirm-action');
+            const form = document.getElementById('form-confirm-action');
+            const inputId = document.getElementById('confirm-tenant-id');
+            const title = document.getElementById('confirm-modal-title');
+            const text = document.getElementById('confirm-modal-text');
+            const submitBtn = document.getElementById('confirm-submit-btn');
+
+            inputId.value = tenantId;
+
+            if (action === 'activate') {
+                form.action = '?handler=Activate';
+                title.textContent = 'Activate Tenant';
+                text.textContent = `Are you sure you want to activate ${tenantName}? Users will be able to log in.`;
+                submitBtn.className = 'btn btn-success btn-sm';
+                submitBtn.textContent = 'Activate Tenant';
+            } else if (action === 'suspend') {
+                form.action = '?handler=Suspend';
+                title.textContent = 'Suspend Tenant';
+                text.textContent = `Are you sure you want to suspend ${tenantName}? Active user sessions will be paused.`;
+                submitBtn.className = 'btn btn-warning btn-sm';
+                submitBtn.textContent = 'Suspend Tenant';
+            } else if (action === 'disable') {
+                form.action = '?handler=Disable';
+                title.textContent = 'Disable Tenant';
+                text.textContent = `Are you sure you want to disable ${tenantName}? This stops all tenant operations.`;
+                submitBtn.className = 'btn btn-danger btn-sm';
+                submitBtn.textContent = 'Disable Tenant';
+            }
+
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        }
+    </script>
+}

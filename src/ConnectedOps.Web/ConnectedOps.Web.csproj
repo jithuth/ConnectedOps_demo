@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\ConnectedOps.Application\ConnectedOps.Application.csproj" />
+    <ProjectReference Include="..\ConnectedOps.Infrastructure\ConnectedOps.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>a7c609b2-b578-4d58-932d-e09400d25a81</UserSecretsId>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,158 @@
+@page "/Account/Login"
+@model ConnectedOps.Web.Pages.Account.LoginModel
+@{
+    Layout = null;
+    ViewData["Title"] = "Super Admin Sign In";
+}
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - ConnectedOps</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/vendor/bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/vendor/bootstrap-icons/font/bootstrap-icons.min.css" />
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #f8fafc;
+            padding: 1.5rem;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 440px;
+        }
+
+        .login-card {
+            background: rgba(30, 41, 59, 0.85);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            padding: 2.25rem;
+        }
+
+        .brand-badge {
+            width: 54px;
+            height: 54px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #2563eb 0%, #06b6d4 100%);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            color: #fff;
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4);
+            margin-bottom: 1.25rem;
+        }
+
+        .form-control {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #fff;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+        }
+
+        .form-control:focus {
+            background: rgba(15, 23, 42, 0.8);
+            border-color: #2563eb;
+            color: #fff;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.25);
+        }
+
+        .form-control::placeholder {
+            color: #94a3b8;
+        }
+
+        .btn-primary-co {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary-co:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5);
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="text-center mb-4">
+            <div class="brand-badge">
+                <i class="bi bi-hdd-network"></i>
+            </div>
+            <h2 class="fw-bold m-0 text-white">ConnectedOps</h2>
+            <div class="text-secondary small mt-1">Platform Super Admin Portal</div>
+        </div>
+
+        <div class="login-card">
+            <h4 class="fw-bold mb-1 text-white">Sign In</h4>
+            <p class="text-secondary small mb-4">Enter your administrative credentials to continue</p>
+
+            @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+            {
+                <div class="alert alert-danger py-2 px-3 small rounded-3 d-flex align-items-center gap-2 mb-3" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <div>@Model.ErrorMessage</div>
+                </div>
+            }
+
+            <form method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold text-secondary" for="Email">Email Address</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-secondary-subtle text-secondary"><i class="bi bi-envelope"></i></span>
+                        <input type="email" asp-for="Email" class="form-control" placeholder="admin@connectedops.com" autocomplete="username" required />
+                    </div>
+                    <span asp-validation-for="Email" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold text-secondary" for="Password">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-secondary-subtle text-secondary"><i class="bi bi-key"></i></span>
+                        <input type="password" asp-for="Password" class="form-control" placeholder="••••••••" autocomplete="current-password" required />
+                    </div>
+                    <span asp-validation-for="Password" class="text-danger small"></span>
+                </div>
+
+                <div class="form-check mb-4">
+                    <input class="form-check-input" type="checkbox" asp-for="RememberMe" id="rememberMe">
+                    <label class="form-check-label text-secondary small" for="rememberMe">
+                        Keep me signed in on this device
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary-co w-100 mb-3 d-flex align-items-center justify-content-center gap-2">
+                    <i class="bi bi-shield-lock"></i>
+                    <span>Sign In to Super Admin</span>
+                </button>
+            </form>
+
+            <div class="text-center mt-3 pt-3 border-top border-secondary border-opacity-25 text-secondary" style="font-size: 0.75rem;">
+                <i class="bi bi-shield-check text-success me-1"></i> HttpOnly Cookie Session Security Active
+            </div>
+        </div>
+    </div>
+</body>
+</html>

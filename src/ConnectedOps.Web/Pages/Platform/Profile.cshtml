@@ -1,0 +1,53 @@
+@page "/Platform/Profile"
+@model ConnectedOps.Web.Pages.Platform.ProfileModel
+@{
+    ViewData["Title"] = "My Platform Profile";
+    ViewData["Subtitle"] = "View administrative account identity, active sessions, and security posture";
+}
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="card bg-body border text-center p-4">
+            <div class="mx-auto rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold mb-3 shadow" style="width: 72px; height: 72px; font-size: 2rem;">
+                @(Model.CurrentUser?.FirstName?.Length > 0 ? Model.CurrentUser.FirstName[0].ToString().ToUpper() : "A")
+            </div>
+            <h4 class="fw-bold mb-1">@(Model.CurrentUser?.FullName ?? "Administrator")</h4>
+            <div class="text-secondary small mb-3">@(Model.CurrentUser?.Email ?? "admin@connectedops.com")</div>
+            <div>
+                <span class="badge bg-primary-subtle text-primary fs-6 px-3 py-1">
+                    @(Model.CurrentUser?.PlatformRole.ToString() ?? "SuperAdmin")
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card bg-body border">
+            <div class="card-header bg-transparent py-3">
+                <h5 class="fw-bold mb-0">Identity & Security Profile</h5>
+            </div>
+            <div class="card-body p-4">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4 text-secondary small">User Identifier</dt>
+                    <dd class="col-sm-8 small font-monospace">@Model.CurrentUser?.Id</dd>
+
+                    <dt class="col-sm-4 text-secondary small">Account Status</dt>
+                    <dd class="col-sm-8 small">
+                        <span class="badge bg-success-subtle text-success">Active</span>
+                    </dd>
+
+                    <dt class="col-sm-4 text-secondary small">Account Created</dt>
+                    <dd class="col-sm-8 small">@(Model.CurrentUser?.CreatedAtUtc.ToString("f") ?? "N/A")</dd>
+
+                    <dt class="col-sm-4 text-secondary small">Last Signed In</dt>
+                    <dd class="col-sm-8 small">@(Model.CurrentUser?.LastLoginAtUtc?.ToString("f") ?? "Current Session")</dd>
+
+                    <dt class="col-sm-4 text-secondary small">Two-Factor Authentication</dt>
+                    <dd class="col-sm-8 small">
+                        <span class="badge bg-secondary-subtle text-secondary">Optional in Dev</span>
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>

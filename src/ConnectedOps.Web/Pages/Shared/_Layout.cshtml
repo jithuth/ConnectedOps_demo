@@ -1,0 +1,492 @@
+@using System.Security.Claims
+@using ConnectedOps.Infrastructure.Auth
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light" dir="ltr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - ConnectedOps Super Admin</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Vendor CSS -->
+    <link rel="stylesheet" href="~/vendor/bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/vendor/bootstrap-icons/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/vendor/adminlte/css/adminlte.min.css" />
+    <link rel="stylesheet" href="~/vendor/tabulator/css/tabulator_bootstrap5.min.css" />
+
+    <style>
+        :root {
+            --font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --co-primary: #2563eb;
+            --co-primary-dark: #1d4ed8;
+            --co-accent: #06b6d4;
+        }
+
+        body {
+            font-family: var(--font-family-base);
+        }
+
+        .brand-link {
+            display: flex;
+            align-items: center;
+            padding: 0.85rem 1rem;
+            text-decoration: none;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .brand-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #2563eb 0%, #06b6d4 100%);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            margin-right: 0.75rem;
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+        }
+
+        [dir="rtl"] .brand-icon {
+            margin-right: 0;
+            margin-left: 0.75rem;
+        }
+
+        .nav-header {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--bs-secondary-color);
+            padding: 0.75rem 1rem 0.25rem 1rem;
+            font-weight: 700;
+        }
+
+        .metric-card {
+            border-radius: 12px;
+            border: 1px solid var(--bs-border-color);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+        }
+
+        .metric-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+        }
+
+        .kbd-badge {
+            background-color: var(--bs-tertiary-bg);
+            border: 1px solid var(--bs-border-color);
+            border-radius: 4px;
+            padding: 0.15rem 0.4rem;
+            font-size: 0.75rem;
+            font-family: monospace;
+        }
+
+        .status-badge {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.3rem 0.6rem;
+            border-radius: 6px;
+        }
+
+        .badge-active { background-color: rgba(16, 185, 129, 0.15); color: #059669; }
+        .badge-pending { background-color: rgba(245, 158, 11, 0.15); color: #d97706; }
+        .badge-suspended { background-color: rgba(239, 68, 68, 0.15); color: #dc2626; }
+        .badge-disabled { background-color: rgba(107, 114, 128, 0.15); color: #4b5563; }
+
+        /* Command Palette */
+        .command-palette-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 1060;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 10vh;
+        }
+
+        .command-palette-backdrop.active {
+            display: flex;
+        }
+
+        .command-palette-card {
+            width: 100%;
+            max-width: 600px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+        }
+    </style>
+
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
+    <div class="app-wrapper">
+        <!-- HEADER -->
+        <nav class="app-header navbar navbar-expand bg-body">
+            <div class="container-fluid">
+                <!-- Left Nav -->
+                <ul class="navbar-nav align-items-center">
+                    <li class="nav-item">
+                        <a class="nav-link" data-lte-toggle="sidebar" href="#" role="button">
+                            <i class="bi bi-list fs-5"></i>
+                        </a>
+                    </li>
+                    <li class="nav-item d-none d-md-block ms-2">
+                        <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-2" id="btn-global-search">
+                            <i class="bi bi-search"></i>
+                            <span>Search Platform...</span>
+                            <span class="kbd-badge ms-2">Ctrl+K</span>
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Right Nav -->
+                <ul class="navbar-nav ms-auto align-items-center gap-1">
+                    <!-- RTL Toggle -->
+                    <li class="nav-item">
+                        <button class="btn btn-sm btn-link text-body nav-link" id="btn-rtl-toggle" title="Toggle RTL / LTR layout">
+                            <i class="bi bi-arrow-left-right"></i>
+                            <span class="d-none d-sm-inline ms-1 small" id="lbl-dir">LTR</span>
+                        </button>
+                    </li>
+
+                    <!-- Dark Mode Toggle -->
+                    <li class="nav-item dropdown">
+                        <button class="btn btn-sm btn-link text-body nav-link dropdown-toggle" id="theme-toggle-btn" data-bs-toggle="dropdown" aria-expanded="false" title="Switch Theme">
+                            <i class="bi bi-sun-fill" id="theme-icon"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="theme-toggle-btn">
+                            <li><button class="dropdown-item d-flex align-items-center gap-2" onclick="setTheme('light')"><i class="bi bi-sun-fill"></i> Light</button></li>
+                            <li><button class="dropdown-item d-flex align-items-center gap-2" onclick="setTheme('dark')"><i class="bi bi-moon-stars-fill"></i> Dark</button></li>
+                            <li><button class="dropdown-item d-flex align-items-center gap-2" onclick="setTheme('auto')"><i class="bi bi-circle-half"></i> System</button></li>
+                        </ul>
+                    </li>
+
+                    <!-- Notifications Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link position-relative" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false" title="Notifications">
+                            <i class="bi bi-bell fs-5"></i>
+                            <span class="position-absolute top-1 start-100 translate-middle badge rounded-pill bg-danger" id="notif-count" style="font-size: 0.65rem;">
+                                3
+                            </span>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end shadow-sm p-0" style="min-width: 320px;">
+                            <div class="p-3 border-bottom d-flex align-items-center justify-content-between">
+                                <h6 class="m-0 fw-bold">Platform Notifications</h6>
+                                <span class="badge bg-primary-subtle text-primary">Live</span>
+                            </div>
+                            <div class="list-group list-group-flush small" id="notif-list">
+                                <a href="/Platform/Tenants" class="list-group-item list-group-item-action d-flex align-items-start gap-2 py-2">
+                                    <i class="bi bi-building-check text-success fs-6 mt-1"></i>
+                                    <div>
+                                        <div class="fw-semibold">New Tenant Provisioned</div>
+                                        <div class="text-secondary small">Atlas Logistics was activated</div>
+                                        <span class="text-muted" style="font-size: 0.7rem;">5m ago</span>
+                                    </div>
+                                </a>
+                                <a href="/Platform/SecurityLogs" class="list-group-item list-group-item-action d-flex align-items-start gap-2 py-2">
+                                    <i class="bi bi-shield-exclamation text-warning fs-6 mt-1"></i>
+                                    <div>
+                                        <div class="fw-semibold">Repeated Failed Logins</div>
+                                        <div class="text-secondary small">IP 192.168.1.10 triggered lockout</div>
+                                        <span class="text-muted" style="font-size: 0.7rem;">22m ago</span>
+                                    </div>
+                                </a>
+                                <a href="/Platform/Tenants" class="list-group-item list-group-item-action d-flex align-items-start gap-2 py-2">
+                                    <i class="bi bi-pause-circle text-danger fs-6 mt-1"></i>
+                                    <div>
+                                        <div class="fw-semibold">Tenant Suspended</div>
+                                        <div class="text-secondary small">Apex Freight was suspended</div>
+                                        <span class="text-muted" style="font-size: 0.7rem;">2h ago</span>
+                                    </div>
+                                </a>
+                            </div>
+                            <div class="p-2 border-top text-center">
+                                <a href="/Platform/AuditLogs" class="small text-decoration-none">View All Activity Logs</a>
+                            </div>
+                        </div>
+                    </li>
+
+                    <!-- User Profile Dropdown -->
+                    <li class="nav-item dropdown ms-2">
+                        <a class="nav-link d-flex align-items-center gap-2 p-1" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">
+                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 0.85rem;">
+                                @(User.Identity?.Name?.Length > 0 ? User.Identity.Name.Substring(0, 1).ToUpper() : "A")
+                            </div>
+                            <span class="d-none d-lg-inline small fw-semibold text-truncate" style="max-width: 140px;">
+                                @(User.Identity?.Name ?? "SuperAdmin")
+                            </span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                            <li class="px-3 py-2 border-bottom">
+                                <div class="fw-semibold text-truncate">@(User.Identity?.Name ?? "Administrator")</div>
+                                <div class="small text-secondary text-truncate">@User.FindFirst(ClaimTypes.Email)?.Value</div>
+                                <span class="badge bg-primary-subtle text-primary mt-1">
+                                    @(User.FindFirst(ConnectedOpsClaimTypes.PlatformRole)?.Value ?? "SuperAdmin")
+                                </span>
+                            </li>
+                            <li><a class="dropdown-item py-2" href="/Platform/Profile"><i class="bi bi-person me-2"></i> My Profile</a></li>
+                            <li><a class="dropdown-item py-2" href="/Platform/Settings"><i class="bi bi-gear me-2"></i> System Settings</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form method="post" action="/Account/Logout" id="logout-form">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="dropdown-item text-danger py-2">
+                                        <i class="bi bi-box-arrow-right me-2"></i> Sign Out
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- SIDEBAR -->
+        <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
+            <div class="sidebar-brand">
+                <a href="/Platform/Dashboard" class="brand-link">
+                    <span class="brand-icon"><i class="bi bi-hdd-network"></i></span>
+                    <span class="brand-text fw-bold text-light">ConnectedOps</span>
+                </a>
+            </div>
+
+            <div class="sidebar-wrapper">
+                <nav class="mt-2">
+                    <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview" role="menu" data-accordion="false">
+                        <li class="nav-header">OVERVIEW</li>
+                        <li class="nav-item">
+                            <a href="/Platform/Dashboard" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Platform/Dashboard") ? "active" : "")">
+                                <i class="nav-icon bi bi-speedometer2"></i>
+                                <p>Dashboard</p>
+                            </a>
+                        </li>
+
+                        <li class="nav-header">PLATFORM</li>
+                        <li class="nav-item">
+                            <a href="/Platform/Tenants" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Platform/Tenants") ? "active" : "")">
+                                <i class="nav-icon bi bi-building"></i>
+                                <p>Tenants</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Platform/Users" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Platform/Users") ? "active" : "")">
+                                <i class="nav-icon bi bi-people-fill"></i>
+                                <p>Platform Users</p>
+                            </a>
+                        </li>
+
+                        <li class="nav-header">MONITORING</li>
+                        <li class="nav-item">
+                            <a href="/Platform/AuditLogs" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Platform/AuditLogs") ? "active" : "")">
+                                <i class="nav-icon bi bi-journal-text"></i>
+                                <p>Audit Logs</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Platform/SecurityLogs" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Platform/SecurityLogs") ? "active" : "")">
+                                <i class="nav-icon bi bi-shield-lock"></i>
+                                <p>Security Logs</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Platform/SystemHealth" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Platform/SystemHealth") ? "active" : "")">
+                                <i class="nav-icon bi bi-heart-pulse"></i>
+                                <p>System Health</p>
+                            </a>
+                        </li>
+
+                        <li class="nav-header">SYSTEM</li>
+                        <li class="nav-item">
+                            <a href="/Platform/Settings" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Platform/Settings") ? "active" : "")">
+                                <i class="nav-icon bi bi-sliders2"></i>
+                                <p>Settings</p>
+                            </a>
+                        </li>
+
+                        <li class="nav-header">ACCOUNT</li>
+                        <li class="nav-item">
+                            <a href="/Platform/Profile" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Platform/Profile") ? "active" : "")">
+                                <i class="nav-icon bi bi-person-badge"></i>
+                                <p>My Profile</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="javascript:void(0)" onclick="document.getElementById('logout-form').submit();" class="nav-link text-danger">
+                                <i class="nav-icon bi bi-box-arrow-right"></i>
+                                <p>Sign Out</p>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="app-main">
+            <div class="app-content-header py-3 border-bottom mb-3">
+                <div class="container-fluid">
+                    <div class="row align-items-center">
+                        <div class="col-sm-6">
+                            <h3 class="mb-0 fw-bold">@ViewData["Title"]</h3>
+                            @if (ViewData["Subtitle"] != null)
+                            {
+                                <div class="text-secondary small mt-1">@ViewData["Subtitle"]</div>
+                            }
+                        </div>
+                        <div class="col-sm-6 text-sm-end mt-2 mt-sm-0">
+                            @await RenderSectionAsync("HeaderActions", required: false)
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="app-content">
+                <div class="container-fluid">
+                    @RenderBody()
+                </div>
+            </div>
+        </main>
+
+        <!-- FOOTER -->
+        <footer class="app-footer border-top py-2 px-3 bg-body text-secondary small d-flex justify-content-between align-items-center">
+            <div>
+                <strong>ConnectedOps</strong> &copy; 2026. Fleet & Asset Intelligence Platform.
+            </div>
+            <div>
+                <span class="badge bg-success-subtle text-success me-2">Production Ready</span>
+                <span>v1.22.0</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- COMMAND PALETTE (CTRL+K) -->
+    <div class="command-palette-backdrop" id="command-palette">
+        <div class="card command-palette-card bg-body">
+            <div class="p-3 border-bottom d-flex align-items-center gap-2">
+                <i class="bi bi-search text-secondary"></i>
+                <input type="text" id="palette-search" class="form-control border-0 shadow-none px-1" placeholder="Search tenants, users, or jump to page... (ESC to close)" autocomplete="off">
+                <button class="btn-close" id="btn-close-palette" aria-label="Close"></button>
+            </div>
+            <div class="p-2" style="max-height: 350px; overflow-y: auto;" id="palette-results">
+                <div class="text-secondary small px-2 py-1 fw-bold">QUICK LINKS</div>
+                <a href="/Platform/Dashboard" class="dropdown-item py-2 px-3 rounded d-flex align-items-center gap-2"><i class="bi bi-speedometer2 text-primary"></i> Dashboard</a>
+                <a href="/Platform/Tenants" class="dropdown-item py-2 px-3 rounded d-flex align-items-center gap-2"><i class="bi bi-building text-success"></i> Manage Tenants</a>
+                <a href="/Platform/Users" class="dropdown-item py-2 px-3 rounded d-flex align-items-center gap-2"><i class="bi bi-people-fill text-info"></i> Platform Users</a>
+                <a href="/Platform/AuditLogs" class="dropdown-item py-2 px-3 rounded d-flex align-items-center gap-2"><i class="bi bi-journal-text text-warning"></i> Audit Logs</a>
+                <a href="/Platform/SecurityLogs" class="dropdown-item py-2 px-3 rounded d-flex align-items-center gap-2"><i class="bi bi-shield-lock text-danger"></i> Security Center</a>
+                <a href="/Platform/Settings" class="dropdown-item py-2 px-3 rounded d-flex align-items-center gap-2"><i class="bi bi-sliders2 text-secondary"></i> System Settings</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vendor Scripts -->
+    <script src="~/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="~/vendor/adminlte/js/adminlte.min.js"></script>
+    <script src="~/vendor/chartjs/chart.umd.js"></script>
+    <script src="~/vendor/tabulator/js/tabulator.min.js"></script>
+
+    <!-- Global App Script -->
+    <script>
+        // Theme Persistence
+        function setTheme(theme) {
+            if (theme === 'auto') {
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.setAttribute('data-bs-theme', prefersDark ? 'dark' : 'light');
+            } else {
+                document.documentElement.setAttribute('data-bs-theme', theme);
+            }
+            localStorage.setItem('connectedops-theme', theme);
+            updateThemeIcon(theme);
+        }
+
+        function updateThemeIcon(theme) {
+            const icon = document.getElementById('theme-icon');
+            if (!icon) return;
+            if (theme === 'dark') icon.className = 'bi bi-moon-stars-fill';
+            else if (theme === 'light') icon.className = 'bi bi-sun-fill';
+            else icon.className = 'bi bi-circle-half';
+        }
+
+        // Initialize theme
+        const savedTheme = localStorage.getItem('connectedops-theme') || 'auto';
+        setTheme(savedTheme);
+
+        // RTL Persistence
+        function toggleRTL() {
+            const currentDir = document.documentElement.getAttribute('dir') || 'ltr';
+            const newDir = currentDir === 'ltr' ? 'rtl' : 'ltr';
+            document.documentElement.setAttribute('dir', newDir);
+            localStorage.setItem('connectedops-dir', newDir);
+            document.getElementById('lbl-dir').textContent = newDir.toUpperCase();
+        }
+
+        const savedDir = localStorage.getItem('connectedops-dir') || 'ltr';
+        document.documentElement.setAttribute('dir', savedDir);
+        document.addEventListener('DOMContentLoaded', () => {
+            const lbl = document.getElementById('lbl-dir');
+            if (lbl) lbl.textContent = savedDir.toUpperCase();
+
+            const rtlBtn = document.getElementById('btn-rtl-toggle');
+            if (rtlBtn) rtlBtn.addEventListener('click', toggleRTL);
+        });
+
+        // Command Palette (Ctrl+K)
+        const palette = document.getElementById('command-palette');
+        const searchInput = document.getElementById('palette-search');
+        const openPaletteBtn = document.getElementById('btn-global-search');
+        const closePaletteBtn = document.getElementById('btn-close-palette');
+
+        function openPalette() {
+            if (palette) {
+                palette.classList.add('active');
+                if (searchInput) {
+                    searchInput.value = '';
+                    searchInput.focus();
+                }
+            }
+        }
+
+        function closePalette() {
+            if (palette) palette.classList.remove('active');
+        }
+
+        if (openPaletteBtn) openPaletteBtn.addEventListener('click', openPalette);
+        if (closePaletteBtn) closePaletteBtn.addEventListener('click', closePalette);
+
+        window.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+                e.preventDefault();
+                openPalette();
+            } else if (e.key === 'Escape') {
+                closePalette();
+            }
+        });
+
+        if (palette) {
+            palette.addEventListener('click', (e) => {
+                if (e.target === palette) closePalette();
+            });
+        }
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

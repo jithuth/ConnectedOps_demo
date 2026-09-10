@@ -1,0 +1,6 @@
+@ConnectedOps.Api_HostAddress = http://localhost:5092
+
+GET {{ConnectedOps.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
