@@ -150,6 +150,26 @@ public static class PermissionKeys
         public const string View = "DriverDashboard.View";
     }
 
+    public static class FleetOperations
+    {
+        public const string View = "FleetOperations.View";
+        public const string ViewBoard = "FleetOperations.ViewBoard";
+        public const string ViewDashboard = "FleetOperations.ViewDashboard";
+        public const string ManageOperations = "FleetOperations.ManageOperations";
+        public const string CheckOut = "FleetOperations.CheckOut";
+        public const string Checkout = "FleetOperations.CheckOut";
+        public const string CheckIn = "FleetOperations.CheckIn";
+        public const string Handover = "FleetOperations.Handover";
+        public const string ViewSessions = "FleetOperations.ViewSessions";
+        public const string ManageShifts = "FleetOperations.ManageShifts";
+        public const string AssignShifts = "FleetOperations.AssignShifts";
+        public const string ViewAvailability = "FleetOperations.ViewAvailability";
+        public const string ViewExceptions = "FleetOperations.ViewExceptions";
+        public const string ManageExceptions = "FleetOperations.ManageExceptions";
+        public const string ResolveExceptions = "FleetOperations.ResolveExceptions";
+        public const string ViewTimeline = "FleetOperations.ViewTimeline";
+    }
+
     public static class Assets
     {
         public const string View = "Assets.View";

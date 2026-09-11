@@ -348,7 +348,18 @@ public sealed class TenantProvisioningService
                 PermissionKeys.Assets.Edit,
 
                 PermissionKeys.Reports.View,
-                PermissionKeys.Reports.Export
+                PermissionKeys.Reports.Export,
+
+                PermissionKeys.FleetOperations.View,
+                PermissionKeys.FleetOperations.ManageOperations,
+                PermissionKeys.FleetOperations.Checkout,
+                PermissionKeys.FleetOperations.CheckIn,
+                PermissionKeys.FleetOperations.Handover,
+                PermissionKeys.FleetOperations.ManageShifts,
+                PermissionKeys.FleetOperations.AssignShifts,
+                PermissionKeys.FleetOperations.ManageExceptions,
+                PermissionKeys.FleetOperations.ViewBoard,
+                PermissionKeys.FleetOperations.ViewTimeline
             ]);
 
         AssignPermissions(
@@ -391,7 +402,18 @@ public sealed class TenantProvisioningService
                 PermissionKeys.DriverAssignments.End,
                 PermissionKeys.DriverDashboard.View,
 
-                PermissionKeys.Reports.View
+                PermissionKeys.Reports.View,
+
+                PermissionKeys.FleetOperations.View,
+                PermissionKeys.FleetOperations.ManageOperations,
+                PermissionKeys.FleetOperations.Checkout,
+                PermissionKeys.FleetOperations.CheckIn,
+                PermissionKeys.FleetOperations.Handover,
+                PermissionKeys.FleetOperations.ManageShifts,
+                PermissionKeys.FleetOperations.AssignShifts,
+                PermissionKeys.FleetOperations.ManageExceptions,
+                PermissionKeys.FleetOperations.ViewBoard,
+                PermissionKeys.FleetOperations.ViewTimeline
             ]);
 
         AssignPermissions(
@@ -407,7 +429,16 @@ public sealed class TenantProvisioningService
                 PermissionKeys.DriverAssignments.View,
                 PermissionKeys.DriverAssignments.Create,
                 PermissionKeys.DriverAssignments.End,
-                PermissionKeys.DriverDashboard.View
+                PermissionKeys.DriverDashboard.View,
+
+                PermissionKeys.FleetOperations.View,
+                PermissionKeys.FleetOperations.ManageOperations,
+                PermissionKeys.FleetOperations.Checkout,
+                PermissionKeys.FleetOperations.CheckIn,
+                PermissionKeys.FleetOperations.Handover,
+                PermissionKeys.FleetOperations.AssignShifts,
+                PermissionKeys.FleetOperations.ViewBoard,
+                PermissionKeys.FleetOperations.ViewTimeline
             ]);
 
         AssignPermissions(
@@ -427,7 +458,11 @@ public sealed class TenantProvisioningService
             permissions,
             TenantRoleCodes.Driver,
             [
-                PermissionKeys.Vehicles.View
+                PermissionKeys.Vehicles.View,
+                PermissionKeys.FleetOperations.View,
+                PermissionKeys.FleetOperations.Checkout,
+                PermissionKeys.FleetOperations.CheckIn,
+                PermissionKeys.FleetOperations.Handover
             ]);
 
         await _dbContext.SaveChangesAsync(

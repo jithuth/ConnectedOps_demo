@@ -14,6 +14,7 @@ using ConnectedOps.Domain.Platform;
 using ConnectedOps.Domain.Security;
 using ConnectedOps.Domain.Vehicles;
 using ConnectedOps.Domain.Drivers;
+using ConnectedOps.Domain.FleetOperations;
 
 namespace ConnectedOps.Infrastructure.Persistence;
 
@@ -156,6 +157,24 @@ public sealed class ConnectedOpsDbContext
 
     public DbSet<DriverNote> DriverNotes =>
         Set<DriverNote>();
+
+    public DbSet<FleetShift> FleetShifts =>
+        Set<FleetShift>();
+
+    public DbSet<FleetShiftAssignment> FleetShiftAssignments =>
+        Set<FleetShiftAssignment>();
+
+    public DbSet<VehicleUsageSession> VehicleUsageSessions =>
+        Set<VehicleUsageSession>();
+
+    public DbSet<VehicleHandover> VehicleHandovers =>
+        Set<VehicleHandover>();
+
+    public DbSet<VehicleConditionRecord> VehicleConditionRecords =>
+        Set<VehicleConditionRecord>();
+
+    public DbSet<FleetOperationalException> FleetOperationalExceptions =>
+        Set<FleetOperationalException>();
 
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)

@@ -1,0 +1,230 @@
+@page
+@model ConnectedOps.Web.Pages.FleetOperations.BoardModel
+@{
+    ViewData["Title"] = "Live Fleet Operations Board";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <div>
+                <h1 class="m-0 text-dark fw-bold">Live Fleet Operations Board</h1>
+                <p class="text-muted small mb-0">Real-time status, driver assignments, checkouts, and custody tracking across your entire fleet</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="/FleetOperations/Checkout" class="btn btn-primary d-flex align-items-center gap-1 shadow-sm">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span>Quick Checkout</span>
+                </a>
+                <a href="/FleetOperations/Exceptions" class="btn btn-outline-danger d-flex align-items-center gap-1 shadow-sm">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <span>Exceptions (@Model.Board.OpenExceptionsCount)</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        <!-- FILTER BAR -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-body p-3">
+                <form method="get" class="row g-2 align-items-center">
+                    <div class="col-lg-4 col-md-6">
+                        <div class="input-group">
+                            <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search"></i></span>
+                            <input type="text" name="Filter.SearchTerm" value="@Model.Filter.SearchTerm" class="form-control border-start-0" placeholder="Search by vehicle, registration, or driver...">
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <select name="Filter.BranchId" class="form-select">
+                            <option value="">All Branches</option>
+                            @foreach (var b in Model.Branches)
+                            {
+                                <option value="@b.Id" selected="@(Model.Filter.BranchId == b.Id ? "selected" : null)">@b.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <select name="Filter.VehicleStatus" class="form-select">
+                            <option value="">All Operational Statuses</option>
+                            <option value="1" selected="@(Model.Filter.VehicleStatus == ConnectedOps.Domain.FleetOperations.VehicleAvailabilityStatus.Available ? "selected" : null)">Available</option>
+                            <option value="3" selected="@(Model.Filter.VehicleStatus == ConnectedOps.Domain.FleetOperations.VehicleAvailabilityStatus.CheckedOut ? "selected" : null)">Checked Out (In Use)</option>
+                            <option value="2" selected="@(Model.Filter.VehicleStatus == ConnectedOps.Domain.FleetOperations.VehicleAvailabilityStatus.Assigned ? "selected" : null)">Assigned to Driver</option>
+                            <option value="4" selected="@(Model.Filter.VehicleStatus == ConnectedOps.Domain.FleetOperations.VehicleAvailabilityStatus.Reserved ? "selected" : null)">Reserved for Shift</option>
+                            <option value="5" selected="@(Model.Filter.VehicleStatus == ConnectedOps.Domain.FleetOperations.VehicleAvailabilityStatus.Unavailable ? "selected" : null)">Unavailable</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-6 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary w-100">Filter</button>
+                        <a href="/FleetOperations/Board" class="btn btn-outline-secondary">Reset</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- STATUS PILLS / SUMMARY -->
+        <div class="d-flex flex-wrap gap-2 mb-4">
+            <a href="/FleetOperations/Board" class="btn btn-sm @(!Model.Filter.VehicleStatus.HasValue ? "btn-dark text-white" : "btn-outline-dark") rounded-pill px-3">
+                All (@Model.Board.Items.Count)
+            </a>
+            <a href="/FleetOperations/Board?Filter.VehicleStatus=1" class="btn btn-sm @(Model.Filter.VehicleStatus == ConnectedOps.Domain.FleetOperations.VehicleAvailabilityStatus.Available ? "btn-success" : "btn-outline-success") rounded-pill px-3">
+                <i class="bi bi-check-circle me-1"></i> Available (@Model.Board.AvailableVehiclesCount)
+            </a>
+            <a href="/FleetOperations/Board?Filter.VehicleStatus=3" class="btn btn-sm @(Model.Filter.VehicleStatus == ConnectedOps.Domain.FleetOperations.VehicleAvailabilityStatus.CheckedOut ? "btn-primary" : "btn-outline-primary") rounded-pill px-3">
+                <i class="bi bi-box-arrow-right me-1"></i> Checked Out (@Model.Board.CheckedOutVehiclesCount)
+            </a>
+            <a href="/FleetOperations/Board?Filter.VehicleStatus=2" class="btn btn-sm @(Model.Filter.VehicleStatus == ConnectedOps.Domain.FleetOperations.VehicleAvailabilityStatus.Assigned ? "btn-info text-dark" : "btn-outline-info") rounded-pill px-3">
+                <i class="bi bi-person-check me-1"></i> Assigned (@Model.Board.AssignedVehiclesCount)
+            </a>
+            <a href="/FleetOperations/Board?Filter.VehicleStatus=5" class="btn btn-sm @(Model.Filter.VehicleStatus == ConnectedOps.Domain.FleetOperations.VehicleAvailabilityStatus.Unavailable ? "btn-danger" : "btn-outline-danger") rounded-pill px-3">
+                <i class="bi bi-slash-circle me-1"></i> Unavailable (@Model.Board.UnavailableVehiclesCount)
+            </a>
+        </div>
+
+        <!-- VEHICLE CARDS GRID -->
+        @if (Model.Board.Items.Count == 0)
+        {
+            <div class="card border-0 shadow-sm rounded-3 text-center py-5">
+                <div class="card-body">
+                    <i class="bi bi-truck text-muted" style="font-size: 3rem;"></i>
+                    <h5 class="fw-bold mt-3">No Vehicles Match Criteria</h5>
+                    <p class="text-muted small">Try clearing your search term or status filter.</p>
+                    <a href="/FleetOperations/Board" class="btn btn-outline-primary btn-sm">Clear Filters</a>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="row g-3">
+                @foreach (var item in Model.Board.Items)
+                {
+                    var statusColor = item.AvailabilityStatus switch
+                    {
+                        ConnectedOps.Domain.FleetOperations.VehicleAvailabilityStatus.Available => "success",
+                        ConnectedOps.Domain.FleetOperations.VehicleAvailabilityStatus.CheckedOut => "primary",
+                        ConnectedOps.Domain.FleetOperations.VehicleAvailabilityStatus.Assigned => "info",
+                        ConnectedOps.Domain.FleetOperations.VehicleAvailabilityStatus.Reserved => "warning",
+                        _ => "danger"
+                    };
+
+                    <div class="col-xl-3 col-lg-4 col-md-6">
+                        <div class="card border-0 shadow-sm rounded-3 h-100 position-relative border-top border-4 border-@statusColor">
+                            <div class="card-body p-3 d-flex flex-column">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <h5 class="fw-bold mb-0 text-dark">@item.VehicleNumber</h5>
+                                        <span class="text-muted small">@item.DisplayName</span>
+                                    </div>
+                                    <span class="badge bg-@statusColor">@item.AvailabilityStatusName</span>
+                                </div>
+
+                                @if (item.HasOpenException)
+                                {
+                                    <div class="alert alert-danger py-1 px-2 mb-2 small d-flex align-items-center gap-1">
+                                        <i class="bi bi-exclamation-triangle-fill"></i>
+                                        <span>Active Operational Exception</span>
+                                    </div>
+                                }
+
+                                <div class="bg-light rounded p-2 mb-3 small">
+                                    <div class="row g-1">
+                                        <div class="col-6 text-muted">Make / Model:</div>
+                                        <div class="col-6 fw-semibold text-end text-truncate">@(item.MakeModel ?? "N/A")</div>
+
+                                        <div class="col-6 text-muted">Plate:</div>
+                                        <div class="col-6 fw-semibold text-end text-truncate">@(item.RegistrationNumber ?? "N/A")</div>
+
+                                        <div class="col-6 text-muted">Branch:</div>
+                                        <div class="col-6 fw-semibold text-end text-truncate">@(item.BranchName ?? "Global Fleet")</div>
+
+                                        <div class="col-6 text-muted">Odometer:</div>
+                                        <div class="col-6 fw-semibold text-end">@item.CurrentOdometer.ToString("N0") km</div>
+                                    </div>
+                                </div>
+
+                                <!-- OPERATIONAL STATE / DRIVER -->
+                                <div class="mb-3 mt-auto">
+                                    @if (item.AvailabilityStatus == ConnectedOps.Domain.FleetOperations.VehicleAvailabilityStatus.CheckedOut)
+                                    {
+                                        <div class="d-flex align-items-center gap-2 border rounded p-2 bg-primary-subtle border-primary-subtle">
+                                            <div class="bg-primary text-white rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                                <i class="bi bi-person-fill"></i>
+                                            </div>
+                                            <div class="small overflow-hidden">
+                                                <div class="fw-bold text-truncate">@item.CurrentDriverName</div>
+                                                <div class="text-muted" style="font-size: 0.75rem;">Checked out @item.CheckedOutAtUtc?.ToString("g")</div>
+                                            </div>
+                                        </div>
+                                    }
+                                    else if (item.AvailabilityStatus == ConnectedOps.Domain.FleetOperations.VehicleAvailabilityStatus.Assigned)
+                                    {
+                                        <div class="d-flex align-items-center gap-2 border rounded p-2 bg-info-subtle border-info-subtle">
+                                            <div class="bg-info text-white rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                                <i class="bi bi-person-check-fill"></i>
+                                            </div>
+                                            <div class="small overflow-hidden">
+                                                <div class="fw-bold text-truncate">@item.CurrentDriverName</div>
+                                                <div class="text-muted" style="font-size: 0.75rem;">Assigned Driver</div>
+                                            </div>
+                                        </div>
+                                    }
+                                    else if (item.AvailabilityStatus == ConnectedOps.Domain.FleetOperations.VehicleAvailabilityStatus.Reserved)
+                                    {
+                                        <div class="d-flex align-items-center gap-2 border rounded p-2 bg-warning-subtle border-warning-subtle">
+                                            <div class="bg-warning text-dark rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                                <i class="bi bi-calendar3"></i>
+                                            </div>
+                                            <div class="small overflow-hidden">
+                                                <div class="fw-bold text-truncate">@item.CurrentShiftName</div>
+                                                <div class="text-muted" style="font-size: 0.75rem;">Reserved for driver @item.CurrentDriverName</div>
+                                            </div>
+                                        </div>
+                                    }
+                                    else if (item.AvailabilityStatus == ConnectedOps.Domain.FleetOperations.VehicleAvailabilityStatus.Available)
+                                    {
+                                        <div class="text-center py-2 text-success small fw-semibold">
+                                            <i class="bi bi-check-circle me-1"></i> Ready for Operational Dispatch
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="text-center py-2 text-danger small fw-semibold">
+                                            <i class="bi bi-x-circle me-1"></i> Unavailable for Operations
+                                        </div>
+                                    }
+                                </div>
+
+                                <!-- ACTIONS -->
+                                <div class="d-flex gap-1 pt-2 border-top">
+                                    @if (item.AvailabilityStatus == ConnectedOps.Domain.FleetOperations.VehicleAvailabilityStatus.Available || item.AvailabilityStatus == ConnectedOps.Domain.FleetOperations.VehicleAvailabilityStatus.Assigned)
+                                    {
+                                        <a href="/FleetOperations/Checkout?vehicleId=@item.VehicleId@(item.CurrentDriverId.HasValue ? $"&driverId={item.CurrentDriverId.Value}" : "")" class="btn btn-sm btn-primary w-100 d-flex align-items-center justify-content-center gap-1">
+                                            <i class="bi bi-box-arrow-right"></i>
+                                            <span>Check Out</span>
+                                        </a>
+                                    }
+                                    else if (item.AvailabilityStatus == ConnectedOps.Domain.FleetOperations.VehicleAvailabilityStatus.CheckedOut)
+                                    {
+                                        <a href="/FleetOperations/Checkout?sessionId=@item.CurrentSessionId&action=checkin" class="btn btn-sm btn-success flex-fill d-flex align-items-center justify-content-center gap-1">
+                                            <i class="bi bi-box-arrow-in-left"></i>
+                                            <span>Check In</span>
+                                        </a>
+                                        <a href="/FleetOperations/Handovers?vehicleId=@item.VehicleId" class="btn btn-sm btn-outline-warning flex-fill d-flex align-items-center justify-content-center gap-1" title="Handover">
+                                            <i class="bi bi-arrow-left-right"></i>
+                                            <span>Handover</span>
+                                        </a>
+                                    }
+                                    <a href="/FleetOperations/Exceptions?vehicleId=@item.VehicleId" class="btn btn-sm btn-outline-secondary" title="Report Exception">
+                                        <i class="bi bi-exclamation-octagon"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>

@@ -475,6 +475,56 @@
                             </a>
                         </li>
 
+                        <li class="nav-header">DAILY OPERATIONS</li>
+                        <li class="nav-item">
+                            <a href="/FleetOperations/Dashboard" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/FleetOperations/Dashboard") ? "active" : "")">
+                                <i class="nav-icon bi bi-speedometer2"></i>
+                                <p>Ops Dashboard</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/FleetOperations/Board" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/FleetOperations/Board") ? "active" : "")">
+                                <i class="nav-icon bi bi-kanban"></i>
+                                <p>Live Operations Board</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/FleetOperations/Checkout" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/FleetOperations/Checkout") ? "active" : "")">
+                                <i class="nav-icon bi bi-box-arrow-right"></i>
+                                <p>Checkout &amp; Check-in</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/FleetOperations/Sessions" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/FleetOperations/Sessions") ? "active" : "")">
+                                <i class="nav-icon bi bi-clock-history"></i>
+                                <p>Usage Sessions</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/FleetOperations/Handovers" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/FleetOperations/Handovers") ? "active" : "")">
+                                <i class="nav-icon bi bi-arrow-left-right"></i>
+                                <p>Handovers</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/FleetOperations/Shifts" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/FleetOperations/Shifts") ? "active" : "")">
+                                <i class="nav-icon bi bi-calendar3"></i>
+                                <p>Shifts</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/FleetOperations/ShiftAssignments" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/FleetOperations/ShiftAssignments") ? "active" : "")">
+                                <i class="nav-icon bi bi-calendar-check"></i>
+                                <p>Shift Schedule</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/FleetOperations/Exceptions" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/FleetOperations/Exceptions") ? "active" : "")">
+                                <i class="nav-icon bi bi-exclamation-octagon"></i>
+                                <p>Exceptions</p>
+                            </a>
+                        </li>
+
                         <li class="nav-header">BILLING &amp; FINANCE</li>
                         <li class="nav-item">
                             <a href="/Billing/Subscription" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Billing/Subscription") ? "active" : "")">

@@ -4,6 +4,7 @@ using ConnectedOps.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ConnectedOps.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(ConnectedOpsDbContext))]
-    partial class ConnectedOpsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260911055913_AddFleetOperations")]
+    partial class AddFleetOperations
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

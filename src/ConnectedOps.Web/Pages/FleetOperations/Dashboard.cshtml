@@ -1,0 +1,422 @@
+@page
+@model ConnectedOps.Web.Pages.FleetOperations.DashboardModel
+@{
+    ViewData["Title"] = "Fleet Operations Dashboard";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <div>
+                <h1 class="m-0 text-dark fw-bold">Fleet Operations Dashboard</h1>
+                <p class="text-muted small mb-0">Daily fleet availability, vehicle checkouts, driver handovers, and active sessions</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="/FleetOperations/Board" class="btn btn-outline-primary d-flex align-items-center gap-1 shadow-sm">
+                    <i class="bi bi-kanban"></i>
+                    <span>Live Board</span>
+                </a>
+                <a href="/FleetOperations/Checkout" class="btn btn-primary d-flex align-items-center gap-1 shadow-sm">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span>Vehicle Checkout</span>
+                </a>
+                <a href="/FleetOperations/Handovers" class="btn btn-warning text-dark d-flex align-items-center gap-1 shadow-sm">
+                    <i class="bi bi-arrow-left-right"></i>
+                    <span>Handover</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        <!-- TOP METRICS -->
+        <div class="row g-3 mb-4">
+            <div class="col-xl-2 col-lg-4 col-sm-6">
+                <div class="card border-0 shadow-sm rounded-3 h-100 bg-primary text-white">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-white-50 small text-uppercase fw-semibold">Open Sessions</div>
+                                <div class="fs-3 fw-bold my-1">@Model.Dashboard.OpenSessions</div>
+                                <div class="small text-white-50">of @Model.Dashboard.TotalFleet Vehicles</div>
+                            </div>
+                            <div class="bg-white bg-opacity-25 rounded-circle p-3 d-flex align-items-center justify-content-center">
+                                <i class="bi bi-truck fs-3 text-white"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-2 col-lg-4 col-sm-6">
+                <div class="card border-0 shadow-sm rounded-3 h-100 bg-success text-white">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-white-50 small text-uppercase fw-semibold">Available Vehicles</div>
+                                <div class="fs-3 fw-bold my-1">@Model.Dashboard.AvailableVehicles</div>
+                                <div class="small text-white-50">Ready for dispatch</div>
+                            </div>
+                            <div class="bg-white bg-opacity-25 rounded-circle p-3 d-flex align-items-center justify-content-center">
+                                <i class="bi bi-check-circle fs-3 text-white"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-2 col-lg-4 col-sm-6">
+                <div class="card border-0 shadow-sm rounded-3 h-100 bg-info text-white">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-white-50 small text-uppercase fw-semibold">Available Drivers</div>
+                                <div class="fs-3 fw-bold my-1">@Model.Dashboard.AvailableDrivers</div>
+                                <div class="small text-white-50">of @Model.Dashboard.TotalDrivers Active</div>
+                            </div>
+                            <div class="bg-white bg-opacity-25 rounded-circle p-3 d-flex align-items-center justify-content-center">
+                                <i class="bi bi-person-badge fs-3 text-white"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-2 col-lg-4 col-sm-6">
+                <div class="card border-0 shadow-sm rounded-3 h-100 bg-dark text-white">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-white-50 small text-uppercase fw-semibold">Checkouts Today</div>
+                                <div class="fs-3 fw-bold my-1">@Model.Dashboard.CheckoutsToday</div>
+                                <div class="small text-white-50">@Model.Dashboard.CheckInsToday returns</div>
+                            </div>
+                            <div class="bg-white bg-opacity-25 rounded-circle p-3 d-flex align-items-center justify-content-center">
+                                <i class="bi bi-arrow-repeat fs-3 text-white"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-2 col-lg-4 col-sm-6">
+                <div class="card border-0 shadow-sm rounded-3 h-100 bg-warning text-dark">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-dark-50 small text-uppercase fw-semibold">Handovers Today</div>
+                                <div class="fs-3 fw-bold my-1">@Model.Dashboard.HandoversToday</div>
+                                <div class="small text-muted">Custody transfers</div>
+                            </div>
+                            <div class="bg-dark bg-opacity-10 rounded-circle p-3 d-flex align-items-center justify-content-center">
+                                <i class="bi bi-arrow-left-right fs-3 text-dark"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-2 col-lg-4 col-sm-6">
+                <div class="card border-0 shadow-sm rounded-3 h-100 @(Model.Dashboard.OpenOperationalExceptions > 0 ? "bg-danger text-white" : "bg-secondary text-white")">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-white-50 small text-uppercase fw-semibold">Exceptions</div>
+                                <div class="fs-3 fw-bold my-1">@Model.Dashboard.OpenOperationalExceptions</div>
+                                <div class="small text-white-50">Requiring attention</div>
+                            </div>
+                            <div class="bg-white bg-opacity-25 rounded-circle p-3 d-flex align-items-center justify-content-center">
+                                <i class="bi bi-exclamation-triangle fs-3 text-white"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CHARTS ROW -->
+        <div class="row g-3 mb-4">
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm rounded-3 h-100">
+                    <div class="card-header bg-transparent border-0 pt-3 pb-0">
+                        <h6 class="card-title fw-bold text-dark m-0">Vehicle Availability</h6>
+                    </div>
+                    <div class="card-body d-flex flex-column justify-content-center align-items-center">
+                        <div style="height: 220px; width: 100%;">
+                            <canvas id="vehicleStatusChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm rounded-3 h-100">
+                    <div class="card-header bg-transparent border-0 pt-3 pb-0">
+                        <h6 class="card-title fw-bold text-dark m-0">Driver Status</h6>
+                    </div>
+                    <div class="card-body d-flex flex-column justify-content-center align-items-center">
+                        <div style="height: 220px; width: 100%;">
+                            <canvas id="driverStatusChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm rounded-3 h-100">
+                    <div class="card-header bg-transparent border-0 pt-3 pb-0">
+                        <h6 class="card-title fw-bold text-dark m-0">Fleet by Branch</h6>
+                    </div>
+                    <div class="card-body d-flex flex-column justify-content-center align-items-center">
+                        <div style="height: 220px; width: 100%;">
+                            <canvas id="branchOpsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ACTIVE SESSIONS & RECENT MOVEMENTS -->
+        <div class="row g-3 mb-4">
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm rounded-3 h-100">
+                    <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center py-3">
+                        <h6 class="card-title fw-bold text-dark m-0">
+                            <i class="bi bi-box-arrow-right text-primary me-2"></i>Recent Checkouts
+                        </h6>
+                        <a href="/FleetOperations/Sessions" class="btn btn-sm btn-outline-secondary">View All</a>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Vehicle</th>
+                                        <th>Driver</th>
+                                        <th>Odometer</th>
+                                        <th>Checked Out</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model.Dashboard.RecentCheckouts.Count == 0)
+                                    {
+                                        <tr>
+                                            <td colspan="5" class="text-center py-4 text-muted">No recent checkouts.</td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var s in Model.Dashboard.RecentCheckouts)
+                                        {
+                                            <tr>
+                                                <td class="fw-semibold text-primary">@s.VehicleNumber</td>
+                                                <td>@s.DriverDisplayName</td>
+                                                <td>@s.StartOdometer.ToString("N0") @s.OdometerUnit</td>
+                                                <td class="small text-muted">@s.CheckedOutAtUtc.ToString("g")</td>
+                                                <td>
+                                                    <span class="badge @(s.Status == ConnectedOps.Domain.FleetOperations.UsageSessionStatus.Open ? "bg-success" : "bg-secondary")">
+                                                        @s.StatusName
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm rounded-3 h-100">
+                    <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center py-3">
+                        <h6 class="card-title fw-bold text-dark m-0">
+                            <i class="bi bi-arrow-left-right text-warning me-2"></i>Recent Custody Handovers
+                        </h6>
+                        <a href="/FleetOperations/Handovers" class="btn btn-sm btn-outline-secondary">View All</a>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Vehicle</th>
+                                        <th>From</th>
+                                        <th>To</th>
+                                        <th>Odometer</th>
+                                        <th>Handover Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model.Dashboard.RecentHandovers.Count == 0)
+                                    {
+                                        <tr>
+                                            <td colspan="5" class="text-center py-4 text-muted">No recent custody handovers.</td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var h in Model.Dashboard.RecentHandovers)
+                                        {
+                                            <tr>
+                                                <td class="fw-semibold text-primary">@h.VehicleNumber</td>
+                                                <td class="small">@(h.FromDriverName ?? "Fleet Pool")</td>
+                                                <td class="fw-semibold">@h.ToDriverName</td>
+                                                <td>@h.Odometer.ToString("N0") @h.OdometerUnit</td>
+                                                <td class="small text-muted">@h.HandoverAtUtc.ToString("g")</td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- OPEN EXCEPTIONS -->
+        @if (Model.Dashboard.OpenExceptions.Count > 0)
+        {
+            <div class="card border-0 shadow-sm rounded-3 mb-4 border-start border-4 border-danger">
+                <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center py-3">
+                    <h6 class="card-title fw-bold text-danger m-0">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Active Operational Exceptions
+                    </h6>
+                    <a href="/FleetOperations/Exceptions" class="btn btn-sm btn-outline-danger">Resolve Exceptions</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Severity</th>
+                                    <th>Type</th>
+                                    <th>Description</th>
+                                    <th>Vehicle</th>
+                                    <th>Driver</th>
+                                    <th>Occurred</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var ex in Model.Dashboard.OpenExceptions)
+                                {
+                                    <tr>
+                                        <td>
+                                            <span class="badge @(ex.Severity == ConnectedOps.Domain.FleetOperations.OperationalExceptionSeverity.Critical ? "bg-danger" : ex.Severity == ConnectedOps.Domain.FleetOperations.OperationalExceptionSeverity.High ? "bg-warning text-dark" : "bg-info text-dark")">
+                                                @ex.SeverityName
+                                            </span>
+                                        </td>
+                                        <td class="fw-semibold">@ex.ExceptionTypeName</td>
+                                        <td>@ex.Description</td>
+                                        <td>@(ex.VehicleNumber ?? "N/A")</td>
+                                        <td>@(ex.DriverDisplayName ?? "N/A")</td>
+                                        <td class="small text-muted">@ex.OccurredAtUtc.ToString("g")</td>
+                                        <td>
+                                            <a href="/FleetOperations/Exceptions" class="btn btn-sm btn-outline-primary py-0">Details</a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Vehicle Status Chart
+        const vehicleStatusCtx = document.getElementById('vehicleStatusChart');
+        if (vehicleStatusCtx) {
+            const vData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Dashboard.VehiclesByOperationalStatus));
+            const labels = Object.keys(vData);
+            const data = Object.values(vData);
+
+            new Chart(vehicleStatusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: ['#198754', '#0d6efd', '#ffc107', '#6c757d', '#dc3545', '#0dcaf0']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12 } }
+                    }
+                }
+            });
+        }
+
+        // Driver Status Chart
+        const driverStatusCtx = document.getElementById('driverStatusChart');
+        if (driverStatusCtx) {
+            const dData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Dashboard.DriversByOperationalStatus));
+            const labels = Object.keys(dData);
+            const data = Object.values(dData);
+
+            new Chart(driverStatusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: ['#198754', '#0d6efd', '#dc3545', '#ffc107']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12 } }
+                    }
+                }
+            });
+        }
+
+        // Branch Operations Chart
+        const branchCtx = document.getElementById('branchOpsChart');
+        if (branchCtx) {
+            const bData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Dashboard.OperationsByBranch));
+            const labels = Object.keys(bData);
+            const data = Object.values(bData);
+
+            new Chart(branchCtx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Fleet Size',
+                        data: data,
+                        backgroundColor: '#0d6efd',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, ticks: { precision: 0 } }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+    });
+</script>
+}

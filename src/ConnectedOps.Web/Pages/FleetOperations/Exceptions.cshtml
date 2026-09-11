@@ -1,0 +1,339 @@
+@page
+@model ConnectedOps.Web.Pages.FleetOperations.ExceptionsModel
+@{
+    ViewData["Title"] = "Fleet Operational Exceptions";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <div>
+                <h1 class="m-0 text-dark fw-bold">Fleet Operational Exceptions</h1>
+                <p class="text-muted small mb-0">Track and resolve operational discrepancies, condition issues, late returns, and driver conflicts</p>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-danger d-flex align-items-center gap-1 shadow-sm" data-bs-toggle="modal" data-bs-target="#newExceptionModal">
+                    <i class="bi bi-exclamation-octagon"></i>
+                    <span>Report Exception</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+        {
+            <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i>@Model.StatusMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.ErrorMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <!-- FILTERS -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-body p-3">
+                <form method="get" class="row g-2 align-items-center">
+                    <div class="col-lg-3 col-md-6">
+                        <select name="Query.Status" class="form-select">
+                            <option value="">All Statuses</option>
+                            <option value="1" selected="@(Model.Query.Status == ConnectedOps.Domain.FleetOperations.OperationalExceptionStatus.Open ? "selected" : null)">Open</option>
+                            <option value="2" selected="@(Model.Query.Status == ConnectedOps.Domain.FleetOperations.OperationalExceptionStatus.Resolved ? "selected" : null)">Resolved</option>
+                            <option value="3" selected="@(Model.Query.Status == ConnectedOps.Domain.FleetOperations.OperationalExceptionStatus.Dismissed ? "selected" : null)">Dismissed</option>
+                        </select>
+                    </div>
+
+                    <div class="col-lg-3 col-md-6">
+                        <select name="Query.Severity" class="form-select">
+                            <option value="">All Severities</option>
+                            <option value="4" selected="@(Model.Query.Severity == ConnectedOps.Domain.FleetOperations.OperationalExceptionSeverity.Critical ? "selected" : null)">Critical</option>
+                            <option value="3" selected="@(Model.Query.Severity == ConnectedOps.Domain.FleetOperations.OperationalExceptionSeverity.High ? "selected" : null)">High</option>
+                            <option value="2" selected="@(Model.Query.Severity == ConnectedOps.Domain.FleetOperations.OperationalExceptionSeverity.Warning ? "selected" : null)">Warning</option>
+                            <option value="1" selected="@(Model.Query.Severity == ConnectedOps.Domain.FleetOperations.OperationalExceptionSeverity.Information ? "selected" : null)">Information</option>
+                        </select>
+                    </div>
+
+                    <div class="col-lg-4 col-md-6">
+                        <select name="Query.VehicleId" class="form-select">
+                            <option value="">All Vehicles</option>
+                            @foreach (var v in Model.Vehicles)
+                            {
+                                <option value="@v.Id" selected="@(Model.Query.VehicleId == v.Id ? "selected" : null)">@v.VehicleNumber - @v.DisplayName</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-lg-2 col-md-6 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary w-100">Filter</button>
+                        <a href="/FleetOperations/Exceptions" class="btn btn-outline-secondary">Reset</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- EXCEPTIONS TABLE -->
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Severity</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                                <th>Vehicle</th>
+                                <th>Driver</th>
+                                <th>Occurred At</th>
+                                <th>Status</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.Exceptions.Items.Count == 0)
+                            {
+                                <tr>
+                                    <td colspan="8" class="text-center py-5 text-muted">
+                                        <i class="bi bi-shield-check fs-2 d-block mb-2 text-success"></i>
+                                        No operational exceptions found.
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var e in Model.Exceptions.Items)
+                                {
+                                    var sevColor = e.Severity switch
+                                    {
+                                        ConnectedOps.Domain.FleetOperations.OperationalExceptionSeverity.Critical => "danger",
+                                        ConnectedOps.Domain.FleetOperations.OperationalExceptionSeverity.High => "warning text-dark",
+                                        ConnectedOps.Domain.FleetOperations.OperationalExceptionSeverity.Warning => "info text-dark",
+                                        _ => "secondary"
+                                    };
+
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-@sevColor">@e.SeverityName</span>
+                                        </td>
+                                        <td class="fw-semibold">@e.ExceptionTypeName</td>
+                                        <td>
+                                            <div>@e.Description</div>
+                                            @if (!string.IsNullOrWhiteSpace(e.ResolutionNotes))
+                                            {
+                                                <div class="small text-muted fst-italic">Resolution: @e.ResolutionNotes</div>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (!string.IsNullOrWhiteSpace(e.VehicleNumber))
+                                            {
+                                                <div class="fw-semibold text-primary">@e.VehicleNumber</div>
+                                                <div class="small text-muted">@e.VehicleDisplayName</div>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted small">—</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (!string.IsNullOrWhiteSpace(e.DriverDisplayName))
+                                            {
+                                                <div class="fw-semibold">@e.DriverDisplayName</div>
+                                                <div class="small text-muted">@e.DriverNumber</div>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted small">—</span>
+                                            }
+                                        </td>
+                                        <td class="small text-muted">@e.OccurredAtUtc.ToString("g")</td>
+                                        <td>
+                                            <span class="badge @(e.Status == ConnectedOps.Domain.FleetOperations.OperationalExceptionStatus.Open ? "bg-danger" : e.Status == ConnectedOps.Domain.FleetOperations.OperationalExceptionStatus.Resolved ? "bg-success" : "bg-secondary")">
+                                                @e.StatusName
+                                            </span>
+                                        </td>
+                                        <td class="text-end">
+                                            @if (e.Status == ConnectedOps.Domain.FleetOperations.OperationalExceptionStatus.Open)
+                                            {
+                                                <button type="button" class="btn btn-sm btn-success me-1" data-bs-toggle="modal" data-bs-target="#resolveModal-@e.Id">
+                                                    <i class="bi bi-check-lg me-1"></i> Resolve
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#dismissModal-@e.Id">
+                                                    Dismiss
+                                                </button>
+
+                                                <!-- RESOLVE MODAL -->
+                                                <div class="modal fade" id="resolveModal-@e.Id" tabindex="-1" aria-hidden="true">
+                                                    <div class="modal-dialog text-start">
+                                                        <div class="modal-content">
+                                                            <form method="post" asp-page-handler="ResolveException" asp-route-id="@e.Id">
+                                                                @Html.AntiForgeryToken()
+                                                                <div class="modal-header">
+                                                                    <h5 class="modal-title fw-bold">Resolve Operational Exception</h5>
+                                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                                </div>
+                                                                <div class="modal-body">
+                                                                    <p class="small text-muted">Exception: <strong>@e.Description</strong></p>
+                                                                    <div class="mb-3">
+                                                                        <label class="form-label fw-semibold">Resolution Actions / Notes <span class="text-danger">*</span></label>
+                                                                        <textarea asp-for="ResolveInput.ResolutionNotes" class="form-control" rows="3" placeholder="Describe corrective action taken..." required></textarea>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="modal-footer">
+                                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                                    <button type="submit" class="btn btn-success fw-bold">Confirm Resolution</button>
+                                                                </div>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- DISMISS MODAL -->
+                                                <div class="modal fade" id="dismissModal-@e.Id" tabindex="-1" aria-hidden="true">
+                                                    <div class="modal-dialog text-start">
+                                                        <div class="modal-content">
+                                                            <form method="post" asp-page-handler="DismissException" asp-route-id="@e.Id">
+                                                                @Html.AntiForgeryToken()
+                                                                <div class="modal-header">
+                                                                    <h5 class="modal-title fw-bold">Dismiss Exception</h5>
+                                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                                </div>
+                                                                <div class="modal-body">
+                                                                    <p>Are you sure you want to dismiss this exception?</p>
+                                                                    <div class="mb-3">
+                                                                        <label class="form-label fw-semibold">Dismissal Reason</label>
+                                                                        <input asp-for="DismissInput.DismissalNotes" type="text" class="form-control" placeholder="False alarm, resolved verbally, etc." />
+                                                                    </div>
+                                                                </div>
+                                                                <div class="modal-footer">
+                                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                                    <button type="submit" class="btn btn-outline-danger">Dismiss</button>
+                                                                </div>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <span class="small text-muted">@e.ResolvedAtUtc?.ToString("g")</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- PAGINATION -->
+                @if (Model.Exceptions.TotalPages > 1)
+                {
+                    <div class="p-3 border-top d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div class="small text-muted">
+                            Showing @(((Model.Exceptions.PageNumber - 1) * Model.Exceptions.PageSize) + 1) to @(Math.Min(Model.Exceptions.PageNumber * Model.Exceptions.PageSize, Model.Exceptions.TotalCount)) of @Model.Exceptions.TotalCount exceptions
+                        </div>
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item @(Model.Exceptions.HasPreviousPage ? "" : "disabled")">
+                                <a class="page-link" href="?Query.PageNumber=@(Model.Exceptions.PageNumber - 1)&Query.Status=@Model.Query.Status&Query.Severity=@Model.Query.Severity">Previous</a>
+                            </li>
+                            @for (var p = 1; p <= Model.Exceptions.TotalPages; p++)
+                            {
+                                <li class="page-item @(p == Model.Exceptions.PageNumber ? "active" : "")">
+                                    <a class="page-link" href="?Query.PageNumber=@p&Query.Status=@Model.Query.Status&Query.Severity=@Model.Query.Severity">@p</a>
+                                </li>
+                            }
+                            <li class="page-item @(Model.Exceptions.HasNextPage ? "" : "disabled")">
+                                <a class="page-link" href="?Query.PageNumber=@(Model.Exceptions.PageNumber + 1)&Query.Status=@Model.Query.Status&Query.Severity=@Model.Query.Severity">Next</a>
+                            </li>
+                        </ul>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- REPORT EXCEPTION MODAL -->
+        <div class="modal fade" id="newExceptionModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <form method="post" asp-page-handler="CreateException">
+                        @Html.AntiForgeryToken()
+                        <div class="modal-header">
+                            <h5 class="modal-title fw-bold text-danger">
+                                <i class="bi bi-exclamation-octagon me-2"></i>Report Operational Exception
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Exception Type <span class="text-danger">*</span></label>
+                                    <select asp-for="CreateInput.ExceptionType" class="form-select" required>
+                                        <option value="1">Late Return</option>
+                                        <option value="2">Odometer Mismatch</option>
+                                        <option value="3" selected>Vehicle Condition Issue</option>
+                                        <option value="4">Driver Unavailable</option>
+                                        <option value="5">Vehicle Unavailable</option>
+                                        <option value="6">Assignment Conflict</option>
+                                        <option value="7">Unauthorized Checkout</option>
+                                        <option value="99">Other</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Severity <span class="text-danger">*</span></label>
+                                    <select asp-for="CreateInput.Severity" class="form-select" required>
+                                        <option value="1">Information</option>
+                                        <option value="2">Warning</option>
+                                        <option value="3" selected>High</option>
+                                        <option value="4">Critical</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Vehicle (Optional)</label>
+                                    <select asp-for="CreateInput.VehicleId" class="form-select select2">
+                                        <option value="">-- No specific vehicle --</option>
+                                        @foreach (var v in Model.Vehicles)
+                                        {
+                                            <option value="@v.Id">@v.VehicleNumber - @v.DisplayName</option>
+                                        }
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Driver (Optional)</label>
+                                    <select asp-for="CreateInput.DriverId" class="form-select select2">
+                                        <option value="">-- No specific driver --</option>
+                                        @foreach (var d in Model.Drivers)
+                                        {
+                                            <option value="@d.Id">@d.DriverNumber - @d.DisplayName</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Exception Description <span class="text-danger">*</span></label>
+                                <textarea asp-for="CreateInput.Description" class="form-control" rows="3" placeholder="Provide detailed information regarding the operational exception..." required></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-danger fw-bold px-4">Report Exception</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

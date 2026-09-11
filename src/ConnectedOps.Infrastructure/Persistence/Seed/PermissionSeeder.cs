@@ -315,7 +315,57 @@ public static class PermissionSeeder
         new(
             PermissionKeys.Reports.Export,
             "Export Reports",
-            "Reports")
+            "Reports"),
+
+        new(
+            PermissionKeys.FleetOperations.View,
+            "View Fleet Operations",
+            "FleetOperations"),
+
+        new(
+            PermissionKeys.FleetOperations.ManageOperations,
+            "Manage Fleet Operations",
+            "FleetOperations"),
+
+        new(
+            PermissionKeys.FleetOperations.Checkout,
+            "Vehicle Checkout",
+            "FleetOperations"),
+
+        new(
+            PermissionKeys.FleetOperations.CheckIn,
+            "Vehicle Check-In",
+            "FleetOperations"),
+
+        new(
+            PermissionKeys.FleetOperations.Handover,
+            "Vehicle Handover",
+            "FleetOperations"),
+
+        new(
+            PermissionKeys.FleetOperations.ManageShifts,
+            "Manage Shifts",
+            "FleetOperations"),
+
+        new(
+            PermissionKeys.FleetOperations.AssignShifts,
+            "Assign Shifts",
+            "FleetOperations"),
+
+        new(
+            PermissionKeys.FleetOperations.ManageExceptions,
+            "Manage Operational Exceptions",
+            "FleetOperations"),
+
+        new(
+            PermissionKeys.FleetOperations.ViewBoard,
+            "View Operations Board",
+            "FleetOperations"),
+
+        new(
+            PermissionKeys.FleetOperations.ViewTimeline,
+            "View Fleet Activity Timeline",
+            "FleetOperations")
     ];
 
     public static async Task SeedAsync(

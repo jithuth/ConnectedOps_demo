@@ -1,0 +1,244 @@
+@page
+@model ConnectedOps.Web.Pages.FleetOperations.HandoversModel
+@{
+    ViewData["Title"] = "Vehicle Custody Handovers";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <div>
+                <h1 class="m-0 text-dark fw-bold">Vehicle Custody Handovers</h1>
+                <p class="text-muted small mb-0">Record and audit driver-to-driver vehicle transfers, field handovers, and condition sign-offs</p>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-warning text-dark d-flex align-items-center gap-1 shadow-sm" data-bs-toggle="modal" data-bs-target="#newHandoverModal">
+                    <i class="bi bi-arrow-left-right"></i>
+                    <span class="fw-semibold">Record Handover</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+        {
+            <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i>@Model.StatusMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.ErrorMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <!-- HANDOVERS TABLE -->
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Vehicle</th>
+                                <th>From Driver</th>
+                                <th></th>
+                                <th>To Driver</th>
+                                <th>Odometer</th>
+                                <th>Condition</th>
+                                <th>Handover Date &amp; Time</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.Handovers.Count == 0)
+                            {
+                                <tr>
+                                    <td colspan="8" class="text-center py-5 text-muted">
+                                        <i class="bi bi-arrow-left-right fs-2 d-block mb-2 text-muted"></i>
+                                        No vehicle handovers recorded yet.
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var h in Model.Handovers)
+                                {
+                                    <tr>
+                                        <td class="fw-semibold text-primary">
+                                            <div>@h.VehicleNumber</div>
+                                            <div class="text-muted small">@h.VehicleDisplayName</div>
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold">@(h.FromDriverName ?? "Fleet Pool")</div>
+                                        </td>
+                                        <td class="text-center text-muted">
+                                            <i class="bi bi-arrow-right fs-5"></i>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold text-success">@h.ToDriverName</div>
+                                        </td>
+                                        <td>@h.Odometer.ToString("N0") @h.OdometerUnit</td>
+                                        <td>
+                                            <span class="badge @(h.Condition == ConnectedOps.Domain.FleetOperations.VehicleCondition.Unsafe || h.Condition == ConnectedOps.Domain.FleetOperations.VehicleCondition.AttentionRequired ? "bg-danger" : "bg-light text-dark border")">
+                                                @h.Condition
+                                            </span>
+                                        </td>
+                                        <td class="small text-muted">@h.HandoverAtUtc.ToString("g")</td>
+                                        <td class="small text-muted text-truncate" style="max-width: 200px;" title="@h.Notes">
+                                            @(string.IsNullOrWhiteSpace(h.Notes) ? "—" : h.Notes)
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- NEW HANDOVER MODAL -->
+        <div class="modal fade" id="newHandoverModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <form method="post" asp-page-handler="CreateHandover" id="form-handover">
+                        @Html.AntiForgeryToken()
+                        <div class="modal-header">
+                            <h5 class="modal-title fw-bold">
+                                <i class="bi bi-arrow-left-right text-warning me-2"></i>Record Vehicle Custody Handover
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Vehicle <span class="text-danger">*</span></label>
+                                    <select asp-for="HandoverInput.VehicleId" class="form-select select2" id="handover-vehicle-select" required>
+                                        <option value="">-- Select Vehicle --</option>
+                                        @foreach (var v in Model.Vehicles)
+                                        {
+                                            <option value="@v.Id" data-odo="@v.CurrentOdometer" selected="@(Model.VehicleId == v.Id ? "selected" : null)">
+                                                @v.VehicleNumber - @v.DisplayName
+                                            </option>
+                                        }
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Receiving Driver (New Custody) <span class="text-danger">*</span></label>
+                                    <select asp-for="HandoverInput.ToDriverId" class="form-select select2" id="handover-todriver-select" required>
+                                        <option value="">-- Select Receiving Driver --</option>
+                                        @foreach (var d in Model.Drivers)
+                                        {
+                                            <option value="@d.Id">@d.DriverNumber - @d.DisplayName</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Surrendering Driver (Optional)</label>
+                                    <select asp-for="HandoverInput.FromDriverId" class="form-select select2" id="handover-fromdriver-select">
+                                        <option value="">-- Active Driver on Vehicle / Auto-detect --</option>
+                                        @foreach (var d in Model.Drivers)
+                                        {
+                                            <option value="@d.Id">@d.DriverNumber - @d.DisplayName</option>
+                                        }
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Handover Odometer Reading <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <input asp-for="HandoverInput.Odometer" type="number" step="0.01" class="form-control" id="handover-odo" required min="0">
+                                        <span class="input-group-text">km</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Handover Location</label>
+                                    <select asp-for="HandoverInput.LocationId" class="form-select">
+                                        <option value="">-- Fleet Yard / Field Location --</option>
+                                        @foreach (var loc in Model.Locations)
+                                        {
+                                            <option value="@loc.Id">@loc.Name</option>
+                                        }
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Vehicle Condition at Handover</label>
+                                    <select asp-for="HandoverInput.Condition" class="form-select">
+                                        <option value="1">Good (Clean, normal condition)</option>
+                                        <option value="2">Acceptable (Operable, minor wear)</option>
+                                        <option value="3">Attention Required (Noted defects)</option>
+                                        <option value="4">Unsafe</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Handover Notes</label>
+                                <textarea asp-for="HandoverInput.Notes" class="form-control" rows="2" placeholder="Keys transferred, inspection verified, clean interior, etc."></textarea>
+                            </div>
+
+                            <div class="p-3 bg-light rounded border">
+                                <div class="form-check mb-2">
+                                    <input asp-for="HandoverInput.AcknowledgedByFromDriver" class="form-check-input" type="checkbox" id="ack-from" checked>
+                                    <label class="form-check-label small" for="ack-from">
+                                        Surrendering driver has verified odometer reading and surrendered keys
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input asp-for="HandoverInput.AcknowledgedByToDriver" class="form-check-input" type="checkbox" id="ack-to" checked>
+                                    <label class="form-check-label small" for="ack-to">
+                                        Receiving driver has inspected the vehicle and accepted operational custody
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-warning text-dark fw-bold px-4">
+                                <i class="bi bi-check-lg me-1"></i> Record Handover
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const vehicleSelect = document.getElementById('handover-vehicle-select');
+        const odoInput = document.getElementById('handover-odo');
+
+        if (vehicleSelect) {
+            vehicleSelect.addEventListener('change', function () {
+                const opt = this.options[this.selectedIndex];
+                if (opt && opt.dataset.odo) {
+                    odoInput.value = opt.dataset.odo;
+                }
+            });
+            if (vehicleSelect.value) {
+                const opt = vehicleSelect.options[vehicleSelect.selectedIndex];
+                if (opt && opt.dataset.odo) {
+                    odoInput.value = opt.dataset.odo;
+                }
+            }
+        }
+    });
+</script>
+}

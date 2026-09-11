@@ -54,6 +54,8 @@ using ConnectedOps.Application.Vehicles;
 using ConnectedOps.Infrastructure.Vehicles;
 using ConnectedOps.Application.Drivers;
 using ConnectedOps.Infrastructure.Drivers;
+using ConnectedOps.Application.FleetOperations;
+using ConnectedOps.Infrastructure.FleetOperations;
 
 
 
@@ -133,6 +135,8 @@ public static class DependencyInjection
 
         AddDriverServices(services);
             
+        AddFleetOperationsServices(services);
+
         AddValidation(
             services);
 
@@ -670,5 +674,44 @@ public static class DependencyInjection
         services.AddScoped<
             IDriverService,
             DriverService>();
+    }
+
+    // ================================================================
+    // PHASE 5 - FLEET OPERATIONS & DAILY OPERATIONS
+    // ================================================================
+    private static void AddFleetOperationsServices(
+        IServiceCollection services)
+    {
+        services.AddScoped<
+            IFleetAvailabilityService,
+            FleetAvailabilityService>();
+
+        services.AddScoped<
+            IFleetShiftService,
+            FleetShiftService>();
+
+        services.AddScoped<
+            IFleetShiftAssignmentService,
+            FleetShiftAssignmentService>();
+
+        services.AddScoped<
+            IVehicleUsageSessionService,
+            VehicleUsageSessionService>();
+
+        services.AddScoped<
+            IVehicleHandoverService,
+            VehicleHandoverService>();
+
+        services.AddScoped<
+            IFleetOperationalExceptionService,
+            FleetOperationalExceptionService>();
+
+        services.AddScoped<
+            IFleetActivityTimelineService,
+            FleetActivityTimelineService>();
+
+        services.AddScoped<
+            IFleetOperationsDashboardService,
+            FleetOperationsDashboardService>();
     }
 }
