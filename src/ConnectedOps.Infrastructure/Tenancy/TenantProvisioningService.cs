@@ -359,7 +359,21 @@ public sealed class TenantProvisioningService
                 PermissionKeys.FleetOperations.AssignShifts,
                 PermissionKeys.FleetOperations.ManageExceptions,
                 PermissionKeys.FleetOperations.ViewBoard,
-                PermissionKeys.FleetOperations.ViewTimeline
+                PermissionKeys.FleetOperations.ViewTimeline,
+
+                PermissionKeys.TrackingDevices.View,
+                PermissionKeys.TrackingDevices.Create,
+                PermissionKeys.TrackingDevices.Edit,
+                PermissionKeys.TrackingDevices.Delete,
+                PermissionKeys.TrackingDevices.Provision,
+                PermissionKeys.TrackingDevices.AssignVehicle,
+
+                PermissionKeys.Telematics.View,
+                PermissionKeys.Telematics.ViewLive,
+                PermissionKeys.Telematics.ViewHistory,
+                PermissionKeys.Telematics.ViewDeviceHealth,
+                PermissionKeys.Telematics.ViewDashboard,
+                PermissionKeys.Telematics.SendCommands
             ]);
 
         AssignPermissions(
@@ -413,7 +427,20 @@ public sealed class TenantProvisioningService
                 PermissionKeys.FleetOperations.AssignShifts,
                 PermissionKeys.FleetOperations.ManageExceptions,
                 PermissionKeys.FleetOperations.ViewBoard,
-                PermissionKeys.FleetOperations.ViewTimeline
+                PermissionKeys.FleetOperations.ViewTimeline,
+
+                PermissionKeys.TrackingDevices.View,
+                PermissionKeys.TrackingDevices.Create,
+                PermissionKeys.TrackingDevices.Edit,
+                PermissionKeys.TrackingDevices.Delete,
+                PermissionKeys.TrackingDevices.Provision,
+                PermissionKeys.TrackingDevices.AssignVehicle,
+
+                PermissionKeys.Telematics.View,
+                PermissionKeys.Telematics.ViewLive,
+                PermissionKeys.Telematics.ViewHistory,
+                PermissionKeys.Telematics.ViewDeviceHealth,
+                PermissionKeys.Telematics.ViewDashboard
             ]);
 
         AssignPermissions(
@@ -438,7 +465,11 @@ public sealed class TenantProvisioningService
                 PermissionKeys.FleetOperations.Handover,
                 PermissionKeys.FleetOperations.AssignShifts,
                 PermissionKeys.FleetOperations.ViewBoard,
-                PermissionKeys.FleetOperations.ViewTimeline
+                PermissionKeys.FleetOperations.ViewTimeline,
+
+                PermissionKeys.Telematics.View,
+                PermissionKeys.Telematics.ViewLive,
+                PermissionKeys.Telematics.ViewDashboard
             ]);
 
         AssignPermissions(
@@ -450,7 +481,11 @@ public sealed class TenantProvisioningService
                 PermissionKeys.Assets.Create,
                 PermissionKeys.Assets.Edit,
 
-                PermissionKeys.Reports.View
+                PermissionKeys.Reports.View,
+
+                PermissionKeys.TrackingDevices.View,
+                PermissionKeys.TrackingDevices.AssignVehicle,
+                PermissionKeys.Telematics.ViewDeviceHealth
             ]);
 
         AssignPermissions(

@@ -55,5 +55,16 @@ public enum AuditAction
     VehicleUsageSessionCancelled = 51,
     FleetOperationalExceptionCreated = 52,
     FleetOperationalExceptionResolved = 53,
-    FleetOperationalExceptionDismissed = 54
+    FleetOperationalExceptionDismissed = 54,
+    TrackingDeviceCreated = 55,
+    TrackingDeviceUpdated = 56,
+    TrackingDeviceActivated = 57,
+    TrackingDeviceDeactivated = 58,
+    TrackingDeviceProvisioned = 59,
+    TrackingDeviceDeprovisioned = 60,
+    TrackingDeviceAssignedToVehicle = 61,
+    TrackingDeviceAssignmentEnded = 62,
+    TelematicsSettingsUpdated = 63,
+    DeviceCommandCreated = 64,
+    DeviceCommandCancelled = 65
 }

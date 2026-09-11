@@ -56,6 +56,9 @@ using ConnectedOps.Application.Drivers;
 using ConnectedOps.Infrastructure.Drivers;
 using ConnectedOps.Application.FleetOperations;
 using ConnectedOps.Infrastructure.FleetOperations;
+using ConnectedOps.Application.Telematics;
+using ConnectedOps.Infrastructure.Telematics;
+using ConnectedOps.Infrastructure.Telematics.Providers;
 
 
 
@@ -136,6 +139,8 @@ public static class DependencyInjection
         AddDriverServices(services);
             
         AddFleetOperationsServices(services);
+
+        AddTelematicsServices(services);
 
         AddValidation(
             services);
@@ -713,5 +718,28 @@ public static class DependencyInjection
         services.AddScoped<
             IFleetOperationsDashboardService,
             FleetOperationsDashboardService>();
+    }
+
+    // ================================================================
+    // PHASE 6 - GPS, TRACKING DEVICES & TELEMATICS
+    // ================================================================
+    private static void AddTelematicsServices(
+        IServiceCollection services)
+    {
+        services.AddScoped<ITelematicsProvider, TeltonikaTelematicsProvider>();
+        services.AddScoped<IDeviceConnectivityService, DeviceConnectivityService>();
+        services.AddScoped<ITelemetryValidationService, TelemetryValidationService>();
+        services.AddScoped<ITelemetryDeduplicationService, TelemetryDeduplicationService>();
+        services.AddScoped<ITrackingProviderService, TrackingProviderService>();
+        services.AddScoped<ITrackingDeviceService, TrackingDeviceService>();
+        services.AddScoped<IDeviceProvisioningService, DeviceProvisioningService>();
+        services.AddScoped<IDeviceAssignmentService, DeviceAssignmentService>();
+        services.AddScoped<ITelemetryIngestionService, TelemetryIngestionService>();
+        services.AddScoped<IVehicleTelemetryStateService, VehicleTelemetryStateService>();
+        services.AddScoped<ITelemetryHistoryService, TelemetryHistoryService>();
+        services.AddScoped<IDeviceHealthService, DeviceHealthService>();
+        services.AddScoped<IDeviceCommandService, DeviceCommandService>();
+        services.AddScoped<ITelematicsDashboardService, TelematicsDashboardService>();
+        services.AddScoped<ITelematicsSettingsService, TelematicsSettingsService>();
     }
 }

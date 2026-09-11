@@ -1,0 +1,364 @@
+@page
+@model ConnectedOps.Web.Pages.Telematics.DevicesModel
+@{
+    ViewData["Title"] = "Tracking Devices";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <div>
+                <h1 class="m-0 text-dark fw-bold"><i class="bi bi-cpu me-2 text-primary"></i>Tracking Devices</h1>
+                <p class="text-muted small mb-0">Manage GPS tracking hardware, assign to vehicles, provision and monitor connectivity</p>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary d-flex align-items-center gap-1 shadow-sm" data-bs-toggle="modal" data-bs-target="#registerDeviceModal">
+                    <i class="bi bi-plus-lg"></i>
+                    <span>Register Device</span>
+                </button>
+                <a href="/Telematics/Health" class="btn btn-outline-danger d-flex align-items-center gap-1 shadow-sm">
+                    <i class="bi bi-heart-pulse"></i>
+                    <span>Device Health</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        <!-- FILTER BAR -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-body p-3">
+                <form method="get" class="row g-2 align-items-center">
+                    <div class="col-lg-3 col-md-6">
+                        <div class="input-group">
+                            <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search"></i></span>
+                            <input type="text" name="Filter.Search" value="@Model.Filter.Search" class="form-control border-start-0" placeholder="Search identifier, IMEI, name...">
+                        </div>
+                    </div>
+                    <div class="col-lg-2 col-md-6">
+                        <select name="Filter.ProviderId" class="form-select">
+                            <option value="">All Providers</option>
+                            @foreach (var p in Model.Providers)
+                            {
+                                <option value="@p.Id" selected="@(Model.Filter.ProviderId == p.Id ? "selected" : null)">@p.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-6">
+                        <select name="Filter.DeviceTypeId" class="form-select">
+                            <option value="">All Device Types</option>
+                            @foreach (var dt in Model.DeviceTypes)
+                            {
+                                <option value="@dt.Id" selected="@(Model.Filter.DeviceTypeId == dt.Id ? "selected" : null)">@dt.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-6">
+                        <select name="Filter.Status" class="form-select">
+                            <option value="">All Statuses</option>
+                            @foreach (var s in Enum.GetValues<ConnectedOps.Domain.Telematics.TrackingDeviceStatus>())
+                            {
+                                <option value="@((int)s)" selected="@(Model.Filter.Status == s ? "selected" : null)">@s</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-6">
+                        <select name="Filter.IsAssigned" class="form-select">
+                            <option value="">Assigned / Unassigned</option>
+                            <option value="true" selected="@(Model.Filter.IsAssigned == true ? "selected" : null)">Assigned to Vehicle</option>
+                            <option value="false" selected="@(Model.Filter.IsAssigned == false ? "selected" : null)">Unassigned</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-1 col-md-6 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary w-100">Filter</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- RESULT SUMMARY -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="text-muted small fw-semibold">Showing @Model.Devices.Count of @Model.TotalCount devices</span>
+            <div>
+                <span class="badge bg-success">@Model.Devices.Count(d => d.ConnectivityStatus == ConnectedOps.Domain.Telematics.DeviceConnectivityStatus.Online) Online</span>
+                <span class="badge bg-danger">@Model.Devices.Count(d => d.ConnectivityStatus == ConnectedOps.Domain.Telematics.DeviceConnectivityStatus.Offline) Offline</span>
+            </div>
+        </div>
+
+        <!-- DEVICE TABLE -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                @if (!Model.Devices.Any())
+                {
+                    <div class="p-5 text-center text-muted">
+                        <i class="bi bi-cpu fs-1 d-block mb-2"></i>
+                        <p class="fs-5 fw-semibold">No Tracking Devices Found</p>
+                        <p class="small">Register your first tracking device to begin fleet telematics.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="small fw-bold">Device</th>
+                                    <th class="small fw-bold">IMEI</th>
+                                    <th class="small fw-bold">Provider / Type</th>
+                                    <th class="small fw-bold text-center">Status</th>
+                                    <th class="small fw-bold text-center">Connectivity</th>
+                                    <th class="small fw-bold">Vehicle</th>
+                                    <th class="small fw-bold text-center">Battery</th>
+                                    <th class="small fw-bold text-center">Signal</th>
+                                    <th class="small fw-bold">Last Seen</th>
+                                    <th class="small fw-bold text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var d in Model.Devices)
+                                {
+                                    var connBadge = d.ConnectivityStatus switch
+                                    {
+                                        ConnectedOps.Domain.Telematics.DeviceConnectivityStatus.Online => "success",
+                                        ConnectedOps.Domain.Telematics.DeviceConnectivityStatus.Offline => "danger",
+                                        _ => "secondary"
+                                    };
+                                    var statusBadge = d.Status switch
+                                    {
+                                        ConnectedOps.Domain.Telematics.TrackingDeviceStatus.Provisioned => "primary",
+                                        ConnectedOps.Domain.Telematics.TrackingDeviceStatus.Online => "success",
+                                        ConnectedOps.Domain.Telematics.TrackingDeviceStatus.Offline => "secondary",
+                                        ConnectedOps.Domain.Telematics.TrackingDeviceStatus.Faulted => "danger",
+                                        ConnectedOps.Domain.Telematics.TrackingDeviceStatus.Suspended => "warning",
+                                        ConnectedOps.Domain.Telematics.TrackingDeviceStatus.Disabled => "dark",
+                                        ConnectedOps.Domain.Telematics.TrackingDeviceStatus.Retired => "dark",
+                                        _ => "info"
+                                    };
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold">@(d.Name ?? d.DeviceIdentifier)</div>
+                                            @if (d.Name != null)
+                                            {
+                                                <span class="small text-muted">@d.DeviceIdentifier</span>
+                                            }
+                                        </td>
+                                        <td class="small text-muted font-monospace">@(d.IMEI ?? "—")</td>
+                                        <td class="small">@d.ProviderCode · @d.DeviceTypeName</td>
+                                        <td class="text-center"><span class="badge bg-@statusBadge">@d.Status</span></td>
+                                        <td class="text-center"><span class="badge bg-@connBadge">@d.ConnectivityStatus</span></td>
+                                        <td>
+                                            @if (d.CurrentVehicleDisplayName != null)
+                                            {
+                                                <a href="/Vehicles/Details?id=@d.CurrentVehicleId" class="text-decoration-none small">@d.CurrentVehicleDisplayName</a>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted small">Unassigned</span>
+                                            }
+                                        </td>
+                                        <td class="text-center">
+                                            @if (d.BatteryLevelPercent.HasValue)
+                                            {
+                                                var bColor = d.BatteryLevelPercent >= 50 ? "success" : d.BatteryLevelPercent >= 25 ? "warning" : "danger";
+                                                <div class="progress" style="height:14px; min-width:50px;" title="@d.BatteryLevelPercent%">
+                                                    <div class="progress-bar bg-@bColor" style="width:@d.BatteryLevelPercent%">@d.BatteryLevelPercent%</div>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">—</span>
+                                            }
+                                        </td>
+                                        <td class="text-center">
+                                            @if (d.SignalStrength.HasValue)
+                                            {
+                                                var sColor = d.SignalStrength >= 15 ? "success" : d.SignalStrength >= 8 ? "warning" : "danger";
+                                                <span class="badge bg-@sColor">@d.SignalStrength</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">—</span>
+                                            }
+                                        </td>
+                                        <td class="small text-muted">@(d.LastSeenAtUtc?.ToString("yyyy-MM-dd HH:mm") ?? "Never")</td>
+                                        <td class="text-center">
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="bi bi-three-dots-vertical"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end">
+                                                    <li><a class="dropdown-item" href="/Telematics/Health"><i class="bi bi-heart-pulse me-2"></i>View Health</a></li>
+                                                    @if (d.CurrentVehicleId == null)
+                                                    {
+                                                        <li><a class="dropdown-item text-success" href="#"><i class="bi bi-link-45deg me-2"></i>Assign Vehicle</a></li>
+                                                    }
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    @if (d.IsActive)
+                                                    {
+                                                        <li><a class="dropdown-item text-warning" href="#"><i class="bi bi-pause-circle me-2"></i>Deactivate</a></li>
+                                                    }
+                                                    else
+                                                    {
+                                                        <li><a class="dropdown-item text-success" href="#"><i class="bi bi-play-circle me-2"></i>Activate</a></li>
+                                                    }
+                                                </ul>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- PAGINATION -->
+                    @if (Model.TotalCount > Model.Filter.PageSize)
+                    {
+                        var totalPages = (int)Math.Ceiling((double)Model.TotalCount / Model.Filter.PageSize);
+                        <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
+                            <span class="small text-muted">Page @Model.Filter.Page of @totalPages</span>
+                            <nav>
+                                <ul class="pagination pagination-sm mb-0">
+                                    @for (int p = 1; p <= totalPages && p <= 10; p++)
+                                    {
+                                        <li class="page-item @(p == Model.Filter.Page ? "active" : "")">
+                                            <a class="page-link" href="?Filter.Page=@p&Filter.PageSize=@Model.Filter.PageSize">@p</a>
+                                        </li>
+                                    }
+                                </ul>
+                            </nav>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- REGISTER DEVICE MODAL -->
+<div class="modal fade" id="registerDeviceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="bi bi-plus-circle text-primary me-2"></i>Register Tracking Device</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="registerDeviceForm">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Device Identifier <span class="text-danger">*</span></label>
+                            <input type="text" id="regDeviceIdentifier" class="form-control" placeholder="e.g. DEV-001 or 861234567890123" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">IMEI</label>
+                            <input type="text" id="regImei" class="form-control" placeholder="15-digit IMEI">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Provider <span class="text-danger">*</span></label>
+                            <select id="regProviderId" class="form-select" required>
+                                <option value="">Select Provider...</option>
+                                @foreach (var p in Model.Providers)
+                                {
+                                    <option value="@p.Id">@p.Name (@p.Code)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Device Type <span class="text-danger">*</span></label>
+                            <select id="regDeviceTypeId" class="form-select" required>
+                                <option value="">Select Type...</option>
+                                @foreach (var dt in Model.DeviceTypes)
+                                {
+                                    <option value="@dt.Id">@dt.Name (@dt.Code)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Name</label>
+                            <input type="text" id="regName" class="form-control" placeholder="Friendly device name">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Serial Number</label>
+                            <input type="text" id="regSerialNumber" class="form-control" placeholder="Manufacturer serial number">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Model</label>
+                            <input type="text" id="regModel" class="form-control" placeholder="e.g. FMB920">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Manufacturer</label>
+                            <input type="text" id="regManufacturer" class="form-control" placeholder="e.g. Teltonika">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">SIM Number</label>
+                            <input type="text" id="regSimNumber" class="form-control" placeholder="SIM card ICCID">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Phone Number</label>
+                            <input type="text" id="regPhoneNumber" class="form-control" placeholder="+1 555 0100">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Firmware Version</label>
+                            <input type="text" id="regFirmwareVersion" class="form-control" placeholder="e.g. 03.27.10">
+                        </div>
+                    </div>
+                </div>
+                <div id="registerResult" class="d-none">
+                    <div class="alert alert-success">
+                        <i class="bi bi-check-circle me-2"></i>Device registered successfully. Reload the page to see it in the list.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" id="btnRegisterDevice" class="btn btn-primary fw-semibold" onclick="registerDevice()">
+                    <i class="bi bi-cpu me-1"></i>Register Device
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        async function registerDevice() {
+            const btn = document.getElementById('btnRegisterDevice');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Registering...';
+            const body = {
+                deviceIdentifier: document.getElementById('regDeviceIdentifier').value,
+                providerId: document.getElementById('regProviderId').value,
+                deviceTypeId: document.getElementById('regDeviceTypeId').value,
+                imei: document.getElementById('regImei').value || null,
+                serialNumber: document.getElementById('regSerialNumber').value || null,
+                name: document.getElementById('regName').value || null,
+                model: document.getElementById('regModel').value || null,
+                manufacturer: document.getElementById('regManufacturer').value || null,
+                simNumber: document.getElementById('regSimNumber').value || null,
+                phoneNumber: document.getElementById('regPhoneNumber').value || null,
+                firmwareVersion: document.getElementById('regFirmwareVersion').value || null
+            };
+            try {
+                const resp = await fetch('/api/tracking-devices', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                if (resp.ok) {
+                    document.getElementById('registerDeviceForm').classList.add('d-none');
+                    document.getElementById('registerResult').classList.remove('d-none');
+                } else {
+                    const err = await resp.json();
+                    alert('Error: ' + (err.message || resp.statusText));
+                }
+            } catch (ex) {
+                alert('Network error: ' + ex.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-cpu me-1"></i>Register Device';
+            }
+        }
+    </script>
+}

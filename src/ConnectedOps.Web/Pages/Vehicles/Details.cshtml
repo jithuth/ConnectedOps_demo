@@ -161,6 +161,11 @@
                     <i class="bi bi-chat-left-dots me-1 text-secondary"></i> Notes &amp; Activity (@Model.Vehicle.NotesList.Count)
                 </button>
             </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-semibold" id="telematics-tab" data-bs-toggle="tab" data-bs-target="#telematics" type="button" role="tab">
+                    <i class="bi bi-broadcast-pin me-1 text-danger"></i> Telematics
+                </button>
+            </li>
         </ul>
     </div>
 
@@ -618,6 +623,49 @@
                     </div>
                 </div>
             </div>
+
+            <!-- TAB 7: TELEMATICS -->
+            <div class="tab-pane fade" id="telematics" role="tabpanel">
+                <div class="row g-4">
+                    <div class="col-lg-12">
+                        <h6 class="fw-bold text-primary mb-3"><i class="bi bi-broadcast-pin me-2"></i>Telematics & GPS Tracking</h6>
+                        <div id="telematicsLoading" class="text-center p-4">
+                            <div class="spinner-border text-primary" role="status"></div>
+                            <p class="text-muted mt-2">Loading telematics data...</p>
+                        </div>
+                        <div id="telematicsContent" class="d-none">
+                            <!-- Active Device Card -->
+                            <div class="card border-0 shadow-sm bg-body mb-3" id="deviceCard">
+                                <div class="card-header bg-transparent border-bottom py-3">
+                                    <h6 class="fw-bold mb-0"><i class="bi bi-cpu me-2 text-primary"></i>Active Tracking Device</h6>
+                                </div>
+                                <div class="card-body" id="deviceInfo">
+                                    <p class="text-muted">No tracking device assigned to this vehicle.</p>
+                                </div>
+                            </div>
+                            <!-- Telemetry State Card -->
+                            <div class="card border-0 shadow-sm bg-body mb-3" id="stateCard">
+                                <div class="card-header bg-transparent border-bottom py-3">
+                                    <h6 class="fw-bold mb-0"><i class="bi bi-geo-alt me-2 text-success"></i>Latest Position & State</h6>
+                                </div>
+                                <div class="card-body" id="stateInfo">
+                                    <p class="text-muted">No telemetry state available.</p>
+                                </div>
+                            </div>
+                            <!-- Recent Telemetry Log -->
+                            <div class="card border-0 shadow-sm bg-body">
+                                <div class="card-header bg-transparent border-bottom py-3">
+                                    <h6 class="fw-bold mb-0"><i class="bi bi-clock-history me-2 text-info"></i>Recent Telemetry Log</h6>
+                                </div>
+                                <div class="card-body p-0" id="telemetryLog">
+                                    <p class="p-3 text-muted">No telemetry records.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="telematicsError" class="d-none alert alert-warning"></div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -938,3 +986,70 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const vehicleId = '@Model.VehicleId';
+            let telematicsLoaded = false;
+            const telTab = document.getElementById('telematics-tab');
+            if (telTab) {
+                telTab.addEventListener('shown.bs.tab', function () {
+                    if (telematicsLoaded) return;
+                    telematicsLoaded = true;
+                    loadTelematics();
+                });
+            }
+
+            async function loadTelematics() {
+                try {
+                    // Load assignment
+                    const assignResp = await fetch(`/api/tracking-device-assignments/vehicle/${vehicleId}`);
+                    const deviceEl = document.getElementById('deviceInfo');
+                    if (assignResp.ok) {
+                        const assign = await assignResp.json();
+                        deviceEl.innerHTML = `
+                            <table class="table table-sm table-bordered mb-0">
+                                <tr><th class="fw-semibold" style="width:200px">Device</th><td>${assign.deviceIdentifier}</td></tr>
+                                <tr><th class="fw-semibold">Assigned Since</th><td>${new Date(assign.assignedFromUtc).toLocaleString()}</td></tr>
+                                <tr><th class="fw-semibold">Primary</th><td>${assign.isPrimary ? '<span class="badge bg-success">Yes</span>' : '<span class="badge bg-secondary">No</span>'}</td></tr>
+                                ${assign.notes ? `<tr><th class="fw-semibold">Notes</th><td>${assign.notes}</td></tr>` : ''}
+                            </table>`;
+                    }
+
+                    // Load telemetry history
+                    const histResp = await fetch(`/api/telematics/vehicle/${vehicleId}/history?Page=1&PageSize=10`);
+                    const logEl = document.getElementById('telemetryLog');
+                    if (histResp.ok) {
+                        const hist = await histResp.json();
+                        if (hist.items && hist.items.length > 0) {
+                            let rows = hist.items.map(r => `
+                                <tr>
+                                    <td class="small">${new Date(r.recordedAtUtc).toLocaleString()}</td>
+                                    <td class="small">${r.latitude?.toFixed(5) ?? '—'}, ${r.longitude?.toFixed(5) ?? '—'}</td>
+                                    <td class="small">${r.speedKph?.toFixed(0) ?? '—'} km/h</td>
+                                    <td class="small">${r.ignitionOn === true ? '<i class="bi bi-key-fill text-success"></i> ON' : '<i class="bi bi-key text-muted"></i> OFF'}</td>
+                                    <td class="small">${r.eventType ?? '—'}</td>
+                                </tr>`).join('');
+                            logEl.innerHTML = `<div class="table-responsive"><table class="table table-hover table-sm mb-0">
+                                <thead class="table-light"><tr>
+                                    <th class="small fw-bold">Time</th><th class="small fw-bold">Position</th>
+                                    <th class="small fw-bold">Speed</th><th class="small fw-bold">Ignition</th>
+                                    <th class="small fw-bold">Event</th>
+                                </tr></thead><tbody>${rows}</tbody></table></div>
+                                <div class="p-2 text-muted small text-end">${hist.totalCount} total records</div>`;
+                        }
+                    }
+
+                    document.getElementById('telematicsLoading').classList.add('d-none');
+                    document.getElementById('telematicsContent').classList.remove('d-none');
+                } catch (ex) {
+                    document.getElementById('telematicsLoading').classList.add('d-none');
+                    const errEl = document.getElementById('telematicsError');
+                    errEl.textContent = 'Failed to load telematics data: ' + ex.message;
+                    errEl.classList.remove('d-none');
+                }
+            }
+        })();
+    </script>
+}

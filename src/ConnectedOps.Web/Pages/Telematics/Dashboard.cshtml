@@ -1,0 +1,290 @@
+@page
+@model ConnectedOps.Web.Pages.Telematics.DashboardModel
+@{
+    ViewData["Title"] = "Telematics Dashboard";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <div>
+                <h1 class="m-0 text-dark fw-bold">Telematics Dashboard</h1>
+                <p class="text-muted small mb-0">Real-time device fleet health, coverage, and telemetry statistics</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="/Telematics/Live" class="btn btn-primary d-flex align-items-center gap-1 shadow-sm">
+                    <i class="bi bi-broadcast-pin"></i>
+                    <span>Live Tracking</span>
+                </a>
+                <a href="/Telematics/Devices" class="btn btn-outline-primary d-flex align-items-center gap-1 shadow-sm">
+                    <i class="bi bi-cpu"></i>
+                    <span>Manage Devices</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        <!-- KPI CARDS -->
+        <div class="row g-3 mb-4">
+            <div class="col-xl-3 col-md-6">
+                <div class="card border-0 shadow-sm bg-gradient-primary text-white h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="mb-1 text-white-50 small fw-semibold text-uppercase">Total Devices</p>
+                                <h2 class="fw-bold mb-0">@Model.Dashboard.TotalDevices</h2>
+                            </div>
+                            <div class="rounded-circle bg-white bg-opacity-25 p-3">
+                                <i class="bi bi-cpu fs-3"></i>
+                            </div>
+                        </div>
+                        <div class="mt-2 small">
+                            <span class="text-white-75"><i class="bi bi-circle-fill text-success me-1" style="font-size:0.5rem"></i> @Model.Dashboard.OnlineDevices Online</span>
+                            <span class="ms-3 text-white-75"><i class="bi bi-circle-fill text-danger me-1" style="font-size:0.5rem"></i> @Model.Dashboard.OfflineDevices Offline</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="card border-0 shadow-sm bg-gradient-success text-white h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="mb-1 text-white-50 small fw-semibold text-uppercase">Tracked Vehicles</p>
+                                <h2 class="fw-bold mb-0">@Model.Dashboard.TrackedVehicles</h2>
+                            </div>
+                            <div class="rounded-circle bg-white bg-opacity-25 p-3">
+                                <i class="bi bi-truck fs-3"></i>
+                            </div>
+                        </div>
+                        <div class="mt-2 small">
+                            <span class="text-white-75"><i class="bi bi-geo-alt me-1"></i> @Model.Dashboard.VehiclesMoving Moving</span>
+                            <span class="ms-3 text-white-75"><i class="bi bi-stop-circle me-1"></i> @Model.Dashboard.VehiclesStopped Stopped</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="card border-0 shadow-sm bg-gradient-info text-white h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="mb-1 text-white-50 small fw-semibold text-uppercase">Ignition Status</p>
+                                <h2 class="fw-bold mb-0">@Model.Dashboard.VehiclesIgnitionOn <small class="fs-6">ON</small></h2>
+                            </div>
+                            <div class="rounded-circle bg-white bg-opacity-25 p-3">
+                                <i class="bi bi-key fs-3"></i>
+                            </div>
+                        </div>
+                        <div class="mt-2 small">
+                            <span class="text-white-75">@Model.Dashboard.VehiclesIgnitionOff vehicles with ignition OFF</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="card border-0 shadow-sm bg-gradient-warning text-white h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="mb-1 text-white-50 small fw-semibold text-uppercase">Today's Telemetry</p>
+                                <h2 class="fw-bold mb-0">@Model.Dashboard.TelemetryReceivedToday.ToString("N0")</h2>
+                            </div>
+                            <div class="rounded-circle bg-white bg-opacity-25 p-3">
+                                <i class="bi bi-reception-4 fs-3"></i>
+                            </div>
+                        </div>
+                        <div class="mt-2 small">
+                            <span class="text-white-75">@Model.Dashboard.FaultedDevices faulted devices</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CHARTS ROW -->
+        <div class="row g-3 mb-4">
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-transparent border-bottom py-3">
+                        <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-pie-chart me-2"></i>Device Health Distribution</h6>
+                    </div>
+                    <div class="card-body d-flex align-items-center justify-content-center" style="min-height:280px;">
+                        <canvas id="healthDonutChart" width="250" height="250"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-transparent border-bottom py-3">
+                        <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-bar-chart me-2"></i>Devices by Provider</h6>
+                    </div>
+                    <div class="card-body d-flex align-items-center justify-content-center" style="min-height:280px;">
+                        <canvas id="providerBarChart" width="400" height="250"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RECENTLY OFFLINE / RECENTLY SEEN TABLES -->
+        <div class="row g-3">
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-transparent border-bottom py-3">
+                        <h6 class="fw-bold mb-0 text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Recently Offline Devices</h6>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (!Model.Dashboard.RecentlyOfflineDevices.Any())
+                        {
+                            <div class="p-4 text-center text-muted">
+                                <i class="bi bi-check-circle fs-2 text-success d-block mb-2"></i>
+                                <p class="mb-0">All devices are connected — no recent disconnections.</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="small fw-semibold">Device</th>
+                                            <th class="small fw-semibold">Vehicle</th>
+                                            <th class="small fw-semibold">Last Seen</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var d in Model.Dashboard.RecentlyOfflineDevices)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <span class="fw-semibold">@(d.Name ?? d.DeviceIdentifier)</span>
+                                                    <span class="d-block small text-muted">@d.IMEI</span>
+                                                </td>
+                                                <td>
+                                                    @if (d.CurrentVehicleDisplayName != null)
+                                                    {
+                                                        <a href="/Vehicles/Details?id=@d.CurrentVehicleId" class="text-decoration-none">@d.CurrentVehicleDisplayName</a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">—</span>
+                                                    }
+                                                </td>
+                                                <td class="text-muted small">@(d.LastSeenAtUtc?.ToString("yyyy-MM-dd HH:mm") ?? "Never")</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-transparent border-bottom py-3">
+                        <h6 class="fw-bold mb-0 text-success"><i class="bi bi-broadcast me-2"></i>Recently Reporting Devices</h6>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (!Model.Dashboard.RecentlySeenDevices.Any())
+                        {
+                            <div class="p-4 text-center text-muted">
+                                <i class="bi bi-wifi-off fs-2 d-block mb-2"></i>
+                                <p class="mb-0">No devices have reported telemetry recently.</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="small fw-semibold">Device</th>
+                                            <th class="small fw-semibold">Vehicle</th>
+                                            <th class="small fw-semibold text-center">Battery</th>
+                                            <th class="small fw-semibold">Last Seen</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var d in Model.Dashboard.RecentlySeenDevices)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <span class="fw-semibold">@(d.Name ?? d.DeviceIdentifier)</span>
+                                                    <span class="d-block small text-muted">@d.ProviderCode · @d.DeviceTypeName</span>
+                                                </td>
+                                                <td>
+                                                    @if (d.CurrentVehicleDisplayName != null)
+                                                    {
+                                                        <a href="/Vehicles/Details?id=@d.CurrentVehicleId" class="text-decoration-none">@d.CurrentVehicleDisplayName</a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">Unassigned</span>
+                                                    }
+                                                </td>
+                                                <td class="text-center">
+                                                    @if (d.BatteryLevelPercent.HasValue)
+                                                    {
+                                                        var bColor = d.BatteryLevelPercent >= 50 ? "success" : d.BatteryLevelPercent >= 25 ? "warning" : "danger";
+                                                        <div class="progress" style="height:14px; min-width:60px;" title="@d.BatteryLevelPercent%">
+                                                            <div class="progress-bar bg-@bColor" style="width:@d.BatteryLevelPercent%">@d.BatteryLevelPercent%</div>
+                                                        </div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">—</span>
+                                                    }
+                                                </td>
+                                                <td class="text-muted small">@(d.LastSeenAtUtc?.ToString("yyyy-MM-dd HH:mm") ?? "—")</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+    <script>
+        (function () {
+            // Health Donut
+            const healthData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Dashboard.DevicesByHealth));
+            const healthLabels = Object.keys(healthData);
+            const healthValues = Object.values(healthData);
+            const healthColors = healthLabels.map(l => {
+                switch (l.toLowerCase()) {
+                    case 'healthy': return '#198754';
+                    case 'warning': return '#ffc107';
+                    case 'offline': return '#6c757d';
+                    case 'faulted': return '#dc3545';
+                    default: return '#0d6efd';
+                }
+            });
+            new Chart(document.getElementById('healthDonutChart'), {
+                type: 'doughnut',
+                data: { labels: healthLabels, datasets: [{ data: healthValues, backgroundColor: healthColors, borderWidth: 2 }] },
+                options: { responsive: false, plugins: { legend: { position: 'bottom', labels: { font: { weight: 'bold' } } } }, cutout: '60%' }
+            });
+
+            // Provider Bar
+            const providerData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Dashboard.DevicesByProvider));
+            const providerLabels = Object.keys(providerData);
+            const providerValues = Object.values(providerData);
+            new Chart(document.getElementById('providerBarChart'), {
+                type: 'bar',
+                data: { labels: providerLabels, datasets: [{ label: 'Devices', data: providerValues, backgroundColor: '#0d6efd', borderRadius: 4 }] },
+                options: { responsive: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+            });
+        })();
+    </script>
+}

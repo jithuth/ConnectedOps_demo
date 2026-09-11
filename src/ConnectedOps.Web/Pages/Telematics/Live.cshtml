@@ -1,0 +1,218 @@
+@page
+@model ConnectedOps.Web.Pages.Telematics.LiveModel
+@{
+    ViewData["Title"] = "Live Fleet Tracking";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <div>
+                <h1 class="m-0 text-dark fw-bold"><i class="bi bi-broadcast-pin me-2 text-primary"></i>Live Fleet Tracking</h1>
+                <p class="text-muted small mb-0">Real-time view of vehicle positions, ignition state, speed, and connectivity</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="/Telematics/Dashboard" class="btn btn-outline-primary d-flex align-items-center gap-1 shadow-sm">
+                    <i class="bi bi-graph-up-arrow"></i>
+                    <span>Dashboard</span>
+                </a>
+                <button class="btn btn-primary d-flex align-items-center gap-1 shadow-sm" onclick="location.reload()">
+                    <i class="bi bi-arrow-clockwise"></i>
+                    <span>Refresh</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        <!-- LIVE KPI STRIP -->
+        <div class="row g-2 mb-4">
+            <div class="col">
+                <div class="card border-0 shadow-sm text-center py-2">
+                    <div class="card-body py-2">
+                        <h3 class="fw-bold text-primary mb-0">@Model.TotalTracked</h3>
+                        <span class="small text-muted fw-semibold">TRACKED</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card border-0 shadow-sm text-center py-2">
+                    <div class="card-body py-2">
+                        <h3 class="fw-bold text-success mb-0">@Model.OnlineCount</h3>
+                        <span class="small text-muted fw-semibold">ONLINE</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card border-0 shadow-sm text-center py-2">
+                    <div class="card-body py-2">
+                        <h3 class="fw-bold text-danger mb-0">@Model.OfflineCount</h3>
+                        <span class="small text-muted fw-semibold">OFFLINE</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card border-0 shadow-sm text-center py-2">
+                    <div class="card-body py-2">
+                        <h3 class="fw-bold text-info mb-0">@Model.MovingCount</h3>
+                        <span class="small text-muted fw-semibold">MOVING</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card border-0 shadow-sm text-center py-2">
+                    <div class="card-body py-2">
+                        <h3 class="fw-bold text-secondary mb-0">@Model.StoppedCount</h3>
+                        <span class="small text-muted fw-semibold">STOPPED</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card border-0 shadow-sm text-center py-2">
+                    <div class="card-body py-2">
+                        <h3 class="fw-bold text-warning mb-0">@Model.IgnitionOnCount</h3>
+                        <span class="small text-muted fw-semibold">IGNITION ON</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FILTER BAR -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-body p-3">
+                <form method="get" class="row g-2 align-items-center">
+                    <div class="col-lg-3 col-md-6">
+                        <div class="input-group">
+                            <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search"></i></span>
+                            <input type="text" name="Filter.Search" value="@Model.Filter.Search" class="form-control border-start-0" placeholder="Search vehicle, driver...">
+                        </div>
+                    </div>
+                    <div class="col-lg-2 col-md-6">
+                        <select name="Filter.BranchId" class="form-select">
+                            <option value="">All Branches</option>
+                            @foreach (var b in Model.Branches)
+                            {
+                                <option value="@b.Id" selected="@(Model.Filter.BranchId == b.Id ? "selected" : null)">@b.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-6">
+                        <select name="Filter.ConnectivityStatus" class="form-select">
+                            <option value="">All Connectivity</option>
+                            <option value="1" selected="@(Model.Filter.ConnectivityStatus == ConnectedOps.Domain.Telematics.DeviceConnectivityStatus.Online ? "selected" : null)">Online</option>
+                            <option value="2" selected="@(Model.Filter.ConnectivityStatus == ConnectedOps.Domain.Telematics.DeviceConnectivityStatus.Offline ? "selected" : null)">Offline</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-6">
+                        <select name="Filter.IgnitionOn" class="form-select">
+                            <option value="">All Ignition</option>
+                            <option value="true" selected="@(Model.Filter.IgnitionOn == true ? "selected" : null)">Ignition ON</option>
+                            <option value="false" selected="@(Model.Filter.IgnitionOn == false ? "selected" : null)">Ignition OFF</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-6">
+                        <select name="Filter.IsMoving" class="form-select">
+                            <option value="">All Motion</option>
+                            <option value="true" selected="@(Model.Filter.IsMoving == true ? "selected" : null)">Moving</option>
+                            <option value="false" selected="@(Model.Filter.IsMoving == false ? "selected" : null)">Stopped</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-1 col-md-6">
+                        <button type="submit" class="btn btn-primary w-100">Filter</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- VEHICLE LIST -->
+        @if (!Model.Vehicles.Any())
+        {
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center p-5 text-muted">
+                    <i class="bi bi-broadcast fs-1 d-block mb-2"></i>
+                    <p class="fs-5 fw-semibold">No Tracked Vehicles Found</p>
+                    <p class="small">Assign tracking devices to vehicles to begin live tracking. <a href="/Telematics/Devices">Manage Devices</a></p>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="row g-3">
+                @foreach (var v in Model.Vehicles)
+                {
+                    var connBadge = v.ConnectivityStatus switch
+                    {
+                        ConnectedOps.Domain.Telematics.DeviceConnectivityStatus.Online => "success",
+                        ConnectedOps.Domain.Telematics.DeviceConnectivityStatus.Offline => "danger",
+                        _ => "secondary"
+                    };
+                    var ignIcon = v.IgnitionOn == true ? "bi-key-fill text-success" : "bi-key text-muted";
+                    var motionLabel = (v.SpeedKph ?? 0) > 0 ? $"Moving at {v.SpeedKph:F0} km/h" : "Stopped";
+                    <div class="col-xl-4 col-lg-6 col-md-6">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <h6 class="fw-bold mb-0">
+                                            <a href="/Vehicles/Details?id=@v.VehicleId" class="text-decoration-none">@v.VehicleName</a>
+                                        </h6>
+                                        <span class="small text-muted">@v.VehicleNumber · @v.RegistrationNumber</span>
+                                    </div>
+                                    <span class="badge bg-@connBadge">@v.ConnectivityStatus</span>
+                                </div>
+
+                                <div class="d-flex gap-3 mb-2 small">
+                                    <span title="Ignition"><i class="bi @ignIcon me-1"></i>@(v.IgnitionOn == true ? "ON" : "OFF")</span>
+                                    <span title="Speed"><i class="bi bi-speedometer2 me-1 text-info"></i>@motionLabel</span>
+                                    @if (v.HeadingDegrees.HasValue)
+                                    {
+                                        <span title="Heading"><i class="bi bi-compass me-1 text-primary"></i>@v.HeadingDegrees.Value.ToString("F0")°</span>
+                                    }
+                                </div>
+
+                                <div class="d-flex gap-3 mb-2 small text-muted">
+                                    <span title="Coordinates"><i class="bi bi-geo-alt me-1"></i>@v.Latitude.ToString("F5"), @v.Longitude.ToString("F5")</span>
+                                </div>
+
+                                <div class="row g-2 small">
+                                    <div class="col-6">
+                                        <span class="fw-semibold">Device:</span> <span class="text-muted">@(v.DeviceName ?? v.DeviceIdentifier)</span>
+                                    </div>
+                                    <div class="col-6">
+                                        <span class="fw-semibold">Driver:</span> <span class="text-muted">@(v.DriverName ?? "—")</span>
+                                    </div>
+                                    @if (v.BranchName != null)
+                                    {
+                                        <div class="col-6">
+                                            <span class="fw-semibold">Branch:</span> <span class="text-muted">@v.BranchName</span>
+                                        </div>
+                                    }
+                                    @if (v.OdometerKm.HasValue)
+                                    {
+                                        <div class="col-6">
+                                            <span class="fw-semibold">Odometer:</span> <span class="text-muted">@v.OdometerKm.Value.ToString("N0") km</span>
+                                        </div>
+                                    }
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
+                                    <span class="small text-muted" title="Last update"><i class="bi bi-clock me-1"></i>@v.RecordedAtUtc.ToString("yyyy-MM-dd HH:mm:ss")</span>
+                                    @if (v.BatteryLevelPercent.HasValue)
+                                    {
+                                        var bColor = v.BatteryLevelPercent >= 50 ? "success" : v.BatteryLevelPercent >= 25 ? "warning" : "danger";
+                                        <div class="d-flex align-items-center gap-1" title="Battery @(v.BatteryLevelPercent)%">
+                                            <i class="bi bi-battery-half text-@bColor"></i>
+                                            <span class="small fw-semibold text-@bColor">@(v.BatteryLevelPercent)%</span>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>

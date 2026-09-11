@@ -15,6 +15,7 @@ using ConnectedOps.Domain.Security;
 using ConnectedOps.Domain.Vehicles;
 using ConnectedOps.Domain.Drivers;
 using ConnectedOps.Domain.FleetOperations;
+using ConnectedOps.Domain.Telematics;
 
 namespace ConnectedOps.Infrastructure.Persistence;
 
@@ -175,6 +176,39 @@ public sealed class ConnectedOpsDbContext
 
     public DbSet<FleetOperationalException> FleetOperationalExceptions =>
         Set<FleetOperationalException>();
+
+    public DbSet<TrackingProvider> TrackingProviders =>
+        Set<TrackingProvider>();
+
+    public DbSet<TrackingDeviceType> TrackingDeviceTypes =>
+        Set<TrackingDeviceType>();
+
+    public DbSet<TrackingDevice> TrackingDevices =>
+        Set<TrackingDevice>();
+
+    public DbSet<DeviceProvisioningRecord> DeviceProvisioningRecords =>
+        Set<DeviceProvisioningRecord>();
+
+    public DbSet<TrackingDeviceVehicleAssignment> TrackingDeviceVehicleAssignments =>
+        Set<TrackingDeviceVehicleAssignment>();
+
+    public DbSet<TelematicsSettings> TelematicsSettings =>
+        Set<TelematicsSettings>();
+
+    public DbSet<TelematicsProviderConfiguration> TelematicsProviderConfigurations =>
+        Set<TelematicsProviderConfiguration>();
+
+    public DbSet<TelemetryRecord> TelemetryRecords =>
+        Set<TelemetryRecord>();
+
+    public DbSet<VehicleTelemetryState> VehicleTelemetryStates =>
+        Set<VehicleTelemetryState>();
+
+    public DbSet<DeviceCommand> DeviceCommands =>
+        Set<DeviceCommand>();
+
+    public DbSet<TelemetryIngestionFailure> TelemetryIngestionFailures =>
+        Set<TelemetryIngestionFailure>();
 
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)

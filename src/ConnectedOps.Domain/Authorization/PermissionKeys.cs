@@ -209,4 +209,24 @@ public static class PermissionKeys
         public const string View = "Accounting.View";
         public const string Manage = "Accounting.Manage";
     }
+
+    public static class TrackingDevices
+    {
+        public const string View = "TrackingDevices.View";
+        public const string Create = "TrackingDevices.Create";
+        public const string Edit = "TrackingDevices.Edit";
+        public const string Delete = "TrackingDevices.Delete";
+        public const string Provision = "TrackingDevices.Provision";
+        public const string AssignVehicle = "TrackingDevices.AssignVehicle";
+    }
+
+    public static class Telematics
+    {
+        public const string View = "Telematics.View";
+        public const string ViewLive = "Telematics.ViewLive";
+        public const string ViewHistory = "Telematics.ViewHistory";
+        public const string ViewDeviceHealth = "Telematics.ViewDeviceHealth";
+        public const string ViewDashboard = "Telematics.ViewDashboard";
+        public const string SendCommands = "Telematics.SendCommands";
+    }
 }

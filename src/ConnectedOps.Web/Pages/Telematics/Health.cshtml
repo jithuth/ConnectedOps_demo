@@ -1,0 +1,251 @@
+@page
+@model ConnectedOps.Web.Pages.Telematics.HealthModel
+@{
+    ViewData["Title"] = "Device Health Monitor";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <div>
+                <h1 class="m-0 text-dark fw-bold"><i class="bi bi-heart-pulse me-2 text-danger"></i>Device Health Monitor</h1>
+                <p class="text-muted small mb-0">Battery levels, signal strength, connectivity status, and firmware across all tracking devices</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="/Telematics/Devices" class="btn btn-outline-primary d-flex align-items-center gap-1 shadow-sm">
+                    <i class="bi bi-cpu"></i>
+                    <span>All Devices</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        <!-- HEALTH STATUS SUMMARY -->
+        <div class="row g-3 mb-4">
+            <div class="col-xl-3 col-md-6">
+                <div class="card border-0 shadow-sm border-start border-4 border-success h-100">
+                    <div class="card-body text-center py-3">
+                        <h2 class="fw-bold text-success mb-0">@Model.HealthyCount</h2>
+                        <span class="small text-muted fw-semibold text-uppercase">Healthy</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="card border-0 shadow-sm border-start border-4 border-warning h-100">
+                    <div class="card-body text-center py-3">
+                        <h2 class="fw-bold text-warning mb-0">@Model.WarningCount</h2>
+                        <span class="small text-muted fw-semibold text-uppercase">Warning</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="card border-0 shadow-sm border-start border-4 border-secondary h-100">
+                    <div class="card-body text-center py-3">
+                        <h2 class="fw-bold text-secondary mb-0">@Model.OfflineCount</h2>
+                        <span class="small text-muted fw-semibold text-uppercase">Offline</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="card border-0 shadow-sm border-start border-4 border-danger h-100">
+                    <div class="card-body text-center py-3">
+                        <h2 class="fw-bold text-danger mb-0">@Model.FaultedCount</h2>
+                        <span class="small text-muted fw-semibold text-uppercase">Faulted</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FILTER BAR -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-body p-3">
+                <form method="get" class="row g-2 align-items-center">
+                    <div class="col-lg-3 col-md-6">
+                        <div class="input-group">
+                            <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search"></i></span>
+                            <input type="text" name="Filter.Search" value="@Model.Filter.Search" class="form-control border-start-0" placeholder="Search device, IMEI, vehicle...">
+                        </div>
+                    </div>
+                    <div class="col-lg-2 col-md-6">
+                        <select name="Filter.ProviderId" class="form-select">
+                            <option value="">All Providers</option>
+                            @foreach (var p in Model.Providers)
+                            {
+                                <option value="@p.Id" selected="@(Model.Filter.ProviderId == p.Id ? "selected" : null)">@p.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-6">
+                        <select name="Filter.HealthState" class="form-select">
+                            <option value="">All Health States</option>
+                            @foreach (var h in Enum.GetValues<ConnectedOps.Domain.Telematics.DeviceHealthState>())
+                            {
+                                <option value="@((int)h)" selected="@(Model.Filter.HealthState == h ? "selected" : null)">@h</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-6">
+                        <select name="Filter.ConnectivityStatus" class="form-select">
+                            <option value="">All Connectivity</option>
+                            <option value="1" selected="@(Model.Filter.ConnectivityStatus == ConnectedOps.Domain.Telematics.DeviceConnectivityStatus.Online ? "selected" : null)">Online</option>
+                            <option value="2" selected="@(Model.Filter.ConnectivityStatus == ConnectedOps.Domain.Telematics.DeviceConnectivityStatus.Offline ? "selected" : null)">Offline</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-6">
+                        <select name="Filter.HasVehicle" class="form-select">
+                            <option value="">All Assignment</option>
+                            <option value="true" selected="@(Model.Filter.HasVehicle == true ? "selected" : null)">Assigned</option>
+                            <option value="false" selected="@(Model.Filter.HasVehicle == false ? "selected" : null)">Unassigned</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-1 col-md-6">
+                        <button type="submit" class="btn btn-primary w-100">Filter</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- HEALTH TABLE -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                @if (!Model.Devices.Any())
+                {
+                    <div class="p-5 text-center text-muted">
+                        <i class="bi bi-heart-pulse fs-1 d-block mb-2"></i>
+                        <p class="fs-5 fw-semibold">No Devices Found</p>
+                        <p class="small">Register tracking devices to monitor their health.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="small fw-bold">Device</th>
+                                    <th class="small fw-bold">Vehicle</th>
+                                    <th class="small fw-bold text-center">Health</th>
+                                    <th class="small fw-bold text-center">Connectivity</th>
+                                    <th class="small fw-bold">Battery</th>
+                                    <th class="small fw-bold text-center">Ext Power</th>
+                                    <th class="small fw-bold text-center">Signal</th>
+                                    <th class="small fw-bold">Firmware</th>
+                                    <th class="small fw-bold">Last Seen</th>
+                                    <th class="small fw-bold">Last Telemetry</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var d in Model.Devices)
+                                {
+                                    var healthBadge = d.HealthState switch
+                                    {
+                                        ConnectedOps.Domain.Telematics.DeviceHealthState.Healthy => "success",
+                                        ConnectedOps.Domain.Telematics.DeviceHealthState.Warning => "warning",
+                                        ConnectedOps.Domain.Telematics.DeviceHealthState.Offline => "secondary",
+                                        ConnectedOps.Domain.Telematics.DeviceHealthState.Faulted => "danger",
+                                        _ => "info"
+                                    };
+                                    var connBadge = d.ConnectivityStatus switch
+                                    {
+                                        ConnectedOps.Domain.Telematics.DeviceConnectivityStatus.Online => "success",
+                                        ConnectedOps.Domain.Telematics.DeviceConnectivityStatus.Offline => "danger",
+                                        _ => "secondary"
+                                    };
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold">@(d.Name ?? d.DeviceIdentifier)</div>
+                                            <span class="small text-muted">@d.ProviderCode · @d.DeviceTypeName</span>
+                                            @if (d.IMEI != null)
+                                            {
+                                                <span class="d-block small text-muted font-monospace">@d.IMEI</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (d.VehicleDisplayName != null)
+                                            {
+                                                <a href="/Vehicles/Details?id=@d.VehicleId" class="text-decoration-none small">@d.VehicleDisplayName</a>
+                                                <span class="d-block small text-muted">@d.VehicleRegistrationNumber</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted small">Unassigned</span>
+                                            }
+                                        </td>
+                                        <td class="text-center"><span class="badge bg-@healthBadge">@d.HealthState</span></td>
+                                        <td class="text-center"><span class="badge bg-@connBadge">@d.ConnectivityStatus</span></td>
+                                        <td>
+                                            @if (d.BatteryLevelPercent.HasValue)
+                                            {
+                                                var bColor = d.BatteryLevelPercent >= 50 ? "success" : d.BatteryLevelPercent >= 25 ? "warning" : "danger";
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <div class="progress flex-grow-1" style="height:16px; min-width:80px;">
+                                                        <div class="progress-bar bg-@bColor" style="width:@d.BatteryLevelPercent%">@d.BatteryLevelPercent%</div>
+                                                    </div>
+                                                </div>
+                                                @if (d.BatteryVoltage.HasValue)
+                                                {
+                                                    <span class="small text-muted">@d.BatteryVoltage.Value.ToString("F2")V</span>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">—</span>
+                                            }
+                                        </td>
+                                        <td class="text-center">
+                                            @if (d.ExternalPowerVoltage.HasValue)
+                                            {
+                                                var epColor = d.ExternalPowerVoltage >= 12m ? "success" : d.ExternalPowerVoltage >= 10m ? "warning" : "danger";
+                                                <span class="badge bg-@epColor">@d.ExternalPowerVoltage.Value.ToString("F1")V</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">—</span>
+                                            }
+                                        </td>
+                                        <td class="text-center">
+                                            @if (d.SignalStrength.HasValue)
+                                            {
+                                                var sIcon = d.SignalStrength >= 20 ? "bi-reception-4" : d.SignalStrength >= 10 ? "bi-reception-2" : "bi-reception-1";
+                                                var sColor = d.SignalStrength >= 15 ? "text-success" : d.SignalStrength >= 8 ? "text-warning" : "text-danger";
+                                                <i class="bi @sIcon @sColor fs-5" title="Signal: @d.SignalStrength"></i>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">—</span>
+                                            }
+                                        </td>
+                                        <td class="small text-muted">@(d.FirmwareVersion ?? "—")</td>
+                                        <td class="small text-muted">@(d.LastSeenAtUtc?.ToString("MM-dd HH:mm") ?? "Never")</td>
+                                        <td class="small text-muted">@(d.LastTelemetryAtUtc?.ToString("MM-dd HH:mm") ?? "Never")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @if (Model.TotalCount > Model.Filter.PageSize)
+                    {
+                        var totalPages = (int)Math.Ceiling((double)Model.TotalCount / Model.Filter.PageSize);
+                        <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
+                            <span class="small text-muted">Page @Model.Filter.Page of @totalPages · @Model.TotalCount total devices</span>
+                            <nav>
+                                <ul class="pagination pagination-sm mb-0">
+                                    @for (int p = 1; p <= totalPages && p <= 10; p++)
+                                    {
+                                        <li class="page-item @(p == Model.Filter.Page ? "active" : "")">
+                                            <a class="page-link" href="?Filter.Page=@p&Filter.PageSize=@Model.Filter.PageSize">@p</a>
+                                        </li>
+                                    }
+                                </ul>
+                            </nav>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>

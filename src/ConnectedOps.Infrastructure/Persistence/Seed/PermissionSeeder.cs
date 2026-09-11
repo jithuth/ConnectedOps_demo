@@ -365,7 +365,68 @@ public static class PermissionSeeder
         new(
             PermissionKeys.FleetOperations.ViewTimeline,
             "View Fleet Activity Timeline",
-            "FleetOperations")
+            "FleetOperations"),
+
+        // PHASE 6 - TRACKING DEVICES & TELEMATICS
+        new(
+            PermissionKeys.TrackingDevices.View,
+            "View Tracking Devices",
+            "TrackingDevices"),
+
+        new(
+            PermissionKeys.TrackingDevices.Create,
+            "Create Tracking Devices",
+            "TrackingDevices"),
+
+        new(
+            PermissionKeys.TrackingDevices.Edit,
+            "Edit Tracking Devices",
+            "TrackingDevices"),
+
+        new(
+            PermissionKeys.TrackingDevices.Delete,
+            "Delete Tracking Devices",
+            "TrackingDevices"),
+
+        new(
+            PermissionKeys.TrackingDevices.Provision,
+            "Provision Tracking Devices",
+            "TrackingDevices"),
+
+        new(
+            PermissionKeys.TrackingDevices.AssignVehicle,
+            "Assign Tracking Device to Vehicle",
+            "TrackingDevices"),
+
+        new(
+            PermissionKeys.Telematics.View,
+            "View Telematics",
+            "Telematics"),
+
+        new(
+            PermissionKeys.Telematics.ViewLive,
+            "View Live Fleet Tracking",
+            "Telematics"),
+
+        new(
+            PermissionKeys.Telematics.ViewHistory,
+            "View Telemetry History",
+            "Telematics"),
+
+        new(
+            PermissionKeys.Telematics.ViewDeviceHealth,
+            "View Device Health",
+            "Telematics"),
+
+        new(
+            PermissionKeys.Telematics.ViewDashboard,
+            "View Telematics Dashboard",
+            "Telematics"),
+
+        new(
+            PermissionKeys.Telematics.SendCommands,
+            "Send Device Commands",
+            "Telematics")
     ];
 
     public static async Task SeedAsync(
@@ -389,6 +450,28 @@ public static class PermissionSeeder
                     item.Key,
                     item.Name,
                     item.Module));
+        }
+
+        // Seed default global tracking providers if not present
+        if (!await dbContext.TrackingProviders.IgnoreQueryFilters().AnyAsync(cancellationToken))
+        {
+            dbContext.TrackingProviders.AddRange(
+                new ConnectedOps.Domain.Telematics.TrackingProvider("Teltonika", "TELTONIKA", ConnectedOps.Domain.Telematics.ProviderType.Teltonika, "Teltonika Telematics hardware and Codec 8 protocol"),
+                new ConnectedOps.Domain.Telematics.TrackingProvider("Traccar", "TRACCAR", ConnectedOps.Domain.Telematics.ProviderType.Traccar, "Traccar open-source GPS tracking system"),
+                new ConnectedOps.Domain.Telematics.TrackingProvider("Queclink", "QUECLINK", ConnectedOps.Domain.Telematics.ProviderType.Queclink, "Queclink wireless tracking devices"),
+                new ConnectedOps.Domain.Telematics.TrackingProvider("Ruptela", "RUPTELA", ConnectedOps.Domain.Telematics.ProviderType.Ruptela, "Ruptela fleet management hardware"),
+                new ConnectedOps.Domain.Telematics.TrackingProvider("Custom HTTP", "CUSTOM_HTTP", ConnectedOps.Domain.Telematics.ProviderType.Http, "Generic HTTP webhook and REST telematics ingestion"));
+        }
+
+        // Seed default global tracking device types if not present
+        if (!await dbContext.TrackingDeviceTypes.IgnoreQueryFilters().AnyAsync(cancellationToken))
+        {
+            dbContext.TrackingDeviceTypes.AddRange(
+                new ConnectedOps.Domain.Telematics.TrackingDeviceType("GPS Tracker", "GPS_TRACKER", "Standard hardwired GPS and vehicle tracking unit", supportsGps: true, supportsIgnition: true, supportsBattery: true, supportsCommands: true),
+                new ConnectedOps.Domain.Telematics.TrackingDeviceType("OBD Tracker", "OBD_TRACKER", "Plug-and-play OBD-II diagnostic port tracking unit", supportsGps: true, supportsIgnition: true, supportsObd: true, supportsBattery: true),
+                new ConnectedOps.Domain.Telematics.TrackingDeviceType("CAN Tracker", "CAN_TRACKER", "Advanced CAN-bus integrated heavy vehicle telemetry tracker", supportsGps: true, supportsIgnition: true, supportsCanBus: true, supportsFuel: true, supportsBattery: true),
+                new ConnectedOps.Domain.Telematics.TrackingDeviceType("Asset Tracker", "ASSET_TRACKER", "Autonomous battery-powered asset and trailer tracker", supportsGps: true, supportsIgnition: false, supportsBattery: true),
+                new ConnectedOps.Domain.Telematics.TrackingDeviceType("BLE Gateway", "BLE_GATEWAY", "Bluetooth Low Energy sensor and beacon gateway", supportsGps: true, supportsIgnition: true, supportsBle: true, supportsTemperature: true));
         }
 
         await dbContext.SaveChangesAsync(

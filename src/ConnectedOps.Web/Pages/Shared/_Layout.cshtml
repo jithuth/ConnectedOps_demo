@@ -525,6 +525,32 @@
                             </a>
                         </li>
 
+                        <li class="nav-header">TELEMATICS</li>
+                        <li class="nav-item">
+                            <a href="/Telematics/Dashboard" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Telematics/Dashboard") ? "active" : "")">
+                                <i class="nav-icon bi bi-graph-up-arrow"></i>
+                                <p>Telematics Dashboard</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Telematics/Live" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Telematics/Live") ? "active" : "")">
+                                <i class="nav-icon bi bi-broadcast-pin"></i>
+                                <p>Live Tracking</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Telematics/Devices" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Telematics/Devices") ? "active" : "")">
+                                <i class="nav-icon bi bi-cpu"></i>
+                                <p>Tracking Devices</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Telematics/Health" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Telematics/Health") ? "active" : "")">
+                                <i class="nav-icon bi bi-heart-pulse"></i>
+                                <p>Device Health</p>
+                            </a>
+                        </li>
+
                         <li class="nav-header">BILLING &amp; FINANCE</li>
                         <li class="nav-item">
                             <a href="/Billing/Subscription" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Billing/Subscription") ? "active" : "")">
