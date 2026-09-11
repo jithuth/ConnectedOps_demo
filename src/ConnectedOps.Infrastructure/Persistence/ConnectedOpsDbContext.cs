@@ -13,6 +13,7 @@ using ConnectedOps.Domain.Organization;
 using ConnectedOps.Domain.Platform;
 using ConnectedOps.Domain.Security;
 using ConnectedOps.Domain.Vehicles;
+using ConnectedOps.Domain.Drivers;
 
 namespace ConnectedOps.Infrastructure.Persistence;
 
@@ -131,6 +132,30 @@ public sealed class ConnectedOpsDbContext
 
     public DbSet<VehicleNote> VehicleNotes =>
         Set<VehicleNote>();
+
+    public DbSet<Driver> Drivers =>
+        Set<Driver>();
+
+    public DbSet<DriverLicense> DriverLicenses =>
+        Set<DriverLicense>();
+
+    public DbSet<DriverLicenseCategory> DriverLicenseCategories =>
+        Set<DriverLicenseCategory>();
+
+    public DbSet<DriverCertification> DriverCertifications =>
+        Set<DriverCertification>();
+
+    public DbSet<DriverVehicleAssignment> DriverVehicleAssignments =>
+        Set<DriverVehicleAssignment>();
+
+    public DbSet<DriverDocument> DriverDocuments =>
+        Set<DriverDocument>();
+
+    public DbSet<DriverEmergencyContact> DriverEmergencyContacts =>
+        Set<DriverEmergencyContact>();
+
+    public DbSet<DriverNote> DriverNotes =>
+        Set<DriverNote>();
 
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)

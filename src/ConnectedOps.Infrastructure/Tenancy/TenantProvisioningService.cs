@@ -327,7 +327,21 @@ public sealed class TenantProvisioningService
                 PermissionKeys.Drivers.View,
                 PermissionKeys.Drivers.Create,
                 PermissionKeys.Drivers.Edit,
+                PermissionKeys.Drivers.Delete,
+                PermissionKeys.Drivers.ChangeStatus,
+                PermissionKeys.Drivers.ManageOrganization,
+                PermissionKeys.Drivers.LinkEmployee,
                 PermissionKeys.Drivers.AssignVehicle,
+                PermissionKeys.DriverLicenses.View,
+                PermissionKeys.DriverLicenses.Manage,
+                PermissionKeys.DriverCertifications.View,
+                PermissionKeys.DriverCertifications.Manage,
+                PermissionKeys.DriverDocuments.View,
+                PermissionKeys.DriverDocuments.Manage,
+                PermissionKeys.DriverAssignments.View,
+                PermissionKeys.DriverAssignments.Create,
+                PermissionKeys.DriverAssignments.End,
+                PermissionKeys.DriverDashboard.View,
 
                 PermissionKeys.Assets.View,
                 PermissionKeys.Assets.Create,
@@ -361,7 +375,21 @@ public sealed class TenantProvisioningService
                 PermissionKeys.Drivers.View,
                 PermissionKeys.Drivers.Create,
                 PermissionKeys.Drivers.Edit,
+                PermissionKeys.Drivers.Delete,
+                PermissionKeys.Drivers.ChangeStatus,
+                PermissionKeys.Drivers.ManageOrganization,
+                PermissionKeys.Drivers.LinkEmployee,
                 PermissionKeys.Drivers.AssignVehicle,
+                PermissionKeys.DriverLicenses.View,
+                PermissionKeys.DriverLicenses.Manage,
+                PermissionKeys.DriverCertifications.View,
+                PermissionKeys.DriverCertifications.Manage,
+                PermissionKeys.DriverDocuments.View,
+                PermissionKeys.DriverDocuments.Manage,
+                PermissionKeys.DriverAssignments.View,
+                PermissionKeys.DriverAssignments.Create,
+                PermissionKeys.DriverAssignments.End,
+                PermissionKeys.DriverDashboard.View,
 
                 PermissionKeys.Reports.View
             ]);
@@ -375,7 +403,11 @@ public sealed class TenantProvisioningService
                 PermissionKeys.Vehicles.AssignDriver,
 
                 PermissionKeys.Drivers.View,
-                PermissionKeys.Drivers.AssignVehicle
+                PermissionKeys.Drivers.AssignVehicle,
+                PermissionKeys.DriverAssignments.View,
+                PermissionKeys.DriverAssignments.Create,
+                PermissionKeys.DriverAssignments.End,
+                PermissionKeys.DriverDashboard.View
             ]);
 
         AssignPermissions(

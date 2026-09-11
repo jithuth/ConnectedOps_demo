@@ -1,0 +1,161 @@
+@page "/Drivers/Edit/{id:guid}"
+@model ConnectedOps.Web.Pages.Drivers.EditModel
+@using ConnectedOps.Domain.Drivers
+@{
+    ViewData["Title"] = $"Edit Driver - {Model.DriverNumber}";
+    ViewData["Subtitle"] = "Update driver personal credentials, contact information, and employment details";
+}
+
+<!-- ACTION BAR -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1"><i class="bi bi-pencil-square text-primary me-2"></i>Edit Driver (@Model.DriverNumber)</h4>
+        <p class="text-secondary small mb-0">Update profile and contact information for driver record.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/Drivers/Details/@Model.Id" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> View Profile
+        </a>
+    </div>
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<form method="post">
+    <input type="hidden" asp-for="Id" />
+
+    <!-- SECTION 1: IDENTITY -->
+    <div class="card border-0 shadow-sm bg-body mb-4">
+        <div class="card-header bg-transparent border-bottom py-3">
+            <h6 class="fw-bold mb-0 text-primary">
+                <i class="bi bi-person-badge me-2"></i>Personal &amp; Display Information
+            </h6>
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold required">First Name</label>
+                    <input type="text" asp-for="Input.FirstName" class="form-control" required />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">Middle Name</label>
+                    <input type="text" asp-for="Input.MiddleName" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold required">Last Name</label>
+                    <input type="text" asp-for="Input.LastName" class="form-control" required />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">Display / Known As Name</label>
+                    <input type="text" asp-for="Input.DisplayName" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold required">Driver Type</label>
+                    <select asp-for="Input.DriverType" class="form-select" required>
+                        @foreach (var t in Enum.GetValues<DriverType>())
+                        {
+                            <option value="@t">@t</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">Date of Birth</label>
+                    <input type="date" asp-for="Input.DateOfBirth" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">Nationality (ISO 2-letter)</label>
+                    <input type="text" asp-for="Input.NationalityCode" class="form-control" maxlength="2" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">Preferred Language</label>
+                    <input type="text" asp-for="Input.PreferredLanguage" class="form-control" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: CONTACT DETAILS -->
+    <div class="card border-0 shadow-sm bg-body mb-4">
+        <div class="card-header bg-transparent border-bottom py-3">
+            <h6 class="fw-bold mb-0 text-primary">
+                <i class="bi bi-telephone me-2"></i>Contact Details
+            </h6>
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold required">Primary Phone</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+                        <input type="tel" asp-for="Input.Phone" class="form-control" required />
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">Alternate Phone</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-telephone-plus"></i></span>
+                        <input type="tel" asp-for="Input.AlternatePhone" class="form-control" />
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">Email Address</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                        <input type="email" asp-for="Input.Email" class="form-control" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 3: EMPLOYMENT DATES -->
+    <div class="card border-0 shadow-sm bg-body mb-4">
+        <div class="card-header bg-transparent border-bottom py-3">
+            <h6 class="fw-bold mb-0 text-primary">
+                <i class="bi bi-calendar-range me-2"></i>Employment &amp; Contract Dates
+            </h6>
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">Hire Date</label>
+                    <input type="date" asp-for="Input.HireDate" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">Start Date</label>
+                    <input type="date" asp-for="Input.StartDate" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">End Date</label>
+                    <input type="date" asp-for="Input.EndDate" class="form-control" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 4: OPERATIONAL NOTES -->
+    <div class="card border-0 shadow-sm bg-body mb-4">
+        <div class="card-header bg-transparent border-bottom py-3">
+            <h6 class="fw-bold mb-0 text-primary">
+                <i class="bi bi-chat-left-text me-2"></i>Operational Notes
+            </h6>
+        </div>
+        <div class="card-body p-4">
+            <textarea asp-for="Input.Notes" class="form-control" rows="3"></textarea>
+        </div>
+    </div>
+
+    <!-- FORM ACTIONS -->
+    <div class="d-flex justify-content-end gap-2 mb-5">
+        <a href="/Drivers/Details/@Model.Id" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary px-4">
+            <i class="bi bi-check-lg me-1"></i> Save Changes
+        </button>
+    </div>
+</form>

@@ -23,5 +23,10 @@ public enum AuditAction
     OdometerRecorded = 19,
     DocumentAdded = 20,
     DocumentUpdated = 21,
-    DocumentRemoved = 22
+    DocumentRemoved = 22,
+    DriverStatusChanged = 23,
+    DriverEmployeeLinked = 24,
+    DriverEmployeeUnlinked = 25,
+    DriverVehicleAssigned = 26,
+    DriverVehicleAssignmentEnded = 27
 }

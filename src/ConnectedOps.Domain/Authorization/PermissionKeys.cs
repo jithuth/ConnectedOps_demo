@@ -114,7 +114,40 @@ public static class PermissionKeys
         public const string Create = "Drivers.Create";
         public const string Edit = "Drivers.Edit";
         public const string Delete = "Drivers.Delete";
+        public const string ChangeStatus = "Drivers.ChangeStatus";
+        public const string ManageOrganization = "Drivers.ManageOrganization";
+        public const string LinkEmployee = "Drivers.LinkEmployee";
         public const string AssignVehicle = "Drivers.AssignVehicle";
+    }
+
+    public static class DriverLicenses
+    {
+        public const string View = "DriverLicenses.View";
+        public const string Manage = "DriverLicenses.Manage";
+    }
+
+    public static class DriverCertifications
+    {
+        public const string View = "DriverCertifications.View";
+        public const string Manage = "DriverCertifications.Manage";
+    }
+
+    public static class DriverDocuments
+    {
+        public const string View = "DriverDocuments.View";
+        public const string Manage = "DriverDocuments.Manage";
+    }
+
+    public static class DriverAssignments
+    {
+        public const string View = "DriverAssignments.View";
+        public const string Create = "DriverAssignments.Create";
+        public const string End = "DriverAssignments.End";
+    }
+
+    public static class DriverDashboard
+    {
+        public const string View = "DriverDashboard.View";
     }
 
     public static class Assets

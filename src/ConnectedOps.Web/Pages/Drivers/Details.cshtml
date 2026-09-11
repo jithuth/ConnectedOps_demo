@@ -1,0 +1,1083 @@
+@page "/Drivers/Details/{id:guid}"
+@model ConnectedOps.Web.Pages.Drivers.DetailsModel
+@using ConnectedOps.Domain.Drivers
+@{
+    ViewData["Title"] = $"Driver - {Model.Driver.DisplayName}";
+    ViewData["Subtitle"] = $"Driver #{Model.Driver.DriverNumber} | Profile, Licenses, Certifications & Assignment History";
+}
+
+<!-- ALERTS -->
+@if (TempData["Feedback"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>@TempData["Feedback"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- DRIVER HEADER CARD -->
+<div class="card border-0 shadow-sm bg-body mb-4">
+    <div class="card-body p-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="avatar-lg rounded-circle bg-primary-subtle text-primary fw-bold fs-2 d-flex align-items-center justify-content-center" style="width: 72px; height: 72px;">
+                    @(Model.Driver.FirstName.Length > 0 ? Model.Driver.FirstName[0].ToString() : "")@(Model.Driver.LastName.Length > 0 ? Model.Driver.LastName[0].ToString() : "")
+                </div>
+                <div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <h3 class="fw-bold mb-0">@Model.Driver.DisplayName</h3>
+                        <span class="badge bg-secondary-subtle text-secondary border">@Model.Driver.DriverNumber</span>
+                        @switch (Model.Driver.Status)
+                        {
+                            case DriverStatus.Active:
+                                <span class="badge bg-success-subtle text-success border border-success-subtle">Active</span>
+                                break;
+                            case DriverStatus.OnLeave:
+                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle">On Leave</span>
+                                break;
+                            case DriverStatus.Suspended:
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Suspended</span>
+                                break;
+                            case DriverStatus.Inactive:
+                                <span class="badge bg-secondary-subtle text-secondary border">Inactive</span>
+                                break;
+                        }
+                        <span class="badge bg-light text-dark border">@Model.Driver.DriverType</span>
+                    </div>
+                    <div class="text-secondary small mt-1 d-flex gap-3 flex-wrap">
+                        @if (!string.IsNullOrWhiteSpace(Model.Driver.Phone))
+                        {
+                            <span><i class="bi bi-telephone me-1"></i>@Model.Driver.Phone</span>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.Driver.Email))
+                        {
+                            <span><i class="bi bi-envelope me-1"></i>@Model.Driver.Email</span>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.Driver.BranchName))
+                        {
+                            <span><i class="bi bi-geo-alt me-1"></i>@Model.Driver.BranchName</span>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.Driver.DepartmentName))
+                        {
+                            <span><i class="bi bi-building me-1"></i>@Model.Driver.DepartmentName</span>
+                        }
+                        @if (Model.Driver.EmployeeId.HasValue)
+                        {
+                            <span class="text-primary"><i class="bi bi-link-45deg me-1"></i>Staff: @Model.Driver.EmployeeName (@Model.Driver.EmployeeNumber)</span>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#changeStatusModal">
+                    <i class="bi bi-toggles me-1"></i> Status
+                </button>
+                <a href="/Drivers/Edit/@Model.Driver.Id" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-pencil me-1"></i> Edit Profile
+                </a>
+                <a href="/Drivers/Index" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Directory
+                </a>
+            </div>
+        </div>
+
+        <!-- CURRENT ASSIGNMENT BANNER -->
+        <hr class="my-3" />
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <div class="small fw-semibold text-secondary text-uppercase">Current Vehicle Assignment</div>
+                @if (Model.Driver.CurrentVehicleAssignment != null)
+                {
+                    <div class="d-flex align-items-center gap-2 mt-1">
+                        <i class="bi bi-truck text-primary fs-5"></i>
+                        <span class="fw-bold fs-6">
+                            <a href="/Vehicles/Details/@Model.Driver.CurrentVehicleAssignment.VehicleId" class="text-decoration-none">
+                                @Model.Driver.CurrentVehicleAssignment.VehicleNumber
+                            </a>
+                        </span>
+                        <span class="text-muted small">(@Model.Driver.CurrentVehicleAssignment.VehicleDisplayName)</span>
+                        <span class="badge bg-primary-subtle text-primary">@Model.Driver.CurrentVehicleAssignment.AssignmentType</span>
+                        <span class="text-secondary small ms-2">Since @Model.Driver.CurrentVehicleAssignment.AssignedFromUtc.ToString("MMM dd, yyyy")</span>
+                    </div>
+                }
+                else
+                {
+                    <div class="d-flex align-items-center gap-2 mt-1">
+                        <i class="bi bi-check-circle text-success fs-5"></i>
+                        <span class="text-success fw-semibold">Unassigned / Ready for Assignment</span>
+                    </div>
+                }
+            </div>
+            <div>
+                @if (Model.Driver.CurrentVehicleAssignment != null)
+                {
+                    <button type="button" class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#endAssignmentModal"
+                            data-assignment-id="@Model.Driver.CurrentVehicleAssignment.Id"
+                            data-vehicle-number="@Model.Driver.CurrentVehicleAssignment.VehicleNumber">
+                        <i class="bi bi-stop-circle me-1"></i> End Assignment
+                    </button>
+                }
+                else if (Model.Driver.Status == DriverStatus.Active)
+                {
+                    <a href="/Drivers/Assignments?preselectedDriverId=@Model.Driver.Id" class="btn btn-primary btn-sm">
+                        <i class="bi bi-arrow-left-right me-1"></i> Assign to Vehicle
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- TABS NAVIGATION -->
+<ul class="nav nav-tabs mb-4" id="driverTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active fw-semibold" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
+            <i class="bi bi-person me-1"></i> Overview
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-semibold" id="licenses-tab" data-bs-toggle="tab" data-bs-target="#licenses" type="button" role="tab">
+            <i class="bi bi-card-heading me-1"></i> Licenses
+            <span class="badge bg-secondary-subtle text-secondary ms-1">@Model.Driver.Licenses.Count</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-semibold" id="certifications-tab" data-bs-toggle="tab" data-bs-target="#certifications" type="button" role="tab">
+            <i class="bi bi-award me-1"></i> Certifications
+            <span class="badge bg-secondary-subtle text-secondary ms-1">@Model.Driver.Certifications.Count</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-semibold" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents" type="button" role="tab">
+            <i class="bi bi-file-earmark-text me-1"></i> Documents
+            <span class="badge bg-secondary-subtle text-secondary ms-1">@Model.Driver.Documents.Count</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-semibold" id="assignments-tab" data-bs-toggle="tab" data-bs-target="#assignments" type="button" role="tab">
+            <i class="bi bi-clock-history me-1"></i> Assignment History
+            <span class="badge bg-secondary-subtle text-secondary ms-1">@Model.Driver.RecentAssignments.Count</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-semibold" id="notes-tab" data-bs-toggle="tab" data-bs-target="#notes" type="button" role="tab">
+            <i class="bi bi-chat-left-text me-1"></i> Notes
+            <span class="badge bg-secondary-subtle text-secondary ms-1">@Model.Driver.NotesList.Count</span>
+        </button>
+    </li>
+</ul>
+
+<!-- TABS CONTENT -->
+<div class="tab-content" id="driverTabsContent">
+    <!-- TAB 1: OVERVIEW -->
+    <div class="tab-pane fade show active" id="overview" role="tabpanel">
+        <div class="row g-4">
+            <!-- Profile & Employment Details -->
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm bg-body h-100">
+                    <div class="card-header bg-transparent border-bottom py-3">
+                        <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-info-circle me-2"></i>Personal &amp; Employment Information</h6>
+                    </div>
+                    <div class="card-body p-3">
+                        <table class="table table-borderless table-sm mb-0">
+                            <tbody>
+                                <tr>
+                                    <th class="text-secondary" style="width: 40%;">Full Name</th>
+                                    <td class="fw-semibold">@Model.Driver.DisplayName</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-secondary">Driver Number</th>
+                                    <td>@Model.Driver.DriverNumber</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-secondary">Driver Type</th>
+                                    <td>@Model.Driver.DriverType</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-secondary">Primary Phone</th>
+                                    <td>@(Model.Driver.Phone ?? "—")</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-secondary">Alternate Phone</th>
+                                    <td>@(Model.Driver.AlternatePhone ?? "—")</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-secondary">Email Address</th>
+                                    <td>@(Model.Driver.Email ?? "—")</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-secondary">Preferred Language</th>
+                                    <td>@(Model.Driver.PreferredLanguage ?? "—")</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-secondary">Date of Birth</th>
+                                    <td>@(Model.Driver.DateOfBirth?.ToString("yyyy-MM-dd") ?? "—")</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-secondary">Nationality</th>
+                                    <td>@(Model.Driver.NationalityCode ?? "—")</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-secondary">Hire Date</th>
+                                    <td>@(Model.Driver.HireDate?.ToString("yyyy-MM-dd") ?? "—")</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-secondary">Contract Dates</th>
+                                    <td>
+                                        @(Model.Driver.StartDate?.ToString("yyyy-MM-dd") ?? "Start: N/A") &mdash;
+                                        @(Model.Driver.EndDate?.ToString("yyyy-MM-dd") ?? "Open-ended")
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th class="text-secondary">Created At</th>
+                                    <td>@Model.Driver.CreatedAtUtc.ToString("yyyy-MM-dd HH:mm") UTC</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Organization & Emergency Contacts -->
+            <div class="col-lg-6">
+                <!-- Org Placement -->
+                <div class="card border-0 shadow-sm bg-body mb-4">
+                    <div class="card-header bg-transparent border-bottom py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-building me-2"></i>Organization Placement</h6>
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <form method="post" asp-page-handler="AssignBranch">
+                                    <label class="form-label small fw-semibold">Branch</label>
+                                    <div class="input-group input-group-sm">
+                                        <select name="branchId" class="form-select">
+                                            <option value="">-- No Branch --</option>
+                                            @foreach (var b in Model.Branches)
+                                            {
+                                                <option value="@b.Id" selected="@(Model.Driver.BranchId == b.Id)">@b.Name</option>
+                                            }
+                                        </select>
+                                        <button type="submit" class="btn btn-outline-primary">Save</button>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="col-sm-6">
+                                <form method="post" asp-page-handler="AssignDepartment">
+                                    <label class="form-label small fw-semibold">Department</label>
+                                    <div class="input-group input-group-sm">
+                                        <select name="departmentId" class="form-select">
+                                            <option value="">-- No Department --</option>
+                                            @foreach (var d in Model.Departments)
+                                            {
+                                                <option value="@d.Id" selected="@(Model.Driver.DepartmentId == d.Id)">@d.Name</option>
+                                            }
+                                        </select>
+                                        <button type="submit" class="btn btn-outline-primary">Save</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Emergency Contacts -->
+                <div class="card border-0 shadow-sm bg-body">
+                    <div class="card-header bg-transparent border-bottom py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-telephone-inbound me-2"></i>Emergency Contacts</h6>
+                        <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addContactModal">
+                            <i class="bi bi-plus-lg me-1"></i> Add Contact
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (!Model.Driver.EmergencyContacts.Any())
+                        {
+                            <div class="text-center py-4 text-muted small">
+                                <i class="bi bi-telephone-x fs-2 d-block mb-1"></i>
+                                No emergency contacts registered.
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Contact Name</th>
+                                            <th>Relationship</th>
+                                            <th>Phone Number</th>
+                                            <th class="text-end">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var c in Model.Driver.EmergencyContacts)
+                                        {
+                                            <tr>
+                                                <td class="fw-semibold">
+                                                    @c.Name
+                                                    @if (c.IsPrimary)
+                                                    {
+                                                        <span class="badge bg-primary-subtle text-primary ms-1">Primary</span>
+                                                    }
+                                                </td>
+                                                <td>@c.Relationship</td>
+                                                <td>@c.Phone</td>
+                                                <td class="text-end">
+                                                    <form method="post" asp-page-handler="DeleteEmergencyContact" class="d-inline" onsubmit="return confirm('Remove emergency contact?');">
+                                                        <input type="hidden" name="contactId" value="@c.Id" />
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2" title="Remove Contact">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: LICENSES -->
+    <div class="tab-pane fade" id="licenses" role="tabpanel">
+        <div class="card border-0 shadow-sm bg-body">
+            <div class="card-header bg-transparent border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-card-heading me-2"></i>Driver Licenses &amp; Categories</h6>
+                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addLicenseModal">
+                    <i class="bi bi-plus-lg me-1"></i> Add License
+                </button>
+            </div>
+            <div class="card-body p-0">
+                @if (!Model.Driver.Licenses.Any())
+                {
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-card-checklist fs-1 text-secondary mb-2 d-block"></i>
+                        <h5>No licenses on file</h5>
+                        <p class="small mb-3">Add the driver's commercial or standard driver's license to verify vehicle eligibility.</p>
+                        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addLicenseModal">Add License</button>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>License #</th>
+                                    <th>Jurisdiction</th>
+                                    <th>Authority</th>
+                                    <th>Expiry Date</th>
+                                    <th>Categories</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var l in Model.Driver.Licenses)
+                                {
+                                    <tr>
+                                        <td>
+                                            <span class="fw-bold">@l.LicenseNumber</span>
+                                            @if (l.IsPrimary)
+                                            {
+                                                <span class="badge bg-primary ms-1">PRIMARY</span>
+                                            }
+                                        </td>
+                                        <td>@l.LicenseCountryCode</td>
+                                        <td>@(l.IssuingAuthority ?? "—")</td>
+                                        <td>
+                                            @if (l.ExpiryDate.HasValue)
+                                            {
+                                                if (l.IsExpired)
+                                                {
+                                                    <span class="badge bg-danger">Expired: @l.ExpiryDate.Value.ToString("yyyy-MM-dd")</span>
+                                                }
+                                                else if (l.IsExpiringSoon)
+                                                {
+                                                    <span class="badge bg-warning text-dark">Expiring: @l.ExpiryDate.Value.ToString("yyyy-MM-dd")</span>
+                                                }
+                                                else
+                                                {
+                                                    <span>@l.ExpiryDate.Value.ToString("yyyy-MM-dd")</span>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">No Expiry</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (l.Categories.Any())
+                                            {
+                                                @foreach (var cat in l.Categories)
+                                                {
+                                                    <span class="badge bg-light text-dark border me-1">@cat.CategoryCode</span>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted small">None</span>
+                                            }
+                                            <button type="button" class="btn btn-link btn-sm p-0 ms-1" data-bs-toggle="modal" data-bs-target="#addCategoryModal"
+                                                    data-license-id="@l.Id" data-license-number="@l.LicenseNumber" title="Add Category">
+                                                <i class="bi bi-plus-circle"></i>
+                                            </button>
+                                        </td>
+                                        <td>
+                                            @if (l.IsActive)
+                                            {
+                                                <span class="badge bg-success-subtle text-success">Active</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary-subtle text-secondary">Inactive</span>
+                                            }
+                                        </td>
+                                        <td class="text-end">
+                                            @if (!l.IsPrimary && l.IsActive)
+                                            {
+                                                <form method="post" asp-page-handler="SetPrimaryLicense" class="d-inline">
+                                                    <input type="hidden" name="licenseId" value="@l.Id" />
+                                                    <button type="submit" class="btn btn-outline-primary btn-sm py-0 px-2" title="Set as Primary">
+                                                        Make Primary
+                                                    </button>
+                                                </form>
+                                            }
+                                            @if (l.IsActive)
+                                            {
+                                                <form method="post" asp-page-handler="DeactivateLicense" class="d-inline" onsubmit="return confirm('Deactivate this license?');">
+                                                    <input type="hidden" name="licenseId" value="@l.Id" />
+                                                    <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2 ms-1" title="Deactivate">
+                                                        Deactivate
+                                                    </button>
+                                                </form>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: CERTIFICATIONS -->
+    <div class="tab-pane fade" id="certifications" role="tabpanel">
+        <div class="card border-0 shadow-sm bg-body">
+            <div class="card-header bg-transparent border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-award me-2"></i>Professional Certifications &amp; Qualifications</h6>
+                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addCertModal">
+                    <i class="bi bi-plus-lg me-1"></i> Add Certification
+                </button>
+            </div>
+            <div class="card-body p-0">
+                @if (!Model.Driver.Certifications.Any())
+                {
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-award fs-1 text-secondary mb-2 d-block"></i>
+                        <h5>No certifications recorded</h5>
+                        <p class="small mb-3">Record Hazmat, Defensive Driving, First Aid, or Medical Examiner credentials.</p>
+                        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addCertModal">Add Certification</button>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Certification</th>
+                                    <th>Type</th>
+                                    <th>Certificate #</th>
+                                    <th>Issuing Body</th>
+                                    <th>Issue / Expiry Date</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var c in Model.Driver.Certifications)
+                                {
+                                    <tr>
+                                        <td class="fw-semibold">@c.Title</td>
+                                        <td><span class="badge bg-secondary-subtle text-secondary">@c.CertificationTypeName</span></td>
+                                        <td>@(c.CertificateNumber ?? "—")</td>
+                                        <td>@(c.IssuedBy ?? "—")</td>
+                                        <td>
+                                            @if (c.ExpiryDate.HasValue)
+                                            {
+                                                if (c.IsExpired)
+                                                {
+                                                    <span class="badge bg-danger">Expired: @c.ExpiryDate.Value.ToString("yyyy-MM-dd")</span>
+                                                }
+                                                else if (c.IsExpiringSoon)
+                                                {
+                                                    <span class="badge bg-warning text-dark">Expiring: @c.ExpiryDate.Value.ToString("yyyy-MM-dd")</span>
+                                                }
+                                                else
+                                                {
+                                                    <span>@c.ExpiryDate.Value.ToString("yyyy-MM-dd")</span>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">Lifetime</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (c.IsActive)
+                                            {
+                                                <span class="badge bg-success-subtle text-success">Valid</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary-subtle text-secondary">Inactive</span>
+                                            }
+                                        </td>
+                                        <td class="text-end">
+                                            @if (c.IsActive)
+                                            {
+                                                <form method="post" asp-page-handler="DeactivateCertification" class="d-inline" onsubmit="return confirm('Deactivate certification?');">
+                                                    <input type="hidden" name="certId" value="@c.Id" />
+                                                    <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2">Deactivate</button>
+                                                </form>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 4: DOCUMENTS -->
+    <div class="tab-pane fade" id="documents" role="tabpanel">
+        <div class="card border-0 shadow-sm bg-body">
+            <div class="card-header bg-transparent border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-file-earmark-text me-2"></i>Driver Compliance Documents</h6>
+                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addDocModal">
+                    <i class="bi bi-plus-lg me-1"></i> Add Document
+                </button>
+            </div>
+            <div class="card-body p-0">
+                @if (!Model.Driver.Documents.Any())
+                {
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-folder-x fs-1 text-secondary mb-2 d-block"></i>
+                        <h5>No documents on file</h5>
+                        <p class="small mb-3">Upload or log commercial driver licenses, medical examiner certificates, or background checks.</p>
+                        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addDocModal">Add Document</button>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Document Title</th>
+                                    <th>Document Type</th>
+                                    <th>Doc Number</th>
+                                    <th>Expiry Date</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var doc in Model.Driver.Documents)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold">@doc.Title</div>
+                                            <div class="text-muted small">@doc.FileName</div>
+                                        </td>
+                                        <td><span class="badge bg-secondary-subtle text-secondary">@doc.DocumentTypeName</span></td>
+                                        <td>@(doc.DocumentNumber ?? "—")</td>
+                                        <td>
+                                            @if (doc.ExpiryDate.HasValue)
+                                            {
+                                                if (doc.IsExpired)
+                                                {
+                                                    <span class="badge bg-danger">Expired: @doc.ExpiryDate.Value.ToString("yyyy-MM-dd")</span>
+                                                }
+                                                else if (doc.IsExpiringSoon)
+                                                {
+                                                    <span class="badge bg-warning text-dark">Expiring: @doc.ExpiryDate.Value.ToString("yyyy-MM-dd")</span>
+                                                }
+                                                else
+                                                {
+                                                    <span>@doc.ExpiryDate.Value.ToString("yyyy-MM-dd")</span>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">No Expiry</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (doc.IsActive)
+                                            {
+                                                <span class="badge bg-success-subtle text-success">Active</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary-subtle text-secondary">Archived</span>
+                                            }
+                                        </td>
+                                        <td class="text-end">
+                                            @if (doc.IsActive)
+                                            {
+                                                <form method="post" asp-page-handler="DeactivateDocument" class="d-inline" onsubmit="return confirm('Archive document?');">
+                                                    <input type="hidden" name="docId" value="@doc.Id" />
+                                                    <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2">Archive</button>
+                                                </form>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 5: VEHICLE ASSIGNMENT HISTORY -->
+    <div class="tab-pane fade" id="assignments" role="tabpanel">
+        <div class="card border-0 shadow-sm bg-body">
+            <div class="card-header bg-transparent border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-clock-history me-2"></i>Driver Vehicle Assignment History</h6>
+                @if (Model.Driver.Status == DriverStatus.Active && Model.Driver.CurrentVehicleAssignment == null)
+                {
+                    <a href="/Drivers/Assignments?preselectedDriverId=@Model.Driver.Id" class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus-lg me-1"></i> New Assignment
+                    </a>
+                }
+            </div>
+            <div class="card-body p-0">
+                @if (!Model.Driver.RecentAssignments.Any())
+                {
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-truck fs-1 text-secondary mb-2 d-block"></i>
+                        <h5>No assignments recorded</h5>
+                        <p class="small mb-3">This driver has not yet been assigned to any fleet vehicles.</p>
+                        @if (Model.Driver.Status == DriverStatus.Active)
+                        {
+                            <a href="/Drivers/Assignments?preselectedDriverId=@Model.Driver.Id" class="btn btn-primary btn-sm">Assign to Vehicle</a>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Vehicle</th>
+                                    <th>Assignment Type</th>
+                                    <th>From Date</th>
+                                    <th>To Date</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var a in Model.Driver.RecentAssignments)
+                                {
+                                    <tr>
+                                        <td>
+                                            <a href="/Vehicles/Details/@a.VehicleId" class="fw-bold text-decoration-none">
+                                                @a.VehicleNumber
+                                            </a>
+                                            <div class="text-muted small">@a.VehicleDisplayName</div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary-subtle text-secondary">@a.AssignmentType</span>
+                                            @if (a.IsPrimary)
+                                            {
+                                                <span class="badge bg-primary-subtle text-primary ms-1">Primary</span>
+                                            }
+                                        </td>
+                                        <td>@a.AssignedFromUtc.ToString("yyyy-MM-dd HH:mm")</td>
+                                        <td>@(a.AssignedToUtc?.ToString("yyyy-MM-dd HH:mm") ?? "Present")</td>
+                                        <td>
+                                            @if (a.IsActive && (!a.AssignedToUtc.HasValue || a.AssignedToUtc.Value > DateTime.UtcNow))
+                                            {
+                                                <span class="badge bg-success">ACTIVE</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary-subtle text-secondary">Completed</span>
+                                            }
+                                        </td>
+                                        <td class="text-end">
+                                            @if (a.IsActive && (!a.AssignedToUtc.HasValue || a.AssignedToUtc.Value > DateTime.UtcNow))
+                                            {
+                                                <button type="button" class="btn btn-outline-warning btn-sm py-0 px-2" data-bs-toggle="modal" data-bs-target="#endAssignmentModal"
+                                                        data-assignment-id="@a.Id" data-vehicle-number="@a.VehicleNumber">
+                                                    End
+                                                </button>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 6: OPERATIONAL NOTES -->
+    <div class="tab-pane fade" id="notes" role="tabpanel">
+        <div class="card border-0 shadow-sm bg-body">
+            <div class="card-header bg-transparent border-bottom py-3">
+                <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-chat-left-text me-2"></i>Operational Log &amp; Notes</h6>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" asp-page-handler="AddNote" class="mb-4">
+                    <div class="mb-2">
+                        <textarea name="noteText" class="form-control" rows="3" placeholder="Add an operational note, performance comment, or incident note..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus-lg me-1"></i> Add Note
+                    </button>
+                </form>
+
+                <hr />
+
+                @if (!Model.Driver.NotesList.Any())
+                {
+                    <div class="text-center py-4 text-muted small">
+                        <i class="bi bi-chat-square-text fs-2 d-block mb-1"></i>
+                        No operational notes recorded for this driver.
+                    </div>
+                }
+                else
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var n in Model.Driver.NotesList)
+                        {
+                            <div class="list-group-item px-0 py-3 bg-transparent border-bottom">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="fw-semibold small"><i class="bi bi-person me-1"></i>Operator Note</span>
+                                    <span class="text-muted small">@n.CreatedAtUtc.ToString("MMM dd, yyyy HH:mm") UTC</span>
+                                </div>
+                                <p class="mb-0 text-secondary">@n.NoteText</p>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CHANGE STATUS MODAL -->
+<div class="modal fade" id="changeStatusModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="ChangeStatus">
+                <div class="modal-header">
+                    <h5 class="modal-title">Change Driver Status</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Status</label>
+                        <select name="newStatus" class="form-select">
+                            @foreach (var s in Enum.GetValues<DriverStatus>())
+                            {
+                                <option value="@s" selected="@(Model.Driver.Status == s)">@s</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Notes / Reason</label>
+                        <textarea name="notes" class="form-control" rows="3" placeholder="Reason for status update..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Status</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ADD EMERGENCY CONTACT MODAL -->
+<div class="modal fade" id="addContactModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="AddEmergencyContact">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Emergency Contact</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold required">Contact Name</label>
+                        <input type="text" asp-for="ContactInput.Name" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold required">Relationship</label>
+                        <input type="text" asp-for="ContactInput.Relationship" class="form-control" placeholder="e.g. Spouse, Parent, Sibling" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold required">Phone Number</label>
+                        <input type="tel" asp-for="ContactInput.Phone" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Alternate Phone</label>
+                        <input type="tel" asp-for="ContactInput.AlternatePhone" class="form-control" />
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" asp-for="ContactInput.IsPrimary" class="form-check-input" id="isPrimaryContact" />
+                        <label class="form-check-label" for="isPrimaryContact">Designate as Primary Emergency Contact</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Contact</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ADD LICENSE MODAL -->
+<div class="modal fade" id="addLicenseModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="AddLicense">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Driver License</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold required">License Number</label>
+                            <input type="text" asp-for="LicenseInput.LicenseNumber" class="form-control" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold required">Issuing Country (2-letter ISO)</label>
+                            <input type="text" asp-for="LicenseInput.LicenseCountryCode" class="form-control" maxlength="2" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Issuing Authority</label>
+                            <input type="text" asp-for="LicenseInput.IssuingAuthority" class="form-control" placeholder="e.g. DMV, DVLA" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Expiry Date</label>
+                            <input type="date" asp-for="LicenseInput.ExpiryDate" class="form-control" />
+                        </div>
+                        <div class="col-md-6 d-flex align-items-center pt-4">
+                            <div class="form-check">
+                                <input type="checkbox" asp-for="LicenseInput.IsPrimary" class="form-check-input" id="isPrimaryLic" />
+                                <label class="form-check-label" for="isPrimaryLic">Set as Primary Active License</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add License</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ADD LICENSE CATEGORY MODAL -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="AddLicenseCategory">
+                <input type="hidden" id="categoryLicenseId" name="licenseId" />
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Category / Class to License</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="small text-secondary mb-3">Adding category to license: <strong id="categoryLicenseNumber"></strong></p>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold required">Category Code</label>
+                        <input type="text" name="categoryCode" class="form-control" placeholder="e.g. Class A, Class B, C, Heavy Rigid" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Description</label>
+                        <input type="text" name="description" class="form-control" placeholder="e.g. Commercial Combination Vehicles" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Category</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ADD CERTIFICATION MODAL -->
+<div class="modal fade" id="addCertModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="AddCertification">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Driver Certification</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold required">Certification Type</label>
+                            <select asp-for="CertInput.CertificationType" class="form-select" required>
+                                @foreach (var t in Enum.GetValues<CertificationType>())
+                                {
+                                    <option value="@t">@t</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold required">Certification Title</label>
+                            <input type="text" asp-for="CertInput.Title" class="form-control" placeholder="e.g. CDL Hazmat Endorsement" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Certificate Number</label>
+                            <input type="text" asp-for="CertInput.CertificateNumber" class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Issuing Authority / Institution</label>
+                            <input type="text" asp-for="CertInput.IssuedBy" class="form-control" placeholder="e.g. National Safety Council" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Expiry Date</label>
+                            <input type="date" asp-for="CertInput.ExpiryDate" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Certification</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ADD DOCUMENT MODAL -->
+<div class="modal fade" id="addDocModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="AddDocument">
+                <div class="modal-header">
+                    <h5 class="modal-title">Log Compliance Document</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold required">Document Type</label>
+                            <select asp-for="DocInput.DocumentType" class="form-select" required>
+                                @foreach (var dt in Enum.GetValues<DriverDocumentType>())
+                                {
+                                    <option value="@dt">@dt</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold required">Document Title</label>
+                            <input type="text" asp-for="DocInput.Title" class="form-control" placeholder="e.g. 2026 DOT Medical Examiner Certificate" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Document Number</label>
+                            <input type="text" asp-for="DocInput.DocumentNumber" class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Issuing Authority</label>
+                            <input type="text" asp-for="DocInput.IssuingAuthority" class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Expiry Date</label>
+                            <input type="date" asp-for="DocInput.ExpiryDate" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Document</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- END ASSIGNMENT MODAL -->
+<div class="modal fade" id="endAssignmentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="EndAssignment">
+                <input type="hidden" id="endAssignmentId" name="assignmentId" />
+                <div class="modal-header">
+                    <h5 class="modal-title">End Vehicle Assignment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-3">Ending assignment with vehicle: <strong id="endVehicleNumber"></strong></p>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Notes</label>
+                        <textarea name="notes" class="form-control" rows="2" placeholder="Optional notes on vehicle return condition..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">End Assignment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const addCatModal = document.getElementById('addCategoryModal');
+            if (addCatModal) {
+                addCatModal.addEventListener('show.bs.modal', function (event) {
+                    const button = event.relatedTarget;
+                    document.getElementById('categoryLicenseId').value = button.getAttribute('data-license-id');
+                    document.getElementById('categoryLicenseNumber').textContent = button.getAttribute('data-license-number');
+                });
+            }
+
+            const endModal = document.getElementById('endAssignmentModal');
+            if (endModal) {
+                endModal.addEventListener('show.bs.modal', function (event) {
+                    const button = event.relatedTarget;
+                    document.getElementById('endAssignmentId').value = button.getAttribute('data-assignment-id');
+                    document.getElementById('endVehicleNumber').textContent = button.getAttribute('data-vehicle-number');
+                });
+            }
+        });
+    </script>
+}

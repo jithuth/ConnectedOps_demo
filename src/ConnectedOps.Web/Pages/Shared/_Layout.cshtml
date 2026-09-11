@@ -456,6 +456,24 @@
                                 <p>Makes &amp; Models</p>
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a href="/Drivers/Dashboard" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Drivers/Dashboard") ? "active" : "")">
+                                <i class="nav-icon bi bi-person-badge"></i>
+                                <p>Driver Dashboard</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Drivers/Index" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Drivers") && !ViewContext.HttpContext.Request.Path.StartsWithSegments("/Drivers/Dashboard") && !ViewContext.HttpContext.Request.Path.StartsWithSegments("/Drivers/Assignments") ? "active" : "")">
+                                <i class="nav-icon bi bi-people"></i>
+                                <p>Drivers</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Drivers/Assignments" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Drivers/Assignments") ? "active" : "")">
+                                <i class="nav-icon bi bi-arrow-left-right"></i>
+                                <p>Assignments</p>
+                            </a>
+                        </li>
 
                         <li class="nav-header">BILLING &amp; FINANCE</li>
                         <li class="nav-item">

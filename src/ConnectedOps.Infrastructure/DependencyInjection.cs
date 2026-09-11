@@ -52,6 +52,8 @@ using ConnectedOps.Application.Notifications;
 using ConnectedOps.Infrastructure.Notifications;
 using ConnectedOps.Application.Vehicles;
 using ConnectedOps.Infrastructure.Vehicles;
+using ConnectedOps.Application.Drivers;
+using ConnectedOps.Infrastructure.Drivers;
 
 
 
@@ -128,6 +130,8 @@ public static class DependencyInjection
         AddNotificationServices(services);
 
         AddVehicleServices(services);
+
+        AddDriverServices(services);
             
         AddValidation(
             services);
@@ -631,5 +635,40 @@ public static class DependencyInjection
         services.AddScoped<
             IVehicleService,
             VehicleService>();
+    }
+
+    // ================================================================
+    // PHASE 4 - DRIVER MANAGEMENT
+    // ================================================================
+    private static void AddDriverServices(
+        IServiceCollection services)
+    {
+        services.AddScoped<
+            IDriverEligibilityService,
+            DriverEligibilityService>();
+
+        services.AddScoped<
+            IDriverAssignmentService,
+            DriverAssignmentService>();
+
+        services.AddScoped<
+            IDriverLicenseService,
+            DriverLicenseService>();
+
+        services.AddScoped<
+            IDriverCertificationService,
+            DriverCertificationService>();
+
+        services.AddScoped<
+            IDriverDocumentService,
+            DriverDocumentService>();
+
+        services.AddScoped<
+            IDriverDashboardService,
+            DriverDashboardService>();
+
+        services.AddScoped<
+            IDriverService,
+            DriverService>();
     }
 }

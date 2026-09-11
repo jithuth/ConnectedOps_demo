@@ -223,6 +223,71 @@ public static class PermissionSeeder
             "Drivers"),
 
         new(
+            PermissionKeys.Drivers.ChangeStatus,
+            "Change Driver Status",
+            "Drivers"),
+
+        new(
+            PermissionKeys.Drivers.ManageOrganization,
+            "Manage Driver Organization",
+            "Drivers"),
+
+        new(
+            PermissionKeys.Drivers.LinkEmployee,
+            "Link Driver Employee",
+            "Drivers"),
+
+        new(
+            PermissionKeys.DriverLicenses.View,
+            "View Driver Licenses",
+            "Drivers"),
+
+        new(
+            PermissionKeys.DriverLicenses.Manage,
+            "Manage Driver Licenses",
+            "Drivers"),
+
+        new(
+            PermissionKeys.DriverCertifications.View,
+            "View Driver Certifications",
+            "Drivers"),
+
+        new(
+            PermissionKeys.DriverCertifications.Manage,
+            "Manage Driver Certifications",
+            "Drivers"),
+
+        new(
+            PermissionKeys.DriverDocuments.View,
+            "View Driver Documents",
+            "Drivers"),
+
+        new(
+            PermissionKeys.DriverDocuments.Manage,
+            "Manage Driver Documents",
+            "Drivers"),
+
+        new(
+            PermissionKeys.DriverAssignments.View,
+            "View Driver Assignments",
+            "Drivers"),
+
+        new(
+            PermissionKeys.DriverAssignments.Create,
+            "Create Driver Assignments",
+            "Drivers"),
+
+        new(
+            PermissionKeys.DriverAssignments.End,
+            "End Driver Assignments",
+            "Drivers"),
+
+        new(
+            PermissionKeys.DriverDashboard.View,
+            "View Driver Dashboard",
+            "Drivers"),
+
+        new(
             PermissionKeys.Assets.View,
             "View Assets",
             "Assets"),

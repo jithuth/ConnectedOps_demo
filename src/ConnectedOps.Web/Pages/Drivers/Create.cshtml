@@ -1,0 +1,228 @@
+@page "/Drivers/Create"
+@model ConnectedOps.Web.Pages.Drivers.CreateModel
+@using ConnectedOps.Domain.Drivers
+@{
+    ViewData["Title"] = "Add Driver";
+    ViewData["Subtitle"] = "Register a new authorized vehicle operator with licensing and organizational credentials";
+}
+
+<!-- ACTION BAR -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1"><i class="bi bi-person-plus text-primary me-2"></i>Register Driver</h4>
+        <p class="text-secondary small mb-0">Add an authorized operator to your fleet roster.</p>
+    </div>
+    <a href="/Drivers/Index" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Back to Directory
+    </a>
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<form method="post">
+    <!-- SECTION 1: IDENTITY & BASIC INFO -->
+    <div class="card border-0 shadow-sm bg-body mb-4">
+        <div class="card-header bg-transparent border-bottom py-3">
+            <h6 class="fw-bold mb-0 text-primary">
+                <i class="bi bi-person-badge me-2"></i>Driver Identity &amp; Profile
+            </h6>
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold required">Driver Number / Code</label>
+                    <input type="text" asp-for="Input.DriverNumber" class="form-control" placeholder="e.g. DRV-00101" required />
+                    <span class="text-muted small">Unique identifier within your organization.</span>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold required">First Name</label>
+                    <input type="text" asp-for="Input.FirstName" class="form-control" placeholder="First Name" required />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">Middle Name</label>
+                    <input type="text" asp-for="Input.MiddleName" class="form-control" placeholder="Middle Name (Optional)" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold required">Last Name</label>
+                    <input type="text" asp-for="Input.LastName" class="form-control" placeholder="Last Name" required />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">Display / Known As Name</label>
+                    <input type="text" asp-for="Input.DisplayName" class="form-control" placeholder="Optional preferred display name" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold required">Driver Type</label>
+                    <select asp-for="Input.DriverType" class="form-select" required>
+                        @foreach (var t in Enum.GetValues<DriverType>())
+                        {
+                            <option value="@t">@t</option>
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: CONTACT INFORMATION -->
+    <div class="card border-0 shadow-sm bg-body mb-4">
+        <div class="card-header bg-transparent border-bottom py-3">
+            <h6 class="fw-bold mb-0 text-primary">
+                <i class="bi bi-telephone me-2"></i>Contact Details
+            </h6>
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold required">Primary Phone</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+                        <input type="tel" asp-for="Input.Phone" class="form-control" placeholder="+1 555-0199" required />
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">Alternate Phone</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-telephone-plus"></i></span>
+                        <input type="tel" asp-for="Input.AlternatePhone" class="form-control" placeholder="Optional backup number" />
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">Email Address</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                        <input type="email" asp-for="Input.Email" class="form-control" placeholder="driver@company.com" />
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">Preferred Language</label>
+                    <input type="text" asp-for="Input.PreferredLanguage" class="form-control" placeholder="e.g. English, Spanish" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">Date of Birth</label>
+                    <input type="date" asp-for="Input.DateOfBirth" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">Nationality (ISO 2-letter)</label>
+                    <input type="text" asp-for="Input.NationalityCode" class="form-control" maxlength="2" placeholder="e.g. US, CA, MX" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 3: ORGANIZATION & EMPLOYEE LINK -->
+    <div class="card border-0 shadow-sm bg-body mb-4">
+        <div class="card-header bg-transparent border-bottom py-3">
+            <h6 class="fw-bold mb-0 text-primary">
+                <i class="bi bi-building me-2"></i>Organization &amp; Employment Link
+            </h6>
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">Assigned Branch</label>
+                    <select asp-for="Input.BranchId" class="form-select">
+                        <option value="">-- No Branch Assigned --</option>
+                        @foreach (var b in Model.Branches)
+                        {
+                            <option value="@b.Id">@b.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">Assigned Department</label>
+                    <select asp-for="Input.DepartmentId" class="form-select">
+                        <option value="">-- No Department Assigned --</option>
+                        @foreach (var d in Model.Departments)
+                        {
+                            <option value="@d.Id">@d.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">Link to HR Employee Record</label>
+                    <select asp-for="Input.EmployeeId" class="form-select">
+                        <option value="">-- Standalone Driver (No Employee Link) --</option>
+                        @foreach (var e in Model.Employees)
+                        {
+                            <option value="@e.Id">@e.EmployeeNumber - @e.FullName</option>
+                        }
+                    </select>
+                    <span class="text-muted small">Optional link to internal staff profile.</span>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">Hire Date</label>
+                    <input type="date" asp-for="Input.HireDate" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">Contract Start Date</label>
+                    <input type="date" asp-for="Input.StartDate" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">Contract End Date</label>
+                    <input type="date" asp-for="Input.EndDate" class="form-control" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 4: PRIMARY LICENSE QUICK SETUP -->
+    <div class="card border-0 shadow-sm bg-body mb-4">
+        <div class="card-header bg-transparent border-bottom py-3 d-flex justify-content-between align-items-center">
+            <h6 class="fw-bold mb-0 text-primary">
+                <i class="bi bi-card-heading me-2"></i>Primary Driver License (Initial Onboarding)
+            </h6>
+            <span class="badge bg-light text-secondary border">Optional</span>
+        </div>
+        <div class="card-body p-4">
+            <p class="text-secondary small mb-3">You can provide the driver's primary license now or add and manage licenses after creating the driver record.</p>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">License Number</label>
+                    <input type="text" asp-for="Input.InitialLicenseNumber" class="form-control" placeholder="e.g. DL-98765432" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">Country Code</label>
+                    <input type="text" asp-for="Input.InitialLicenseCountryCode" class="form-control" maxlength="2" placeholder="e.g. US" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold">Issuing Authority / State</label>
+                    <input type="text" asp-for="Input.InitialLicenseAuthority" class="form-control" placeholder="e.g. CA DMV" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold">Expiry Date</label>
+                    <input type="date" asp-for="Input.InitialLicenseExpiryDate" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">License Category / Class</label>
+                    <input type="text" asp-for="Input.InitialLicenseCategoryCode" class="form-control" placeholder="e.g. Class A, Class B, C" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 5: OPERATIONAL NOTES -->
+    <div class="card border-0 shadow-sm bg-body mb-4">
+        <div class="card-header bg-transparent border-bottom py-3">
+            <h6 class="fw-bold mb-0 text-primary">
+                <i class="bi bi-chat-left-text me-2"></i>Operational Notes
+            </h6>
+        </div>
+        <div class="card-body p-4">
+            <textarea asp-for="Input.Notes" class="form-control" rows="3" placeholder="General driver operational notes, restrictions, or onboarding comments..."></textarea>
+        </div>
+    </div>
+
+    <!-- FORM SUBMISSION -->
+    <div class="d-flex justify-content-end gap-2 mb-5">
+        <a href="/Drivers/Index" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary px-4">
+            <i class="bi bi-check-lg me-1"></i> Register Driver
+        </button>
+    </div>
+</form>

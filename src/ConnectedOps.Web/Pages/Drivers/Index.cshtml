@@ -1,0 +1,384 @@
+@page "/Drivers/Index"
+@model ConnectedOps.Web.Pages.Drivers.IndexModel
+@using ConnectedOps.Domain.Drivers
+@{
+    ViewData["Title"] = "Drivers";
+    ViewData["Subtitle"] = "Authorized fleet vehicle operators, licensing compliance, and assignment records";
+}
+
+<!-- ALERTS -->
+@if (TempData["Feedback"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>@TempData["Feedback"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- HEADER & ACTION BAR -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <h4 class="fw-bold mb-1"><i class="bi bi-people text-primary me-2"></i>Driver Directory</h4>
+        <p class="text-secondary small mb-0">Manage authorized vehicle drivers, professional credentials, and active fleet assignments.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/Drivers/Assignments" class="btn btn-outline-info btn-sm">
+            <i class="bi bi-arrow-left-right me-1"></i> Assignments Board
+        </a>
+        <a href="/Drivers/Create" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-lg me-1"></i> Add Driver
+        </a>
+    </div>
+</div>
+
+<!-- SEARCH & FILTER CARD -->
+<div class="card border-0 shadow-sm bg-body mb-4">
+    <div class="card-body p-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">Search</label>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" name="SearchTerm" value="@Model.Query.SearchTerm" class="form-control form-control-sm" placeholder="Name, driver #, license #..." />
+                </div>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-semibold">Branch</label>
+                <select name="BranchId" class="form-select form-select-sm">
+                    <option value="">All Branches</option>
+                    @foreach (var b in Model.Branches)
+                    {
+                        <option value="@b.Id" selected="@(Model.Query.BranchId == b.Id)">@b.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-semibold">Driver Type</label>
+                <select name="DriverType" class="form-select form-select-sm">
+                    <option value="">All Types</option>
+                    @foreach (var t in Enum.GetValues<DriverType>())
+                    {
+                        <option value="@t" selected="@(Model.Query.DriverType == t)">@t</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-semibold">Status</label>
+                <select name="Status" class="form-select form-select-sm">
+                    <option value="">All Statuses</option>
+                    @foreach (var s in Enum.GetValues<DriverStatus>())
+                    {
+                        <option value="@s" selected="@(Model.Query.Status == s)">@s</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
+                    <i class="bi bi-funnel me-1"></i> Filter
+                </button>
+                <a href="/Drivers/Index" class="btn btn-outline-secondary btn-sm" title="Reset Filters">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- DRIVERS TABLE CARD -->
+<div class="card border-0 shadow-sm bg-body">
+    <div class="card-header bg-transparent border-bottom d-flex justify-content-between align-items-center py-3">
+        <h6 class="fw-bold mb-0">
+            <i class="bi bi-card-list me-2 text-primary"></i>Drivers List
+            <span class="badge bg-secondary-subtle text-secondary ms-2">@Model.Drivers.TotalCount Total</span>
+        </h6>
+    </div>
+    <div class="card-body p-0">
+        @if (!Model.Drivers.Items.Any())
+        {
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-person-x fs-1 mb-2 d-block text-secondary"></i>
+                <h5>No drivers found</h5>
+                <p class="small mb-3">Adjust your search criteria or register a new authorized driver.</p>
+                <a href="/Drivers/Create" class="btn btn-primary btn-sm">Add New Driver</a>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Driver</th>
+                            <th>Type</th>
+                            <th>Primary License</th>
+                            <th>Organization</th>
+                            <th>Active Assignment</th>
+                            <th>Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var d in Model.Drivers.Items)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm rounded-circle bg-primary-subtle text-primary fw-bold d-flex align-items-center justify-content-center me-2" style="width: 36px; height: 36px;">
+                                            @(d.FirstName.Length > 0 ? d.FirstName[0].ToString() : "")@(d.LastName.Length > 0 ? d.LastName[0].ToString() : "")
+                                        </div>
+                                        <div>
+                                            <a href="/Drivers/Details/@d.Id" class="fw-bold text-decoration-none">
+                                                @d.DisplayName
+                                            </a>
+                                            <div class="text-muted small">
+                                                <span class="badge bg-light text-secondary border me-1">@d.DriverNumber</span>
+                                                @if (!string.IsNullOrWhiteSpace(d.Phone))
+                                                {
+                                                    <span><i class="bi bi-telephone text-muted me-1"></i>@d.Phone</span>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary-subtle text-secondary">@d.DriverType</span>
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrWhiteSpace(d.PrimaryLicenseNumber))
+                                    {
+                                        <div class="fw-semibold">@d.PrimaryLicenseNumber</div>
+                                        <div class="small">
+                                            @if (d.PrimaryLicenseExpiryDate.HasValue)
+                                            {
+                                                var isExpired = d.PrimaryLicenseExpiryDate.Value < DateOnly.FromDateTime(DateTime.UtcNow);
+                                                var isSoon = d.PrimaryLicenseExpiryDate.Value <= DateOnly.FromDateTime(DateTime.UtcNow.AddDays(30));
+                                                if (isExpired)
+                                                {
+                                                    <span class="badge bg-danger">Expired: @d.PrimaryLicenseExpiryDate.Value.ToString("yyyy-MM-dd")</span>
+                                                }
+                                                else if (isSoon)
+                                                {
+                                                    <span class="badge bg-warning text-dark">Expiring: @d.PrimaryLicenseExpiryDate.Value.ToString("yyyy-MM-dd")</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">Exp: @d.PrimaryLicenseExpiryDate.Value.ToString("yyyy-MM-dd")</span>
+                                                }
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small italic">No license registered</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="small fw-semibold">@(d.BranchName ?? "—")</div>
+                                    <div class="text-muted small">@(d.DepartmentName ?? "")</div>
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrWhiteSpace(d.CurrentVehicleNumber))
+                                    {
+                                        <span class="badge bg-info-subtle text-info border border-info-subtle">
+                                            <i class="bi bi-truck me-1"></i>@d.CurrentVehicleNumber
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success-subtle text-success">
+                                            <i class="bi bi-check-circle me-1"></i>Available
+                                        </span>
+                                    }
+                                </td>
+                                <td>
+                                    @switch (d.Status)
+                                    {
+                                        case DriverStatus.Active:
+                                            <span class="badge bg-success-subtle text-success">Active</span>
+                                            break;
+                                        case DriverStatus.OnLeave:
+                                            <span class="badge bg-warning-subtle text-warning">On Leave</span>
+                                            break;
+                                        case DriverStatus.Suspended:
+                                            <span class="badge bg-danger-subtle text-danger">Suspended</span>
+                                            break;
+                                        case DriverStatus.Inactive:
+                                            <span class="badge bg-secondary-subtle text-secondary">Inactive</span>
+                                            break;
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="/Drivers/Details/@d.Id" class="btn btn-outline-secondary" title="View Details">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="/Drivers/Edit/@d.Id" class="btn btn-outline-secondary" title="Edit Driver">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-secondary" title="Change Status"
+                                                data-bs-toggle="modal" data-bs-target="#statusModal"
+                                                data-driver-id="@d.Id" data-driver-name="@d.DisplayName" data-current-status="@d.Status">
+                                            <i class="bi bi-toggles"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-danger" title="Delete Driver"
+                                                data-bs-toggle="modal" data-bs-target="#deleteModal"
+                                                data-driver-id="@d.Id" data-driver-name="@d.DisplayName">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- PAGINATION -->
+            @if (Model.Drivers.TotalPages > 1)
+            {
+                <div class="card-footer bg-transparent border-top d-flex justify-content-between align-items-center py-2">
+                    <span class="small text-muted">
+                        Page @Model.Drivers.PageNumber of @Model.Drivers.TotalPages (@Model.Drivers.TotalCount drivers)
+                    </span>
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item @(!Model.Drivers.HasPreviousPage ? "disabled" : "")">
+                                <a class="page-link" href="@Url.Page("/Drivers/Index", new {
+                                    Model.Query.SearchTerm,
+                                    Model.Query.BranchId,
+                                    Model.Query.DepartmentId,
+                                    Model.Query.Status,
+                                    Model.Query.DriverType,
+                                    PageNumber = Model.Drivers.PageNumber - 1,
+                                    Model.Query.PageSize
+                                })">&laquo;</a>
+                            </li>
+                            @for (var i = 1; i <= Model.Drivers.TotalPages; i++)
+                            {
+                                <li class="page-item @(i == Model.Drivers.PageNumber ? "active" : "")">
+                                    <a class="page-link" href="@Url.Page("/Drivers/Index", new {
+                                        Model.Query.SearchTerm,
+                                        Model.Query.BranchId,
+                                        Model.Query.DepartmentId,
+                                        Model.Query.Status,
+                                        Model.Query.DriverType,
+                                        PageNumber = i,
+                                        Model.Query.PageSize
+                                    })">@i</a>
+                                </li>
+                            }
+                            <li class="page-item @(!Model.Drivers.HasNextPage ? "disabled" : "")">
+                                <a class="page-link" href="@Url.Page("/Drivers/Index", new {
+                                    Model.Query.SearchTerm,
+                                    Model.Query.BranchId,
+                                    Model.Query.DepartmentId,
+                                    Model.Query.Status,
+                                    Model.Query.DriverType,
+                                    PageNumber = Model.Drivers.PageNumber + 1,
+                                    Model.Query.PageSize
+                                })">&raquo;</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+<!-- CHANGE STATUS MODAL -->
+<div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="ChangeStatus">
+                <input type="hidden" id="statusDriverId" name="id" />
+                <div class="modal-header">
+                    <h5 class="modal-title" id="statusModalLabel">Change Driver Status</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-3">Updating status for driver: <strong id="statusDriverName"></strong></p>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">New Status</label>
+                        <select id="newStatusSelect" name="newStatus" class="form-select" required>
+                            @foreach (var s in Enum.GetValues<DriverStatus>())
+                            {
+                                <option value="@s">@s</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Reason / Notes</label>
+                        <textarea name="notes" class="form-control" rows="3" placeholder="Optional explanation for audit log..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Status</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- DELETE CONFIRMATION MODAL -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="Delete">
+                <input type="hidden" id="deleteDriverId" name="id" />
+                <div class="modal-header">
+                    <h5 class="modal-title text-danger" id="deleteModalLabel">Confirm Deletion</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0">Are you sure you want to delete driver <strong id="deleteDriverName"></strong>?</p>
+                    <p class="text-danger small mt-2 mb-0">This driver record will be soft-deleted. Active assignments must be closed prior to deletion.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Delete Driver</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const statusModal = document.getElementById('statusModal');
+            if (statusModal) {
+                statusModal.addEventListener('show.bs.modal', function (event) {
+                    const button = event.relatedTarget;
+                    const driverId = button.getAttribute('data-driver-id');
+                    const driverName = button.getAttribute('data-driver-name');
+                    const currentStatus = button.getAttribute('data-current-status');
+
+                    document.getElementById('statusDriverId').value = driverId;
+                    document.getElementById('statusDriverName').textContent = driverName;
+                    document.getElementById('newStatusSelect').value = currentStatus;
+                });
+            }
+
+            const deleteModal = document.getElementById('deleteModal');
+            if (deleteModal) {
+                deleteModal.addEventListener('show.bs.modal', function (event) {
+                    const button = event.relatedTarget;
+                    const driverId = button.getAttribute('data-driver-id');
+                    const driverName = button.getAttribute('data-driver-name');
+
+                    document.getElementById('deleteDriverId').value = driverId;
+                    document.getElementById('deleteDriverName').textContent = driverName;
+                });
+            }
+        });
+    </script>
+}
