@@ -18,6 +18,7 @@ using ConnectedOps.Domain.FleetOperations;
 using ConnectedOps.Domain.Telematics;
 using ConnectedOps.Domain.Geofences;
 using ConnectedOps.Domain.Demo;
+using ConnectedOps.Domain.Maintenance;
 
 namespace ConnectedOps.Infrastructure.Persistence;
 
@@ -226,6 +227,45 @@ public sealed class ConnectedOpsDbContext
 
     public DbSet<DemoRoutePoint> DemoRoutePoints =>
         Set<DemoRoutePoint>();
+
+    public DbSet<MaintenanceServiceType> MaintenanceServiceTypes =>
+        Set<MaintenanceServiceType>();
+
+    public DbSet<MaintenanceProvider> MaintenanceProviders =>
+        Set<MaintenanceProvider>();
+
+    public DbSet<MaintenancePlan> MaintenancePlans =>
+        Set<MaintenancePlan>();
+
+    public DbSet<MaintenancePlanRule> MaintenancePlanRules =>
+        Set<MaintenancePlanRule>();
+
+    public DbSet<VehicleMaintenancePlanAssignment> VehicleMaintenancePlanAssignments =>
+        Set<VehicleMaintenancePlanAssignment>();
+
+    public DbSet<VehicleMaintenanceDue> VehicleMaintenanceDues =>
+        Set<VehicleMaintenanceDue>();
+
+    public DbSet<VehicleMaintenanceRecord> VehicleMaintenanceRecords =>
+        Set<VehicleMaintenanceRecord>();
+
+    public DbSet<VehicleMaintenanceTask> VehicleMaintenanceTasks =>
+        Set<VehicleMaintenanceTask>();
+
+    public DbSet<VehicleMaintenancePart> VehicleMaintenanceParts =>
+        Set<VehicleMaintenancePart>();
+
+    public DbSet<VehicleMaintenanceLabour> VehicleMaintenanceLabours =>
+        Set<VehicleMaintenanceLabour>();
+
+    public DbSet<VehicleMaintenanceExpense> VehicleMaintenanceExpenses =>
+        Set<VehicleMaintenanceExpense>();
+
+    public DbSet<VehicleDowntimeRecord> VehicleDowntimeRecords =>
+        Set<VehicleDowntimeRecord>();
+
+    public DbSet<VehicleMaintenanceDocument> VehicleMaintenanceDocuments =>
+        Set<VehicleMaintenanceDocument>();
 
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)

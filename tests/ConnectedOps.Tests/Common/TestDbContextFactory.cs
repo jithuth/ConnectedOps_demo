@@ -9,6 +9,7 @@ public static class TestDbContextFactory
     {
         var options = new DbContextOptionsBuilder<ConnectedOpsDbContext>()
             .UseInMemoryDatabase(dbName ?? Guid.NewGuid().ToString())
+            .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning))
             .EnableSensitiveDataLogging()
             .Options;
 

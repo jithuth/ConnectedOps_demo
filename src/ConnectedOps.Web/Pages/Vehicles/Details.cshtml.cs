@@ -1,3 +1,4 @@
+using ConnectedOps.Application.Maintenance;
 using ConnectedOps.Application.Vehicles;
 using ConnectedOps.Domain.Vehicles;
 using Microsoft.AspNetCore.Mvc;
@@ -11,19 +12,31 @@ public sealed class DetailsModel : PageModel
     private readonly IVehicleService _vehicleService;
     private readonly IVehicleOdometerService _odometerService;
     private readonly IVehicleDocumentService _documentService;
+    private readonly IMaintenanceRecordService _maintenanceRecordService;
+    private readonly IMaintenanceScheduleService _maintenanceScheduleService;
+    private readonly IMaintenancePlanService _maintenancePlanService;
 
     public DetailsModel(
         IVehicleService vehicleService,
         IVehicleOdometerService odometerService,
-        IVehicleDocumentService documentService)
+        IVehicleDocumentService documentService,
+        IMaintenanceRecordService maintenanceRecordService,
+        IMaintenanceScheduleService maintenanceScheduleService,
+        IMaintenancePlanService maintenancePlanService)
     {
         _vehicleService = vehicleService;
         _odometerService = odometerService;
         _documentService = documentService;
+        _maintenanceRecordService = maintenanceRecordService;
+        _maintenanceScheduleService = maintenanceScheduleService;
+        _maintenancePlanService = maintenancePlanService;
     }
 
     public Guid VehicleId { get; private set; }
     public VehicleDetailDto Vehicle { get; private set; } = null!;
+    public IReadOnlyCollection<VehicleMaintenanceRecordListItemDto> MaintenanceRecords { get; private set; } = [];
+    public IReadOnlyCollection<VehicleMaintenanceDueDto> DueMaintenance { get; private set; } = [];
+    public IReadOnlyCollection<VehicleMaintenancePlanAssignmentDto> AssignedPlans { get; private set; } = [];
 
     [BindProperty]
     public UpsertVehicleSpecificationRequest SpecInput { get; set; } = new(
@@ -46,6 +59,9 @@ public sealed class DetailsModel : PageModel
         try
         {
             Vehicle = await _vehicleService.GetVehicleByIdAsync(id, HttpContext.RequestAborted);
+            MaintenanceRecords = await _maintenanceRecordService.GetVehicleMaintenanceHistoryAsync(id, cancellationToken: HttpContext.RequestAborted);
+            DueMaintenance = await _maintenanceScheduleService.CalculateVehicleMaintenanceAsync(id, HttpContext.RequestAborted);
+            AssignedPlans = await _maintenancePlanService.GetVehicleAssignmentsAsync(vehicleId: id, cancellationToken: HttpContext.RequestAborted);
             if (Vehicle.Specification != null)
             {
                 SpecInput = new UpsertVehicleSpecificationRequest(

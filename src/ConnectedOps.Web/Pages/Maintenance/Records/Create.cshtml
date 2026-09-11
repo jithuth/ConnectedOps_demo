@@ -1,0 +1,183 @@
+@page
+@model ConnectedOps.Web.Pages.Maintenance.Records.CreateModel
+@using ConnectedOps.Domain.Maintenance
+@using ConnectedOps.Domain.Vehicles
+@{
+    ViewData["Title"] = "Create Service Record";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row align-items-center mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0 fw-bold"><i class="bi bi-plus-circle text-primary me-2"></i>New Maintenance Service Record</h1>
+                <p class="text-muted small mb-0">Record internal maintenance, preventive servicing, or corrective repair.</p>
+            </div>
+            <div class="col-sm-6 text-sm-end mt-2 mt-sm-0">
+                <a href="/Maintenance/Records" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Records
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.ErrorMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <div class="row justify-content-center">
+            <div class="col-lg-9">
+                <form method="post">
+                    <div class="card border-0 shadow-sm rounded-3 mb-4">
+                        <div class="card-header bg-transparent border-0 pt-3">
+                            <h6 class="card-title fw-bold mb-0"><i class="bi bi-truck me-2 text-primary"></i>1. Vehicle &amp; Service Classification</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">Select Vehicle <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="vehicle-select" name="Input.VehicleId" required>
+                                        <option value="">-- Choose Vehicle --</option>
+                                        @foreach (var v in Model.Vehicles)
+                                        {
+                                            <option value="@v.Id" data-odo="@v.CurrentOdometer" data-unit="@v.OdometerUnit" selected="@(Model.Input.VehicleId == v.Id)">
+                                                @v.VehicleNumber - @v.DisplayName (@v.CurrentOdometer.ToString("N0") @v.OdometerUnit)
+                                            </option>
+                                        }
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">Service Type <span class="text-danger">*</span></label>
+                                    <select class="form-select" name="Input.MaintenanceServiceTypeId" required>
+                                        <option value="">-- Choose Service Type --</option>
+                                        @foreach (var st in Model.ServiceTypes)
+                                        {
+                                            <option value="@st.Id" selected="@(Model.Input.MaintenanceServiceTypeId == st.Id)">
+                                                @st.Name (@st.CategoryName)
+                                            </option>
+                                        }
+                                    </select>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold">Maintenance Type</label>
+                                    <select class="form-select" name="Input.MaintenanceType">
+                                        <option value="@((int)VehicleMaintenanceType.Scheduled)" selected="@(Model.Input.MaintenanceType == VehicleMaintenanceType.Scheduled)">Scheduled (Planned)</option>
+                                        <option value="@((int)VehicleMaintenanceType.Preventive)" selected="@(Model.Input.MaintenanceType == VehicleMaintenanceType.Preventive)">Preventive</option>
+                                        <option value="@((int)VehicleMaintenanceType.Corrective)" selected="@(Model.Input.MaintenanceType == VehicleMaintenanceType.Corrective)">Corrective (Repair)</option>
+                                        <option value="@((int)VehicleMaintenanceType.Inspection)" selected="@(Model.Input.MaintenanceType == VehicleMaintenanceType.Inspection)">Inspection</option>
+                                        <option value="@((int)VehicleMaintenanceType.Emergency)" selected="@(Model.Input.MaintenanceType == VehicleMaintenanceType.Emergency)">Emergency / Breakdown</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold">Linked Plan (Optional)</label>
+                                    <select class="form-select" name="Input.MaintenancePlanId">
+                                        <option value="">-- None / Standalone --</option>
+                                        @foreach (var p in Model.Plans)
+                                        {
+                                            <option value="@p.Id" selected="@(Model.Input.MaintenancePlanId == p.Id)">
+                                                @p.Name (@p.Code)
+                                            </option>
+                                        }
+                                    </select>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold">Workshop / Service Provider</label>
+                                    <select class="form-select" name="Input.MaintenanceProviderId">
+                                        <option value="">-- Internal Workshop (Default) --</option>
+                                        @foreach (var p in Model.Providers)
+                                        {
+                                            <option value="@p.Id" selected="@(Model.Input.MaintenanceProviderId == p.Id)">
+                                                @p.Name (@p.ProviderTypeName)
+                                            </option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card border-0 shadow-sm rounded-3 mb-4">
+                        <div class="card-header bg-transparent border-0 pt-3">
+                            <h6 class="card-title fw-bold mb-0"><i class="bi bi-clock-history me-2 text-primary"></i>2. Service Details &amp; Usage Readings</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold">Service Date <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control" name="Input.ServiceDateUtc" value="@Model.Input.ServiceDateUtc.ToString("yyyy-MM-dd")" required />
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold">Current Odometer</label>
+                                    <input type="number" step="0.01" class="form-control" id="odo-input" name="Input.OdometerReading" value="@Model.Input.OdometerReading" placeholder="e.g. 50000" />
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold">Engine Hours</label>
+                                    <input type="number" step="0.1" class="form-control" name="Input.EngineHours" value="@Model.Input.EngineHours" placeholder="e.g. 1200.5" />
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold">Initial Status</label>
+                                    <select class="form-select" name="Input.InitialStatus">
+                                        <option value="@((int)MaintenanceRecordStatus.Draft)">Draft</option>
+                                        <option value="@((int)MaintenanceRecordStatus.Scheduled)">Scheduled</option>
+                                        <option value="@((int)MaintenanceRecordStatus.InProgress)">In Progress (Start Now)</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold">Reference / Job #</label>
+                                    <input type="text" class="form-control" name="Input.ReferenceNumber" value="@Model.Input.ReferenceNumber" placeholder="e.g. WO-2026-001" />
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold">Currency</label>
+                                    <input type="text" class="form-control" name="Input.CurrencyCode" value="@(Model.Input.CurrencyCode ?? "USD")" maxlength="10" />
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label small fw-semibold">Description / Work Scope</label>
+                                    <textarea class="form-control" name="Input.Description" rows="2" placeholder="Briefly describe the scheduled maintenance or reported issue...">@Model.Input.Description</textarea>
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label small fw-semibold">Technician / Initial Notes</label>
+                                    <textarea class="form-control" name="Input.TechnicianNotes" rows="2" placeholder="Internal technician notes...">@Model.Input.TechnicianNotes</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mb-5">
+                        <a href="/Maintenance/Records" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4"><i class="bi bi-check-circle me-1"></i> Create Service Record</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('vehicle-select').addEventListener('change', function() {
+            var selectedOption = this.options[this.selectedIndex];
+            var odo = selectedOption.getAttribute('data-odo');
+            if (odo) {
+                document.getElementById('odo-input').value = odo;
+            }
+        });
+    </script>
+}

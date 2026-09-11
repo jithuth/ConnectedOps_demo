@@ -251,4 +251,74 @@ public static class PermissionKeys
         public const string View = "DemoFleet.View";
         public const string Manage = "DemoFleet.Manage";
     }
+
+    public static class Maintenance
+    {
+        public const string View = "Maintenance.View";
+    }
+
+    public static class MaintenancePlans
+    {
+        public const string View = "MaintenancePlans.View";
+        public const string Create = "MaintenancePlans.Create";
+        public const string Edit = "MaintenancePlans.Edit";
+        public const string Delete = "MaintenancePlans.Delete";
+    }
+
+    public static class MaintenanceRecords
+    {
+        public const string View = "MaintenanceRecords.View";
+        public const string Create = "MaintenanceRecords.Create";
+        public const string Edit = "MaintenanceRecords.Edit";
+        public const string Complete = "MaintenanceRecords.Complete";
+        public const string Cancel = "MaintenanceRecords.Cancel";
+    }
+
+    public static class MaintenanceTasks
+    {
+        public const string Manage = "MaintenanceTasks.Manage";
+    }
+
+    public static class MaintenanceParts
+    {
+        public const string Manage = "MaintenanceParts.Manage";
+    }
+
+    public static class MaintenanceLabour
+    {
+        public const string Manage = "MaintenanceLabour.Manage";
+    }
+
+    public static class MaintenanceExpenses
+    {
+        public const string Manage = "MaintenanceExpenses.Manage";
+    }
+
+    public static class MaintenanceDocuments
+    {
+        public const string View = "MaintenanceDocuments.View";
+        public const string Manage = "MaintenanceDocuments.Manage";
+    }
+
+    public static class MaintenanceDue
+    {
+        public const string View = "MaintenanceDue.View";
+    }
+
+    public static class MaintenanceDashboard
+    {
+        public const string View = "MaintenanceDashboard.View";
+    }
+
+    public static class MaintenanceProviders
+    {
+        public const string View = "MaintenanceProviders.View";
+        public const string Manage = "MaintenanceProviders.Manage";
+    }
+
+    public static class MaintenanceServiceTypes
+    {
+        public const string View = "MaintenanceServiceTypes.View";
+        public const string Manage = "MaintenanceServiceTypes.Manage";
+    }
 }

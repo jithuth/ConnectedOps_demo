@@ -1,0 +1,84 @@
+@page
+@model ConnectedOps.Web.Pages.Maintenance.Plans.CreateModel
+@{
+    ViewData["Title"] = "Create Maintenance Plan";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row align-items-center mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0 fw-bold"><i class="bi bi-plus-circle text-primary me-2"></i>Create Maintenance Plan</h1>
+                <p class="text-muted small mb-0">Define standard servicing intervals and rules for fleet vehicles.</p>
+            </div>
+            <div class="col-sm-6 text-sm-end mt-2 mt-sm-0">
+                <a href="/Maintenance/Plans" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Plans
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.ErrorMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <form method="post">
+                    <div class="card border-0 shadow-sm rounded-3">
+                        <div class="card-body p-4">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">Plan Code <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" name="Input.Code" value="@Model.Input.Code" placeholder="e.g. HILUX-STD-PLAN" required />
+                                    <small class="text-muted">Unique identifier for this plan.</small>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">Plan Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" name="Input.Name" value="@Model.Input.Name" placeholder="e.g. Toyota Hilux Standard Maintenance" required />
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">Vehicle Category (Optional)</label>
+                                    <select class="form-select" name="Input.VehicleCategoryId">
+                                        <option value="">-- Apply to All Categories --</option>
+                                        @foreach (var cat in Model.Categories)
+                                        {
+                                            <option value="@cat.Id" selected="@(Model.Input.VehicleCategoryId == cat.Id)">@cat.Name</option>
+                                        }
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">Status</label>
+                                    <div class="form-check form-switch mt-2">
+                                        <input class="form-check-input" type="checkbox" name="Input.IsActive" value="true" checked />
+                                        <label class="form-check-label small">Active Plan</label>
+                                    </div>
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label small fw-semibold">Description</label>
+                                    <textarea class="form-control" name="Input.Description" rows="3" placeholder="Describe the maintenance schedule recommendations...">@Model.Input.Description</textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent border-0 d-flex justify-content-end gap-2 p-4 pt-0">
+                            <a href="/Maintenance/Plans" class="btn btn-outline-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary px-4">Create Plan &amp; Add Rules</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

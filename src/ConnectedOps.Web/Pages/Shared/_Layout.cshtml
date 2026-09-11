@@ -571,6 +571,44 @@
                             </a>
                         </li>
 
+                        <li class="nav-header">MAINTENANCE</li>
+                        <li class="nav-item">
+                            <a href="/Maintenance/Dashboard" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Maintenance/Dashboard") ? "active" : "")">
+                                <i class="nav-icon bi bi-speedometer2"></i>
+                                <p>Dashboard</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Maintenance/Due" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Maintenance/Due") ? "active" : "")">
+                                <i class="nav-icon bi bi-alarm"></i>
+                                <p>Due Maintenance</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Maintenance/Records" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Maintenance/Records") ? "active" : "")">
+                                <i class="nav-icon bi bi-wrench-adjustable"></i>
+                                <p>Service Records</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Maintenance/Plans" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Maintenance/Plans") ? "active" : "")">
+                                <i class="nav-icon bi bi-clipboard2-pulse"></i>
+                                <p>Maintenance Plans</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Maintenance/ServiceTypes" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Maintenance/ServiceTypes") ? "active" : "")">
+                                <i class="nav-icon bi bi-tags"></i>
+                                <p>Service Types</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Maintenance/Providers" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Maintenance/Providers") ? "active" : "")">
+                                <i class="nav-icon bi bi-shop"></i>
+                                <p>Workshops / Providers</p>
+                            </a>
+                        </li>
+
                         <li class="nav-header">SIMULATION &amp; DEMO</li>
                         <li class="nav-item">
                             <a href="/Demo/FleetSimulator" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Demo/FleetSimulator") ? "active" : "")">

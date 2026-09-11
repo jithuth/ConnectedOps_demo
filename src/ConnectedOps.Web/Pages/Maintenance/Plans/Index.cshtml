@@ -1,0 +1,88 @@
+@page
+@model ConnectedOps.Web.Pages.Maintenance.Plans.IndexModel
+@{
+    ViewData["Title"] = "Maintenance Plans";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row align-items-center mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0 fw-bold"><i class="bi bi-clipboard2-pulse text-primary me-2"></i>Maintenance Plans</h1>
+                <p class="text-muted small mb-0">Preventive maintenance plans, service schedules, and vehicle assignments.</p>
+            </div>
+            <div class="col-sm-6 text-sm-end mt-2 mt-sm-0">
+                <a href="/Maintenance/Plans/Create" class="btn btn-primary btn-sm">
+                    <i class="bi bi-plus-circle me-1"></i> Create Plan
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small">
+                            <tr>
+                                <th>Code</th>
+                                <th>Plan Name</th>
+                                <th>Vehicle Category</th>
+                                <th>Rules</th>
+                                <th>Assigned Vehicles</th>
+                                <th>Status</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.Plans.Count == 0)
+                            {
+                                <tr>
+                                    <td colspan="7" class="text-center py-5 text-muted">
+                                        <i class="bi bi-clipboard-x fs-1 text-muted d-block mb-2"></i>
+                                        No maintenance plans found. Click "Create Plan" to define one.
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var plan in Model.Plans)
+                                {
+                                    <tr>
+                                        <td class="fw-bold">@plan.Code</td>
+                                        <td>
+                                            <div class="fw-semibold">@plan.Name</div>
+                                            <div class="small text-muted">@(plan.Description ?? "—")</div>
+                                        </td>
+                                        <td>
+                                            @(plan.VehicleCategoryName ?? "All Categories")
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary-subtle text-primary">@plan.RuleCount rules</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary-subtle text-secondary">@plan.AssignedVehicleCount vehicles</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge @(plan.IsActive ? "bg-success" : "bg-secondary")">
+                                                @(plan.IsActive ? "Active" : "Inactive")
+                                            </span>
+                                        </td>
+                                        <td class="text-end">
+                                            <a href="/Maintenance/Plans/Details?id=@plan.Id" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-gear me-1"></i> Manage Rules
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

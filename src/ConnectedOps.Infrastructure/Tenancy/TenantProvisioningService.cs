@@ -386,7 +386,30 @@ public sealed class TenantProvisioningService
                 PermissionKeys.Geofences.ViewEvents,
 
                 PermissionKeys.DemoFleet.View,
-                PermissionKeys.DemoFleet.Manage
+                PermissionKeys.DemoFleet.Manage,
+
+                PermissionKeys.Maintenance.View,
+                PermissionKeys.MaintenancePlans.View,
+                PermissionKeys.MaintenancePlans.Create,
+                PermissionKeys.MaintenancePlans.Edit,
+                PermissionKeys.MaintenancePlans.Delete,
+                PermissionKeys.MaintenanceRecords.View,
+                PermissionKeys.MaintenanceRecords.Create,
+                PermissionKeys.MaintenanceRecords.Edit,
+                PermissionKeys.MaintenanceRecords.Complete,
+                PermissionKeys.MaintenanceRecords.Cancel,
+                PermissionKeys.MaintenanceTasks.Manage,
+                PermissionKeys.MaintenanceParts.Manage,
+                PermissionKeys.MaintenanceLabour.Manage,
+                PermissionKeys.MaintenanceExpenses.Manage,
+                PermissionKeys.MaintenanceDocuments.View,
+                PermissionKeys.MaintenanceDocuments.Manage,
+                PermissionKeys.MaintenanceDue.View,
+                PermissionKeys.MaintenanceDashboard.View,
+                PermissionKeys.MaintenanceProviders.View,
+                PermissionKeys.MaintenanceProviders.Manage,
+                PermissionKeys.MaintenanceServiceTypes.View,
+                PermissionKeys.MaintenanceServiceTypes.Manage
             ]);
 
         AssignPermissions(
@@ -466,7 +489,65 @@ public sealed class TenantProvisioningService
                 PermissionKeys.Geofences.ViewEvents,
 
                 PermissionKeys.DemoFleet.View,
-                PermissionKeys.DemoFleet.Manage
+                PermissionKeys.DemoFleet.Manage,
+
+                PermissionKeys.Maintenance.View,
+                PermissionKeys.MaintenancePlans.View,
+                PermissionKeys.MaintenancePlans.Create,
+                PermissionKeys.MaintenancePlans.Edit,
+                PermissionKeys.MaintenancePlans.Delete,
+                PermissionKeys.MaintenanceRecords.View,
+                PermissionKeys.MaintenanceRecords.Create,
+                PermissionKeys.MaintenanceRecords.Edit,
+                PermissionKeys.MaintenanceRecords.Complete,
+                PermissionKeys.MaintenanceRecords.Cancel,
+                PermissionKeys.MaintenanceTasks.Manage,
+                PermissionKeys.MaintenanceParts.Manage,
+                PermissionKeys.MaintenanceLabour.Manage,
+                PermissionKeys.MaintenanceExpenses.Manage,
+                PermissionKeys.MaintenanceDocuments.View,
+                PermissionKeys.MaintenanceDocuments.Manage,
+                PermissionKeys.MaintenanceDue.View,
+                PermissionKeys.MaintenanceDashboard.View,
+                PermissionKeys.MaintenanceProviders.View,
+                PermissionKeys.MaintenanceProviders.Manage,
+                PermissionKeys.MaintenanceServiceTypes.View,
+                PermissionKeys.MaintenanceServiceTypes.Manage
+            ]);
+
+        AssignPermissions(
+            roles,
+            permissions,
+            TenantRoleCodes.MaintenanceManager,
+            [
+                PermissionKeys.Vehicles.View,
+                PermissionKeys.VehicleCategories.View,
+                PermissionKeys.VehicleMakes.View,
+                PermissionKeys.VehicleModels.View,
+                PermissionKeys.VehicleDashboard.View,
+
+                PermissionKeys.Maintenance.View,
+                PermissionKeys.MaintenancePlans.View,
+                PermissionKeys.MaintenancePlans.Create,
+                PermissionKeys.MaintenancePlans.Edit,
+                PermissionKeys.MaintenancePlans.Delete,
+                PermissionKeys.MaintenanceRecords.View,
+                PermissionKeys.MaintenanceRecords.Create,
+                PermissionKeys.MaintenanceRecords.Edit,
+                PermissionKeys.MaintenanceRecords.Complete,
+                PermissionKeys.MaintenanceRecords.Cancel,
+                PermissionKeys.MaintenanceTasks.Manage,
+                PermissionKeys.MaintenanceParts.Manage,
+                PermissionKeys.MaintenanceLabour.Manage,
+                PermissionKeys.MaintenanceExpenses.Manage,
+                PermissionKeys.MaintenanceDocuments.View,
+                PermissionKeys.MaintenanceDocuments.Manage,
+                PermissionKeys.MaintenanceDue.View,
+                PermissionKeys.MaintenanceDashboard.View,
+                PermissionKeys.MaintenanceProviders.View,
+                PermissionKeys.MaintenanceProviders.Manage,
+                PermissionKeys.MaintenanceServiceTypes.View,
+                PermissionKeys.MaintenanceServiceTypes.Manage
             ]);
 
         AssignPermissions(
@@ -501,7 +582,31 @@ public sealed class TenantProvisioningService
                 PermissionKeys.Maps.ViewLive,
 
                 PermissionKeys.Geofences.View,
-                PermissionKeys.Geofences.ViewEvents
+                PermissionKeys.Geofences.ViewEvents,
+
+                PermissionKeys.Maintenance.View,
+                PermissionKeys.MaintenanceDue.View
+            ]);
+
+        AssignPermissions(
+            roles,
+            permissions,
+            TenantRoleCodes.SafetyOfficer,
+            [
+                PermissionKeys.Vehicles.View,
+                PermissionKeys.Drivers.View,
+                PermissionKeys.FleetOperations.View,
+                PermissionKeys.FleetOperations.ViewBoard,
+                PermissionKeys.FleetOperations.ViewExceptions,
+                PermissionKeys.Telematics.View,
+                PermissionKeys.Telematics.ViewLive,
+                PermissionKeys.Maps.View,
+                PermissionKeys.Maps.ViewLive,
+                PermissionKeys.Geofences.View,
+                PermissionKeys.Geofences.ViewEvents,
+                PermissionKeys.Maintenance.View,
+                PermissionKeys.MaintenanceRecords.View,
+                PermissionKeys.MaintenanceDue.View
             ]);
 
         AssignPermissions(
@@ -517,7 +622,10 @@ public sealed class TenantProvisioningService
 
                 PermissionKeys.TrackingDevices.View,
                 PermissionKeys.TrackingDevices.AssignVehicle,
-                PermissionKeys.Telematics.ViewDeviceHealth
+                PermissionKeys.Telematics.ViewDeviceHealth,
+
+                PermissionKeys.Maintenance.View,
+                PermissionKeys.MaintenanceDue.View
             ]);
 
         AssignPermissions(

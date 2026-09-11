@@ -479,7 +479,118 @@ public static class PermissionSeeder
         new(
             PermissionKeys.DemoFleet.Manage,
             "Manage Demo Fleet Simulator",
-            "DemoFleet")
+            "DemoFleet"),
+
+        // PHASE 8 - VEHICLE MAINTENANCE
+        new(
+            PermissionKeys.Maintenance.View,
+            "View Maintenance Subsystem",
+            "Maintenance"),
+
+        new(
+            PermissionKeys.MaintenancePlans.View,
+            "View Maintenance Plans",
+            "Maintenance"),
+
+        new(
+            PermissionKeys.MaintenancePlans.Create,
+            "Create Maintenance Plans",
+            "Maintenance"),
+
+        new(
+            PermissionKeys.MaintenancePlans.Edit,
+            "Edit Maintenance Plans",
+            "Maintenance"),
+
+        new(
+            PermissionKeys.MaintenancePlans.Delete,
+            "Delete Maintenance Plans",
+            "Maintenance"),
+
+        new(
+            PermissionKeys.MaintenanceRecords.View,
+            "View Maintenance Records",
+            "Maintenance"),
+
+        new(
+            PermissionKeys.MaintenanceRecords.Create,
+            "Create Maintenance Records",
+            "Maintenance"),
+
+        new(
+            PermissionKeys.MaintenanceRecords.Edit,
+            "Edit Maintenance Records",
+            "Maintenance"),
+
+        new(
+            PermissionKeys.MaintenanceRecords.Complete,
+            "Complete Maintenance Records",
+            "Maintenance"),
+
+        new(
+            PermissionKeys.MaintenanceRecords.Cancel,
+            "Cancel Maintenance Records",
+            "Maintenance"),
+
+        new(
+            PermissionKeys.MaintenanceTasks.Manage,
+            "Manage Maintenance Tasks",
+            "Maintenance"),
+
+        new(
+            PermissionKeys.MaintenanceParts.Manage,
+            "Manage Maintenance Parts",
+            "Maintenance"),
+
+        new(
+            PermissionKeys.MaintenanceLabour.Manage,
+            "Manage Maintenance Labour",
+            "Maintenance"),
+
+        new(
+            PermissionKeys.MaintenanceExpenses.Manage,
+            "Manage Maintenance Expenses",
+            "Maintenance"),
+
+        new(
+            PermissionKeys.MaintenanceDocuments.View,
+            "View Maintenance Documents",
+            "Maintenance"),
+
+        new(
+            PermissionKeys.MaintenanceDocuments.Manage,
+            "Manage Maintenance Documents",
+            "Maintenance"),
+
+        new(
+            PermissionKeys.MaintenanceDue.View,
+            "View Due Maintenance",
+            "Maintenance"),
+
+        new(
+            PermissionKeys.MaintenanceDashboard.View,
+            "View Maintenance Dashboard",
+            "Maintenance"),
+
+        new(
+            PermissionKeys.MaintenanceProviders.View,
+            "View Maintenance Providers",
+            "Maintenance"),
+
+        new(
+            PermissionKeys.MaintenanceProviders.Manage,
+            "Manage Maintenance Providers",
+            "Maintenance"),
+
+        new(
+            PermissionKeys.MaintenanceServiceTypes.View,
+            "View Maintenance Service Types",
+            "Maintenance"),
+
+        new(
+            PermissionKeys.MaintenanceServiceTypes.Manage,
+            "Manage Maintenance Service Types",
+            "Maintenance")
     ];
 
     public static async Task SeedAsync(

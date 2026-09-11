@@ -65,6 +65,8 @@ using ConnectedOps.Application.Geofences;
 using ConnectedOps.Infrastructure.Geofences;
 using ConnectedOps.Application.Demo;
 using ConnectedOps.Infrastructure.Demo;
+using ConnectedOps.Application.Maintenance;
+using ConnectedOps.Infrastructure.Maintenance;
 
 
 
@@ -149,6 +151,8 @@ public static class DependencyInjection
         AddTelematicsServices(services);
 
         AddMapsAndGeofencingServices(services, configuration);
+
+        AddMaintenanceServices(services);
 
         AddValidation(
             services);
@@ -766,5 +770,21 @@ public static class DependencyInjection
         services.AddScoped<IGeofenceEvaluationService, GeofenceEvaluationService>();
         services.AddScoped<IDemoFleetSimulator, DemoFleetSimulator>();
         services.AddHostedService<DemoFleetBackgroundService>();
+    }
+
+    // ================================================================
+    // PHASE 8 - VEHICLE MAINTENANCE MANAGEMENT
+    // ================================================================
+    private static void AddMaintenanceServices(
+        IServiceCollection services)
+    {
+        services.AddScoped<IMaintenanceServiceTypeService, MaintenanceServiceTypeService>();
+        services.AddScoped<IMaintenanceProviderService, MaintenanceProviderService>();
+        services.AddScoped<IMaintenancePlanService, MaintenancePlanService>();
+        services.AddScoped<IVehicleEngineHoursProvider, VehicleEngineHoursProvider>();
+        services.AddScoped<IMaintenanceScheduleService, MaintenanceScheduleService>();
+        services.AddScoped<IMaintenanceDueEvaluationService, MaintenanceDueEvaluationService>();
+        services.AddScoped<IMaintenanceRecordService, MaintenanceRecordService>();
+        services.AddScoped<IMaintenanceDashboardService, MaintenanceDashboardService>();
     }
 }

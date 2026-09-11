@@ -1,0 +1,914 @@
+@page
+@model ConnectedOps.Web.Pages.Maintenance.Records.DetailsModel
+@using ConnectedOps.Domain.Maintenance
+@{
+    ViewData["Title"] = $"Service Record - {Model.Record.ServiceTypeName}";
+    var r = Model.Record;
+    var statusBadgeClass = r.Status switch
+    {
+        MaintenanceRecordStatus.Completed => "bg-success text-white",
+        MaintenanceRecordStatus.InProgress => "bg-info text-white",
+        MaintenanceRecordStatus.Scheduled => "bg-primary text-white",
+        MaintenanceRecordStatus.Draft => "bg-secondary text-white",
+        MaintenanceRecordStatus.Cancelled => "bg-dark text-white",
+        _ => "bg-secondary text-white"
+    };
+    var isCompletedOrCancelled = r.Status is MaintenanceRecordStatus.Completed or MaintenanceRecordStatus.Cancelled;
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row align-items-center mb-2">
+            <div class="col-sm-6">
+                <div class="d-flex align-items-center gap-2">
+                    <h1 class="m-0 fw-bold">@r.ServiceTypeName</h1>
+                    <span class="badge @statusBadgeClass fs-6">@r.StatusName</span>
+                    <span class="badge bg-light text-dark border">@r.MaintenanceTypeName</span>
+                </div>
+                <p class="text-muted small mb-0">
+                    Vehicle: <a href="/Vehicles/Details?id=@r.VehicleId" class="fw-semibold text-decoration-none">@r.VehicleNumber (@r.VehicleDisplayName)</a>
+                    @if (!string.IsNullOrEmpty(r.RegistrationNumber)) { <span>| Reg: @r.RegistrationNumber</span> }
+                    | Workshop: @(r.ProviderName ?? "Internal Workshop")
+                    | Date: @r.ServiceDateUtc.ToString("MMM dd, yyyy")
+                </p>
+            </div>
+            <div class="col-sm-6 text-sm-end mt-2 mt-sm-0">
+                <div class="btn-group btn-group-sm">
+                    @if (r.Status == MaintenanceRecordStatus.Draft || r.Status == MaintenanceRecordStatus.Scheduled)
+                    {
+                        <button type="button" class="btn btn-info text-white" data-bs-toggle="modal" data-bs-target="#startServiceModal">
+                            <i class="bi bi-play-circle me-1"></i> Start Service
+                        </button>
+                    }
+                    @if (r.Status != MaintenanceRecordStatus.Completed && r.Status != MaintenanceRecordStatus.Cancelled)
+                    {
+                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#completeServiceModal">
+                            <i class="bi bi-check-circle me-1"></i> Complete Service
+                        </button>
+                        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelServiceModal">
+                            <i class="bi bi-x-circle me-1"></i> Cancel
+                        </button>
+                    }
+                    <a href="/Maintenance/Records" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i> Back
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i>@Model.SuccessMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.ErrorMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <!-- SUMMARY STATS ROW -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-body p-3">
+                        <span class="text-muted small">Total Service Cost</span>
+                        <h4 class="fw-bold text-success mb-0 mt-1">@r.TotalCost.ToString("N2") @r.CurrencyCode</h4>
+                        <small class="text-muted">Parts: @(r.TotalPartsCost?.ToString("N2") ?? "0.00") | Labour: @(r.TotalLabourCost?.ToString("N2") ?? "0.00")</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-3">
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-body p-3">
+                        <span class="text-muted small">Odometer Reading</span>
+                        <h4 class="fw-bold text-dark mb-0 mt-1">@(r.OdometerReading.HasValue ? $"{r.OdometerReading.Value:N0} {r.OdometerUnit}" : "—")</h4>
+                        <small class="text-muted">Engine: @(r.EngineHours.HasValue ? $"{r.EngineHours.Value:N1} hrs" : "—")</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-3">
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-body p-3">
+                        <span class="text-muted small">Vehicle Downtime</span>
+                        <h4 class="fw-bold text-info mb-0 mt-1">@(r.VehicleDowntimeMinutes.HasValue ? $"{Math.Round(r.VehicleDowntimeMinutes.Value / 60.0, 1)} hrs" : "0 hrs")</h4>
+                        <small class="text-muted">@r.VehicleDowntimeMinutes min recorded</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-3">
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-body p-3">
+                        <span class="text-muted small">Checklist Progress</span>
+                        @{
+                            var completedTasks = r.Tasks.Count(t => t.Status == MaintenanceTaskStatus.Completed);
+                            var totalTasks = r.Tasks.Count;
+                            var pct = totalTasks > 0 ? (int)((completedTasks / (double)totalTasks) * 100) : 0;
+                        }
+                        <h4 class="fw-bold text-primary mb-0 mt-1">@completedTasks / @totalTasks</h4>
+                        <small class="text-muted">@pct% tasks completed</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABS CARD -->
+        <div class="card border-0 shadow-sm rounded-3 mb-5">
+            <div class="card-header bg-transparent border-bottom-0 p-3 pb-0">
+                <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                    <li class="nav-item">
+                        <button class="nav-link active fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-overview">Overview</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-tasks">
+                            Tasks <span class="badge bg-secondary ms-1">@r.Tasks.Count</span>
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-parts">
+                            Parts &amp; Materials <span class="badge bg-secondary ms-1">@r.Parts.Count</span>
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-labour">
+                            Labour <span class="badge bg-secondary ms-1">@r.Labour.Count</span>
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-expenses">
+                            Expenses <span class="badge bg-secondary ms-1">@r.Expenses.Count</span>
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-documents">
+                            Documents <span class="badge bg-secondary ms-1">@r.Documents.Count</span>
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-downtime">
+                            Downtime Log <span class="badge bg-secondary ms-1">@r.DowntimeRecords.Count</span>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body p-4">
+                <div class="tab-content">
+                    <!-- OVERVIEW TAB -->
+                    <div class="tab-pane fade show active" id="tab-overview">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <h6 class="fw-bold mb-3 text-muted text-uppercase small">Service Information</h6>
+                                <table class="table table-sm table-borderless">
+                                    <tr>
+                                        <td class="text-muted" style="width: 140px;">Service Type:</td>
+                                        <td class="fw-semibold">@r.ServiceTypeName (@r.ServiceCategoryName)</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Maintenance Type:</td>
+                                        <td><span class="badge bg-light text-dark border">@r.MaintenanceTypeName</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Linked Plan:</td>
+                                        <td>@(r.PlanName ?? "Standalone / Ad-hoc Service")</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Workshop:</td>
+                                        <td>@(r.ProviderName ?? "Internal Fleet Workshop")</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Reference #:</td>
+                                        <td>@(r.ReferenceNumber ?? "—")</td>
+                                    </tr>
+                                </table>
+                            </div>
+
+                            <div class="col-md-6">
+                                <h6 class="fw-bold mb-3 text-muted text-uppercase small">Timeline &amp; Usage</h6>
+                                <table class="table table-sm table-borderless">
+                                    <tr>
+                                        <td class="text-muted" style="width: 140px;">Service Date:</td>
+                                        <td>@r.ServiceDateUtc.ToString("MMM dd, yyyy")</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Started At:</td>
+                                        <td>@(r.StartDateTimeUtc.HasValue ? r.StartDateTimeUtc.Value.ToString("MMM dd, yyyy HH:mm UTC") : "Not started yet")</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Completed At:</td>
+                                        <td>@(r.CompletedDateTimeUtc.HasValue ? r.CompletedDateTimeUtc.Value.ToString("MMM dd, yyyy HH:mm UTC") : "Incomplete")</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Odometer:</td>
+                                        <td>@(r.OdometerReading.HasValue ? $"{r.OdometerReading.Value:N0} {r.OdometerUnit}" : "—")</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Engine Hours:</td>
+                                        <td>@(r.EngineHours.HasValue ? $"{r.EngineHours.Value:N1} hrs" : "—")</td>
+                                    </tr>
+                                </table>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(r.Description))
+                            {
+                                <div class="col-12">
+                                    <h6 class="fw-bold mb-2 text-muted text-uppercase small">Description / Work Scope</h6>
+                                    <div class="p-3 bg-light rounded-3">@r.Description</div>
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrEmpty(r.TechnicianNotes))
+                            {
+                                <div class="col-12">
+                                    <h6 class="fw-bold mb-2 text-muted text-uppercase small">Technician Notes</h6>
+                                    <div class="p-3 bg-light rounded-3 text-pre-wrap">@r.TechnicianNotes</div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- TASKS TAB -->
+                    <div class="tab-pane fade" id="tab-tasks">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold mb-0">Maintenance Checklist Tasks</h6>
+                            @if (!isCompletedOrCancelled)
+                            {
+                                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addTaskModal">
+                                    <i class="bi bi-plus me-1"></i> Add Task
+                                </button>
+                            }
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light small">
+                                    <tr>
+                                        <th style="width: 40px;">#</th>
+                                        <th>Task</th>
+                                        <th>Description</th>
+                                        <th>Status</th>
+                                        <th class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (r.Tasks.Count == 0)
+                                    {
+                                        <tr>
+                                            <td colspan="5" class="text-center py-4 text-muted small">No tasks added to this service record.</td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        var idx = 1;
+                                        @foreach (var task in r.Tasks)
+                                        {
+                                            <tr>
+                                                <td>@(idx++)</td>
+                                                <td class="fw-semibold">@task.Name</td>
+                                                <td class="small text-muted">@(task.Description ?? "—")</td>
+                                                <td>
+                                                    <span class="badge @(task.Status == MaintenanceTaskStatus.Completed ? "bg-success" : task.Status == MaintenanceTaskStatus.InProgress ? "bg-info" : "bg-secondary")">
+                                                        @task.StatusName
+                                                    </span>
+                                                </td>
+                                                <td class="text-end">
+                                                    @if (!isCompletedOrCancelled)
+                                                    {
+                                                        <div class="btn-group btn-group-sm">
+                                                            @if (task.Status != MaintenanceTaskStatus.Completed)
+                                                            {
+                                                                <form method="post" asp-page-handler="UpdateTaskStatus" class="d-inline">
+                                                                    <input type="hidden" name="taskId" value="@task.Id" />
+                                                                    <input type="hidden" name="status" value="@((int)MaintenanceTaskStatus.Completed)" />
+                                                                    <button type="submit" class="btn btn-xs btn-outline-success" title="Mark Done"><i class="bi bi-check-lg"></i></button>
+                                                                </form>
+                                                            }
+                                                            <form method="post" asp-page-handler="DeleteTask" class="d-inline ms-1" onsubmit="return confirm('Remove this task?');">
+                                                                <input type="hidden" name="taskId" value="@task.Id" />
+                                                                <button type="submit" class="btn btn-xs btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></button>
+                                                            </form>
+                                                        </div>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- PARTS TAB -->
+                    <div class="tab-pane fade" id="tab-parts">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold mb-0">Parts / Materials Replaced</h6>
+                            @if (!isCompletedOrCancelled)
+                            {
+                                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addPartModal">
+                                    <i class="bi bi-plus me-1"></i> Add Part
+                                </button>
+                            }
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light small">
+                                    <tr>
+                                        <th>Part Name</th>
+                                        <th>Part #</th>
+                                        <th>Qty</th>
+                                        <th class="text-end">Unit Cost</th>
+                                        <th class="text-end">Total</th>
+                                        <th>Supplier</th>
+                                        <th class="text-end"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (r.Parts.Count == 0)
+                                    {
+                                        <tr>
+                                            <td colspan="7" class="text-center py-4 text-muted small">No parts recorded for this service.</td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var part in r.Parts)
+                                        {
+                                            <tr>
+                                                <td class="fw-semibold">@part.PartName</td>
+                                                <td class="small text-muted">@(part.PartNumber ?? "—")</td>
+                                                <td>@part.Quantity @part.Unit</td>
+                                                <td class="text-end">@(part.UnitCost.HasValue ? $"${part.UnitCost.Value:N2}" : "—")</td>
+                                                <td class="text-end fw-semibold text-success">@(part.TotalCost.HasValue ? $"${part.TotalCost.Value:N2}" : "—")</td>
+                                                <td class="small text-muted">@(part.Supplier ?? "—")</td>
+                                                <td class="text-end">
+                                                    @if (!isCompletedOrCancelled)
+                                                    {
+                                                        <form method="post" asp-page-handler="DeletePart" class="d-inline" onsubmit="return confirm('Remove this part?');">
+                                                            <input type="hidden" name="partId" value="@part.Id" />
+                                                            <button type="submit" class="btn btn-xs btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                                        </form>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                                @if (r.Parts.Count > 0)
+                                {
+                                    <tfoot class="table-light">
+                                        <tr>
+                                            <th colspan="4" class="text-end">Parts Subtotal:</th>
+                                            <th class="text-end text-success fw-bold">$@(r.TotalPartsCost?.ToString("N2") ?? "0.00")</th>
+                                            <th colspan="2"></th>
+                                        </tr>
+                                    </tfoot>
+                                }
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- LABOUR TAB -->
+                    <div class="tab-pane fade" id="tab-labour">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold mb-0">Technician Labour Entries</h6>
+                            @if (!isCompletedOrCancelled)
+                            {
+                                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addLabourModal">
+                                    <i class="bi bi-plus me-1"></i> Add Labour
+                                </button>
+                            }
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light small">
+                                    <tr>
+                                        <th>Work Description</th>
+                                        <th>Technician</th>
+                                        <th>Hours</th>
+                                        <th class="text-end">Rate / Hr</th>
+                                        <th class="text-end">Total</th>
+                                        <th class="text-end"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (r.Labour.Count == 0)
+                                    {
+                                        <tr>
+                                            <td colspan="6" class="text-center py-4 text-muted small">No labour recorded for this service.</td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var l in r.Labour)
+                                        {
+                                            <tr>
+                                                <td class="fw-semibold">@l.Description</td>
+                                                <td>@(l.EmployeeName ?? l.TechnicianName ?? "Unassigned")</td>
+                                                <td>@l.Hours.ToString("N1") hrs</td>
+                                                <td class="text-end">@(l.HourlyRate.HasValue ? $"${l.HourlyRate.Value:N2}" : "—")</td>
+                                                <td class="text-end fw-semibold text-success">@(l.TotalCost.HasValue ? $"${l.TotalCost.Value:N2}" : "—")</td>
+                                                <td class="text-end">
+                                                    @if (!isCompletedOrCancelled)
+                                                    {
+                                                        <form method="post" asp-page-handler="DeleteLabour" class="d-inline" onsubmit="return confirm('Remove labour?');">
+                                                            <input type="hidden" name="labourId" value="@l.Id" />
+                                                            <button type="submit" class="btn btn-xs btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                                        </form>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                                @if (r.Labour.Count > 0)
+                                {
+                                    <tfoot class="table-light">
+                                        <tr>
+                                            <th colspan="4" class="text-end">Labour Subtotal:</th>
+                                            <th class="text-end text-success fw-bold">$@(r.TotalLabourCost?.ToString("N2") ?? "0.00")</th>
+                                            <th></th>
+                                        </tr>
+                                    </tfoot>
+                                }
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- EXPENSES TAB -->
+                    <div class="tab-pane fade" id="tab-expenses">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold mb-0">Incidental Expenses (Towing, Fees, External Services)</h6>
+                            @if (!isCompletedOrCancelled)
+                            {
+                                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addExpenseModal">
+                                    <i class="bi bi-plus me-1"></i> Add Expense
+                                </button>
+                            }
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light small">
+                                    <tr>
+                                        <th>Type</th>
+                                        <th>Description</th>
+                                        <th>Reference</th>
+                                        <th class="text-end">Amount</th>
+                                        <th class="text-end"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (r.Expenses.Count == 0)
+                                    {
+                                        <tr>
+                                            <td colspan="5" class="text-center py-4 text-muted small">No incidental expenses recorded.</td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var e in r.Expenses)
+                                        {
+                                            <tr>
+                                                <td><span class="badge bg-light text-dark border">@e.ExpenseTypeName</span></td>
+                                                <td class="fw-semibold">@e.Description</td>
+                                                <td class="small text-muted">@(e.Reference ?? "—")</td>
+                                                <td class="text-end fw-semibold text-success">@e.Amount.ToString("N2") @e.CurrencyCode</td>
+                                                <td class="text-end">
+                                                    @if (!isCompletedOrCancelled)
+                                                    {
+                                                        <form method="post" asp-page-handler="DeleteExpense" class="d-inline" onsubmit="return confirm('Remove expense?');">
+                                                            <input type="hidden" name="expenseId" value="@e.Id" />
+                                                            <button type="submit" class="btn btn-xs btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                                        </form>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                                @if (r.Expenses.Count > 0)
+                                {
+                                    <tfoot class="table-light">
+                                        <tr>
+                                            <th colspan="3" class="text-end">Expenses Subtotal:</th>
+                                            <th class="text-end text-success fw-bold">$@(r.OtherCost?.ToString("N2") ?? "0.00")</th>
+                                            <th></th>
+                                        </tr>
+                                    </tfoot>
+                                }
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- DOCUMENTS TAB -->
+                    <div class="tab-pane fade" id="tab-documents">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold mb-0">Attached Documents &amp; Invoices</h6>
+                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addDocumentModal">
+                                <i class="bi bi-plus me-1"></i> Attach Document
+                            </button>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light small">
+                                    <tr>
+                                        <th>Document Type</th>
+                                        <th>Title</th>
+                                        <th>File Name</th>
+                                        <th>Uploaded Date</th>
+                                        <th class="text-end"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (r.Documents.Count == 0)
+                                    {
+                                        <tr>
+                                            <td colspan="5" class="text-center py-4 text-muted small">No documents attached to this record.</td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var doc in r.Documents)
+                                        {
+                                            <tr>
+                                                <td><span class="badge bg-secondary-subtle text-secondary">@doc.DocumentTypeName</span></td>
+                                                <td class="fw-semibold">@doc.Title</td>
+                                                <td class="small text-muted"><i class="bi bi-file-earmark me-1"></i>@doc.FileName</td>
+                                                <td class="small">@doc.UploadedAtUtc.ToString("MMM dd, yyyy")</td>
+                                                <td class="text-end">
+                                                    <form method="post" asp-page-handler="DeleteDocument" class="d-inline" onsubmit="return confirm('Remove document?');">
+                                                        <input type="hidden" name="documentId" value="@doc.Id" />
+                                                        <button type="submit" class="btn btn-xs btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- DOWNTIME TAB -->
+                    <div class="tab-pane fade" id="tab-downtime">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold mb-0">Vehicle Downtime Records</h6>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light small">
+                                    <tr>
+                                        <th>Type</th>
+                                        <th>Reason</th>
+                                        <th>Started</th>
+                                        <th>Ended</th>
+                                        <th>Duration</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (r.DowntimeRecords.Count == 0)
+                                    {
+                                        <tr>
+                                            <td colspan="5" class="text-center py-4 text-muted small">No downtime entries recorded.</td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var dt in r.DowntimeRecords)
+                                        {
+                                            <tr>
+                                                <td><span class="badge bg-light text-dark border">@dt.DowntimeTypeName</span></td>
+                                                <td class="fw-semibold">@dt.Reason</td>
+                                                <td class="small">@dt.StartedAtUtc.ToString("MMM dd, yyyy HH:mm")</td>
+                                                <td class="small">@(dt.EndedAtUtc.HasValue ? dt.EndedAtUtc.Value.ToString("MMM dd, yyyy HH:mm") : "In Progress")</td>
+                                                <td class="small fw-semibold">@(dt.DurationMinutes.HasValue ? $"{Math.Round(dt.DurationMinutes.Value / 60.0, 1)} hrs" : "—")</td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- START SERVICE MODAL -->
+<div class="modal fade" id="startServiceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="post" asp-page-handler="Start">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title fw-bold">Start Maintenance Service</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="small text-muted mb-3">Starting this service will transition the vehicle status to <strong>UnderMaintenance</strong> and start tracking active downtime.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-info text-white"><i class="bi bi-play-circle me-1"></i> Start Service</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- COMPLETE SERVICE MODAL -->
+<div class="modal fade" id="completeServiceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="post" asp-page-handler="Complete">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title fw-bold">Complete Maintenance Service</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Completion Timestamp <span class="text-danger">*</span></label>
+                        <input type="datetime-local" class="form-control form-control-sm" name="completedDateTimeUtc" value="@DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm")" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Final Odometer Reading (@r.OdometerUnit)</label>
+                        <input type="number" step="0.01" class="form-control form-control-sm" name="finalOdometer" value="@r.OdometerReading" placeholder="Enter final odometer reading..." />
+                        <small class="text-muted">Will record an official odometer entry under source Maintenance.</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Final Engine Hours</label>
+                        <input type="number" step="0.1" class="form-control form-control-sm" name="finalEngineHours" value="@r.EngineHours" placeholder="e.g. 1250.0" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Final Technician Notes / Summary</label>
+                        <textarea class="form-control form-control-sm" name="notes" rows="2" placeholder="Work completed notes..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-success"><i class="bi bi-check-circle me-1"></i> Complete &amp; Recalculate</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- CANCEL SERVICE MODAL -->
+<div class="modal fade" id="cancelServiceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="post" asp-page-handler="Cancel">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title fw-bold">Cancel Service Record</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Cancellation Reason</label>
+                        <textarea class="form-control form-control-sm" name="reason" rows="2" placeholder="Why is this maintenance cancelled?" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-sm btn-danger">Confirm Cancellation</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ADD TASK MODAL -->
+<div class="modal fade" id="addTaskModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="post" asp-page-handler="AddTask">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title fw-bold">Add Checklist Task</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Task Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-sm" name="name" placeholder="e.g. Inspect brake pads" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Description</label>
+                        <input type="text" class="form-control form-control-sm" name="description" placeholder="Additional details..." />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Notes</label>
+                        <input type="text" class="form-control form-control-sm" name="notes" placeholder="Notes..." />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Add Task</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ADD PART MODAL -->
+<div class="modal fade" id="addPartModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="post" asp-page-handler="AddPart">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title fw-bold">Add Part / Material</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Part Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-sm" name="partName" placeholder="e.g. Synthetic Engine Oil 5W-30" required />
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Part #</label>
+                            <input type="text" class="form-control form-control-sm" name="partNumber" placeholder="e.g. OIL-5W30-4L" />
+                        </div>
+                        <div class="col-3">
+                            <label class="form-label small fw-semibold">Qty <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" class="form-control form-control-sm" name="quantity" value="1" required />
+                        </div>
+                        <div class="col-3">
+                            <label class="form-label small fw-semibold">Unit</label>
+                            <input type="text" class="form-control form-control-sm" name="unit" value="PCS" required />
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Unit Cost ($)</label>
+                            <input type="number" step="0.01" class="form-control form-control-sm" name="unitCost" placeholder="0.00" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Supplier</label>
+                            <input type="text" class="form-control form-control-sm" name="supplier" placeholder="Vendor name..." />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Notes</label>
+                        <input type="text" class="form-control form-control-sm" name="notes" placeholder="Notes..." />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Add Part</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ADD LABOUR MODAL -->
+<div class="modal fade" id="addLabourModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="post" asp-page-handler="AddLabour">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title fw-bold">Add Labour Entry</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Description <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-sm" name="description" placeholder="e.g. Oil change &amp; 50-point inspection" required />
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Hours <span class="text-danger">*</span></label>
+                            <input type="number" step="0.1" class="form-control form-control-sm" name="hours" value="1" required />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Hourly Rate ($)</label>
+                            <input type="number" step="0.01" class="form-control form-control-sm" name="hourlyRate" placeholder="e.g. 50.00" />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Technician Name</label>
+                        <input type="text" class="form-control form-control-sm" name="technicianName" placeholder="e.g. John Doe" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Notes</label>
+                        <input type="text" class="form-control form-control-sm" name="notes" placeholder="Notes..." />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Add Labour</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ADD EXPENSE MODAL -->
+<div class="modal fade" id="addExpenseModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="post" asp-page-handler="AddExpense">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title fw-bold">Add Incidental Expense</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Expense Type</label>
+                        <select class="form-select form-select-sm" name="expenseType">
+                            <option value="@((int)MaintenanceExpenseType.Towing)">Towing</option>
+                            <option value="@((int)MaintenanceExpenseType.InspectionFee)">Inspection Fee</option>
+                            <option value="@((int)MaintenanceExpenseType.ExternalService)">External Service</option>
+                            <option value="@((int)MaintenanceExpenseType.Transport)">Transport</option>
+                            <option value="@((int)MaintenanceExpenseType.Miscellaneous)">Miscellaneous</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Description <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-sm" name="description" placeholder="e.g. Tow truck recovery" required />
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Amount ($) <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" class="form-control form-control-sm" name="amount" placeholder="0.00" required />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Reference / Receipt #</label>
+                            <input type="text" class="form-control form-control-sm" name="reference" placeholder="e.g. REC-9921" />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Notes</label>
+                        <input type="text" class="form-control form-control-sm" name="notes" placeholder="Notes..." />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Add Expense</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ADD DOCUMENT MODAL -->
+<div class="modal fade" id="addDocumentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="post" asp-page-handler="AddDocument">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title fw-bold">Attach Maintenance Document</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Document Type</label>
+                        <select class="form-select form-select-sm" name="documentType">
+                            <option value="@((int)MaintenanceDocumentType.Invoice)">Invoice</option>
+                            <option value="@((int)MaintenanceDocumentType.Receipt)">Receipt</option>
+                            <option value="@((int)MaintenanceDocumentType.InspectionReport)">Inspection Report</option>
+                            <option value="@((int)MaintenanceDocumentType.ServiceReport)">Service Report</option>
+                            <option value="@((int)MaintenanceDocumentType.Photo)">Photo</option>
+                            <option value="@((int)MaintenanceDocumentType.WarrantyDocument)">Warranty Document</option>
+                            <option value="@((int)MaintenanceDocumentType.Other)">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Document Title <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-sm" name="title" placeholder="e.g. Workshop Service Invoice" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">File Object Key / URL <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-sm" name="fileObjectKey" placeholder="storage/maintenance/inv-001.pdf" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">File Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-sm" name="fileName" placeholder="inv-001.pdf" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Notes</label>
+                        <input type="text" class="form-control form-control-sm" name="notes" placeholder="Notes..." />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Attach Document</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

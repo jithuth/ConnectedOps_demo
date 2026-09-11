@@ -1,0 +1,282 @@
+@page
+@model ConnectedOps.Web.Pages.Maintenance.DashboardModel
+@{
+    ViewData["Title"] = "Maintenance Dashboard";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row align-items-center mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0 fw-bold"><i class="bi bi-speedometer2 text-primary me-2"></i>Maintenance Dashboard</h1>
+                <p class="text-muted small mb-0">Overview of fleet health, upcoming/due services, maintenance expenditures &amp; downtime.</p>
+            </div>
+            <div class="col-sm-6 text-sm-end mt-2 mt-sm-0">
+                <a href="/Maintenance/Due" class="btn btn-outline-warning btn-sm me-1">
+                    <i class="bi bi-alarm me-1"></i> Due Services
+                </a>
+                <a href="/Maintenance/Records/Create" class="btn btn-primary btn-sm">
+                    <i class="bi bi-plus-circle me-1"></i> New Service Record
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        <!-- TOP KPI ROW -->
+        <div class="row g-3 mb-4">
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-3 bg-gradient h-100 border-start border-4 border-warning">
+                    <div class="card-body p-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <span class="text-muted small text-uppercase fw-semibold">Upcoming</span>
+                                <h3 class="fw-bold mb-0 mt-1 text-warning">@Model.Metrics.VehiclesWithUpcomingMaintenance</h3>
+                                <small class="text-muted">Vehicles in reminder window</small>
+                            </div>
+                            <div class="rounded-circle bg-warning-subtle text-warning p-3">
+                                <i class="bi bi-hourglass-split fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-3 bg-gradient h-100 border-start border-4 border-danger">
+                    <div class="card-body p-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <span class="text-muted small text-uppercase fw-semibold">Due &amp; Overdue</span>
+                                <h3 class="fw-bold mb-0 mt-1 text-danger">@(Model.Metrics.VehiclesDueForMaintenance + Model.Metrics.VehiclesOverdueForMaintenance)</h3>
+                                <small class="text-danger fw-semibold">@Model.Metrics.VehiclesOverdueForMaintenance overdue</small>
+                            </div>
+                            <div class="rounded-circle bg-danger-subtle text-danger p-3">
+                                <i class="bi bi-exclamation-octagon fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-3 bg-gradient h-100 border-start border-4 border-info">
+                    <div class="card-body p-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <span class="text-muted small text-uppercase fw-semibold">Under Maintenance</span>
+                                <h3 class="fw-bold mb-0 mt-1 text-info">@Model.Metrics.VehiclesCurrentlyUnderMaintenance</h3>
+                                <small class="text-muted">Active workshop downtime</small>
+                            </div>
+                            <div class="rounded-circle bg-info-subtle text-info p-3">
+                                <i class="bi bi-tools fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-3 bg-gradient h-100 border-start border-4 border-success">
+                    <div class="card-body p-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <span class="text-muted small text-uppercase fw-semibold">Cost This Month</span>
+                                <h3 class="fw-bold mb-0 mt-1 text-success">$@Model.Metrics.MaintenanceCostThisMonth.ToString("N2")</h3>
+                                <small class="text-muted">@Model.Metrics.ServicesCompletedThisMonth services completed</small>
+                            </div>
+                            <div class="rounded-circle bg-success-subtle text-success p-3">
+                                <i class="bi bi-cash-stack fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECONDARY STATS & SUMMARY -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm rounded-3 h-100">
+                    <div class="card-header bg-transparent border-0 pt-3">
+                        <h6 class="card-title fw-bold mb-0"><i class="bi bi-graph-up me-2 text-primary"></i>Upcoming by Service Type</h6>
+                    </div>
+                    <div class="card-body p-3">
+                        @if (Model.Metrics.UpcomingByServiceType.Count == 0)
+                        {
+                            <div class="text-center py-4 text-muted small">No upcoming maintenance scheduled</div>
+                        }
+                        else
+                        {
+                            <ul class="list-group list-group-flush">
+                                @foreach (var item in Model.Metrics.UpcomingByServiceType)
+                                {
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
+                                        <div>
+                                            <span class="fw-semibold">@item.ServiceTypeName</span>
+                                            <span class="badge bg-secondary-subtle text-secondary ms-1">@item.CategoryName</span>
+                                        </div>
+                                        <span class="badge bg-primary rounded-pill">@item.Count</span>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm rounded-3 h-100">
+                    <div class="card-header bg-transparent border-0 pt-3">
+                        <h6 class="card-title fw-bold mb-0"><i class="bi bi-geo-alt me-2 text-danger"></i>Overdue by Branch</h6>
+                    </div>
+                    <div class="card-body p-3">
+                        @if (Model.Metrics.OverdueByBranch.Count == 0)
+                        {
+                            <div class="text-center py-4 text-muted small">No overdue vehicles across branches</div>
+                        }
+                        else
+                        {
+                            <ul class="list-group list-group-flush">
+                                @foreach (var item in Model.Metrics.OverdueByBranch)
+                                {
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
+                                        <span class="fw-semibold">@item.BranchName</span>
+                                        <span class="badge bg-danger rounded-pill">@item.Count</span>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm rounded-3 h-100">
+                    <div class="card-header bg-transparent border-0 pt-3">
+                        <h6 class="card-title fw-bold mb-0"><i class="bi bi-hourglass me-2 text-info"></i>Fleet Downtime &amp; Costs</h6>
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="mb-3">
+                            <span class="text-muted small">Avg Service Downtime</span>
+                            <div class="fs-4 fw-bold text-dark">@Model.Metrics.AverageDowntimeHours hrs</div>
+                        </div>
+                        <div class="mb-3">
+                            <span class="text-muted small">Maintenance Cost (YTD)</span>
+                            <div class="fs-4 fw-bold text-success">$@Model.Metrics.MaintenanceCostThisYear.ToString("N2")</div>
+                        </div>
+                        <div>
+                            <span class="text-muted small">Services Completed Today</span>
+                            <div class="fs-4 fw-bold text-primary">@Model.Metrics.ServicesCompletedToday</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RECENT MAINTENANCE & TOP COST VEHICLES -->
+        <div class="row g-3">
+            <div class="col-lg-7">
+                <div class="card border-0 shadow-sm rounded-3 h-100">
+                    <div class="card-header bg-transparent border-0 pt-3 d-flex justify-content-between align-items-center">
+                        <h6 class="card-title fw-bold mb-0"><i class="bi bi-clock-history me-2 text-primary"></i>Recently Completed Maintenance</h6>
+                        <a href="/Maintenance/Records" class="btn btn-link btn-sm text-decoration-none">View All</a>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light small">
+                                    <tr>
+                                        <th>Vehicle</th>
+                                        <th>Service</th>
+                                        <th>Provider</th>
+                                        <th>Date</th>
+                                        <th class="text-end">Cost</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model.Metrics.RecentCompletedMaintenance.Count == 0)
+                                    {
+                                        <tr>
+                                            <td colspan="6" class="text-center py-4 text-muted small">No completed service records found</td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var rec in Model.Metrics.RecentCompletedMaintenance)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <a href="/Vehicles/Details?id=@rec.VehicleId" class="fw-semibold text-decoration-none">@rec.VehicleNumber</a>
+                                                    @if (!string.IsNullOrEmpty(rec.RegistrationNumber))
+                                                    {
+                                                        <div class="small text-muted">@rec.RegistrationNumber</div>
+                                                    }
+                                                </td>
+                                                <td>@rec.ServiceTypeName</td>
+                                                <td>@(rec.ProviderName ?? "Internal Workshop")</td>
+                                                <td class="small">@rec.CompletedDateUtc.ToString("MMM dd, yyyy")</td>
+                                                <td class="text-end fw-semibold text-success">@rec.TotalCost.ToString("N2") @rec.CurrencyCode</td>
+                                                <td class="text-end">
+                                                    <a href="/Maintenance/Records/Details?id=@rec.Id" class="btn btn-xs btn-outline-primary"><i class="bi bi-arrow-right"></i></a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="card border-0 shadow-sm rounded-3 h-100">
+                    <div class="card-header bg-transparent border-0 pt-3">
+                        <h6 class="card-title fw-bold mb-0"><i class="bi bi-trophy me-2 text-warning"></i>Highest Maintenance Cost Vehicles</h6>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light small">
+                                    <tr>
+                                        <th>Vehicle</th>
+                                        <th>Category</th>
+                                        <th>Services</th>
+                                        <th class="text-end">Total Cost</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model.Metrics.HighestMaintenanceCostVehicles.Count == 0)
+                                    {
+                                        <tr>
+                                            <td colspan="4" class="text-center py-4 text-muted small">No cost data available</td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var v in Model.Metrics.HighestMaintenanceCostVehicles)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <a href="/Vehicles/Details?id=@v.VehicleId" class="fw-semibold text-decoration-none">@v.VehicleNumber</a>
+                                                    <div class="small text-muted">@v.VehicleDisplayName</div>
+                                                </td>
+                                                <td class="small">@v.CategoryName</td>
+                                                <td class="small">@v.ServiceCount</td>
+                                                <td class="text-end fw-semibold text-danger">$@v.TotalCost.ToString("N2")</td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
