@@ -1,0 +1,368 @@
+@page
+@model ConnectedOps.Web.Pages.Maps.HistoryModel
+@{
+    ViewData["Title"] = "Historical Route Replay";
+    ViewData["Subtitle"] = "Inspect previous vehicle journeys, movement trails, speed profiles, and event occurrences";
+}
+
+<!-- FILTER & SELECTION BAR -->
+<div class="card border-0 shadow-sm rounded-3 mb-3">
+    <div class="card-body p-3">
+        <form id="historyForm" class="row g-2 align-items-center">
+            <div class="col-lg-4 col-md-6">
+                <label class="form-label small fw-semibold mb-1">Select Vehicle</label>
+                <select id="sel-vehicle" class="form-select">
+                    <option value="">-- Choose a Vehicle --</option>
+                    @foreach (var v in Model.Vehicles)
+                    {
+                        <option value="@v.Id" selected="@(Model.VehicleId == v.Id ? "selected" : null)">
+                            @v.VehicleNumber - @v.MakeName @v.ModelName (@v.RegistrationNumber)
+                        </option>
+                    }
+                </select>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <label class="form-label small fw-semibold mb-1">From Date/Time (UTC)</label>
+                <input type="datetime-local" id="filter-start" class="form-control" value="@(Model.StartUtc?.ToString("yyyy-MM-ddTHH:mm") ?? DateTime.UtcNow.AddDays(-1).ToString("yyyy-MM-ddTHH:mm"))" />
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <label class="form-label small fw-semibold mb-1">To Date/Time (UTC)</label>
+                <input type="datetime-local" id="filter-end" class="form-control" value="@(Model.EndUtc?.ToString("yyyy-MM-ddTHH:mm") ?? DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm"))" />
+            </div>
+            <div class="col-lg-2 col-md-6 d-flex align-items-end">
+                <button type="button" class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-1" onclick="loadRouteHistory()">
+                    <i class="bi bi-search"></i>
+                    <span>Load Route</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ROUTE STATS STRIP -->
+<div class="row g-2 mb-3 d-none" id="stats-strip">
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center py-2 h-100">
+            <div class="card-body p-2">
+                <h4 class="fw-bold text-primary mb-0" id="stat-points">0</h4>
+                <span class="small text-muted fw-semibold text-uppercase" style="font-size: 0.7rem;">Waypoints</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center py-2 h-100">
+            <div class="card-body p-2">
+                <h4 class="fw-bold text-info mb-0" id="stat-distance">0.0 km</h4>
+                <span class="small text-muted fw-semibold text-uppercase" style="font-size: 0.7rem;">Distance Covered</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center py-2 h-100">
+            <div class="card-body p-2">
+                <h4 class="fw-bold text-warning mb-0" id="stat-max-speed">0 km/h</h4>
+                <span class="small text-muted fw-semibold text-uppercase" style="font-size: 0.7rem;">Max Speed</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center py-2 h-100">
+            <div class="card-body p-2">
+                <h4 class="fw-bold text-success mb-0" id="stat-avg-speed">0 km/h</h4>
+                <span class="small text-muted fw-semibold text-uppercase" style="font-size: 0.7rem;">Avg Speed</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MAP & REPLAY CONTROLS -->
+<div class="card border-0 shadow-sm rounded-3 position-relative overflow-hidden" style="min-height: 650px; height: 700px;">
+    <!-- Map Canvas -->
+    <div id="history-map-container" class="w-100 h-100" style="background: #e5e7eb;"></div>
+
+    <!-- HUD Overlay for Replay Playback -->
+    <div id="replay-hud" class="position-absolute bottom-0 start-50 translate-middle-x mb-4 z-3 bg-white bg-opacity-95 shadow-lg border rounded-3 p-3 d-none" style="width: 680px; max-width: 95%;">
+        <!-- Progress Bar & Scrubber -->
+        <div class="mb-2">
+            <div class="d-flex justify-content-between align-items-center small text-muted mb-1">
+                <span id="hud-start-time">—</span>
+                <span class="fw-bold text-dark font-monospace" id="hud-current-time">—</span>
+                <span id="hud-end-time">—</span>
+            </div>
+            <input type="range" class="form-range" id="replay-slider" min="0" max="100" value="0" oninput="onScrubSlider(this.value)">
+        </div>
+
+        <!-- Controls & Live Gauges -->
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <!-- Playback Buttons -->
+            <div class="d-flex align-items-center gap-1">
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="stepBackward()" title="Step Back">
+                    <i class="bi bi-skip-backward-fill"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-primary px-3" id="btn-play-pause" onclick="togglePlayPause()">
+                    <i class="bi bi-play-fill" id="play-icon"></i>
+                    <span id="play-text">Play</span>
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="stepForward()" title="Step Forward">
+                    <i class="bi bi-skip-forward-fill"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-light border ms-1" onclick="resetReplay()" title="Reset">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </button>
+
+                <!-- Speed Multiplier -->
+                <select id="sel-playback-speed" class="form-select form-select-sm ms-2" style="width: 80px;" onchange="onSpeedMultiplierChanged()">
+                    <option value="1">1x</option>
+                    <option value="2">2x</option>
+                    <option value="5" selected>5x</option>
+                    <option value="10">10x</option>
+                    <option value="20">20x</option>
+                </select>
+            </div>
+
+            <!-- Instantaneous Telemetry HUD -->
+            <div class="d-flex align-items-center gap-3 font-monospace small bg-light px-3 py-1 rounded-2 border">
+                <span title="Speed"><i class="bi bi-speedometer2 text-info me-1"></i><strong id="hud-speed">0</strong> km/h</span>
+                <span title="Ignition"><i class="bi bi-key-fill me-1" id="hud-ign-icon"></i><strong id="hud-ign">OFF</strong></span>
+                <span title="Heading"><i class="bi bi-compass text-primary me-1"></i><strong id="hud-heading">0°</strong></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="~/vendor/maplibre-gl/maplibre-gl.css" />
+    <script src="~/vendor/maplibre-gl/maplibre-gl.js"></script>
+    <script src="~/js/maps/connectedops-map.js"></script>
+
+    <script>
+        let historyMap = null;
+        let routeTrail = [];
+        let replayIndex = 0;
+        let isPlaying = false;
+        let playbackInterval = null;
+        let playbackSpeed = 5;
+        let animatedMarker = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            historyMap = new ConnectedOpsMap('history-map-container', {
+                styleUrl: 'https://tiles.openfreemap.org/styles/bright',
+                enableClustering: false,
+                onReady: () => {
+                    const sel = document.getElementById('sel-vehicle');
+                    if (sel.value) {
+                        loadRouteHistory();
+                    }
+                }
+            });
+        });
+
+        async function loadRouteHistory() {
+            const vehicleId = document.getElementById('sel-vehicle').value;
+            if (!vehicleId) {
+                alert('Please select a vehicle.');
+                return;
+            }
+
+            const start = document.getElementById('filter-start').value;
+            const end = document.getElementById('filter-end').value;
+
+            pause();
+            resetReplay();
+
+            try {
+                let url = `?handler=RouteData&vehicleId=${vehicleId}&maxPoints=500`;
+                if (start) url += `&startUtc=${encodeURIComponent(start)}`;
+                if (end) url += `&endUtc=${encodeURIComponent(end)}`;
+
+                const res = await fetch(url);
+                if (!res.ok) throw new Error('Could not load route history');
+                const data = await res.json();
+
+                routeTrail = data.trail || [];
+
+                if (routeTrail.length === 0) {
+                    alert('No recorded telemetry points found for the selected vehicle and timeframe.');
+                    document.getElementById('stats-strip').classList.add('d-none');
+                    document.getElementById('replay-hud').classList.add('d-none');
+                    historyMap.clearTrail();
+                    return;
+                }
+
+                // Render full trail on map
+                historyMap.setTrail(routeTrail);
+
+                // Compute Stats
+                calculateStats(routeTrail);
+
+                // Setup HUD
+                document.getElementById('stats-strip').classList.remove('d-none');
+                document.getElementById('replay-hud').classList.remove('d-none');
+
+                const slider = document.getElementById('replay-slider');
+                slider.max = routeTrail.length - 1;
+                slider.value = 0;
+
+                document.getElementById('hud-start-time').textContent = new Date(routeTrail[0].recordedAtUtc).toLocaleTimeString();
+                document.getElementById('hud-end-time').textContent = new Date(routeTrail[routeTrail.length - 1].recordedAtUtc).toLocaleTimeString();
+
+                updateHUD(0);
+                setupReplayMarker();
+            } catch (err) {
+                console.error('Failed to load route history:', err);
+                alert('Error loading route trail.');
+            }
+        }
+
+        function calculateStats(trail) {
+            document.getElementById('stat-points').textContent = trail.length;
+
+            let maxSpeed = 0;
+            let sumSpeed = 0;
+            let totalDist = 0;
+
+            for (let i = 0; i < trail.length; i++) {
+                const spd = trail[i].speedKph || 0;
+                if (spd > maxSpeed) maxSpeed = spd;
+                sumSpeed += spd;
+
+                if (i > 0) {
+                    totalDist += haversineKm(
+                        [trail[i - 1].longitude, trail[i - 1].latitude],
+                        [trail[i].longitude, trail[i].latitude]
+                    );
+                }
+            }
+
+            document.getElementById('stat-max-speed').textContent = `${maxSpeed.toFixed(0)} km/h`;
+            document.getElementById('stat-avg-speed').textContent = `${(sumSpeed / trail.length).toFixed(0)} km/h`;
+            document.getElementById('stat-distance').textContent = `${totalDist.toFixed(1)} km`;
+        }
+
+        function setupReplayMarker() {
+            if (!routeTrail || routeTrail.length === 0) return;
+            const startPt = routeTrail[0];
+
+            if (!animatedMarker) {
+                const el = document.createElement('div');
+                el.className = 'co-replay-marker';
+                el.innerHTML = `
+                    <div style="background: #2563eb; color: #fff; width: 34px; height: 34px; border-radius: 50%; border: 3px solid #ffffff; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; font-size: 16px;">
+                        <i class="bi bi-truck"></i>
+                    </div>
+                `;
+                animatedMarker = new maplibregl.Marker({ element: el, anchor: 'center' })
+                    .setLngLat([startPt.longitude, startPt.latitude])
+                    .addTo(historyMap.map);
+            } else {
+                animatedMarker.setLngLat([startPt.longitude, startPt.latitude]);
+            }
+        }
+
+        function togglePlayPause() {
+            if (isPlaying) pause();
+            else play();
+        }
+
+        function play() {
+            if (routeTrail.length === 0) return;
+            isPlaying = true;
+            document.getElementById('play-icon').className = 'bi bi-pause-fill';
+            document.getElementById('play-text').textContent = 'Pause';
+
+            const intervalMs = Math.max(20, Math.floor(1000 / playbackSpeed));
+            if (playbackInterval) clearInterval(playbackInterval);
+
+            playbackInterval = setInterval(() => {
+                if (replayIndex >= routeTrail.length - 1) {
+                    pause();
+                    return;
+                }
+                replayIndex++;
+                applyReplayStep(replayIndex);
+            }, intervalMs);
+        }
+
+        function pause() {
+            isPlaying = false;
+            document.getElementById('play-icon').className = 'bi bi-play-fill';
+            document.getElementById('play-text').textContent = 'Play';
+            if (playbackInterval) {
+                clearInterval(playbackInterval);
+                playbackInterval = null;
+            }
+        }
+
+        function resetReplay() {
+            pause();
+            replayIndex = 0;
+            applyReplayStep(0);
+        }
+
+        function stepForward() {
+            pause();
+            if (replayIndex < routeTrail.length - 1) {
+                replayIndex++;
+                applyReplayStep(replayIndex);
+            }
+        }
+
+        function stepBackward() {
+            pause();
+            if (replayIndex > 0) {
+                replayIndex--;
+                applyReplayStep(replayIndex);
+            }
+        }
+
+        function onScrubSlider(val) {
+            pause();
+            replayIndex = parseInt(val);
+            applyReplayStep(replayIndex);
+        }
+
+        function onSpeedMultiplierChanged() {
+            playbackSpeed = parseInt(document.getElementById('sel-playback-speed').value) || 5;
+            if (isPlaying) {
+                play(); // restart interval with new speed
+            }
+        }
+
+        function applyReplayStep(idx) {
+            const pt = routeTrail[idx];
+            if (!pt) return;
+
+            document.getElementById('replay-slider').value = idx;
+            updateHUD(idx);
+
+            if (animatedMarker) {
+                animatedMarker.setLngLat([pt.longitude, pt.latitude]);
+            }
+        }
+
+        function updateHUD(idx) {
+            const pt = routeTrail[idx];
+            if (!pt) return;
+
+            document.getElementById('hud-current-time').textContent = new Date(pt.recordedAtUtc).toLocaleTimeString();
+            document.getElementById('hud-speed').textContent = (pt.speedKph || 0).toFixed(0);
+
+            const ign = pt.ignitionOn;
+            document.getElementById('hud-ign').textContent = ign ? 'ON' : 'OFF';
+            document.getElementById('hud-ign-icon').className = ign ? 'bi bi-key-fill text-success me-1' : 'bi bi-key text-muted me-1';
+            document.getElementById('hud-heading').textContent = pt.headingDegrees != null ? `${pt.headingDegrees.toFixed(0)}°` : '0°';
+        }
+
+        function haversineKm(c1, c2) {
+            const R = 6371;
+            const lat1 = c1[1] * Math.PI / 180;
+            const lat2 = c2[1] * Math.PI / 180;
+            const dLat = (c2[1] - c1[1]) * Math.PI / 180;
+            const dLon = (c2[0] - c1[0]) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1) * Math.cos(lat2) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        }
+    </script>
+}

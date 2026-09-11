@@ -426,7 +426,60 @@ public static class PermissionSeeder
         new(
             PermissionKeys.Telematics.SendCommands,
             "Send Device Commands",
-            "Telematics")
+            "Telematics"),
+
+        // Phase 7: Maps
+        new(
+            PermissionKeys.Maps.View,
+            "View Maps",
+            "Maps"),
+
+        new(
+            PermissionKeys.Maps.ViewLive,
+            "View Live Fleet Map",
+            "Maps"),
+
+        new(
+            PermissionKeys.Maps.ViewHistory,
+            "View Historical Map Trails",
+            "Maps"),
+
+        // Phase 7: Geofences
+        new(
+            PermissionKeys.Geofences.View,
+            "View Geofences",
+            "Geofences"),
+
+        new(
+            PermissionKeys.Geofences.Create,
+            "Create Geofences",
+            "Geofences"),
+
+        new(
+            PermissionKeys.Geofences.Edit,
+            "Edit Geofences",
+            "Geofences"),
+
+        new(
+            PermissionKeys.Geofences.Delete,
+            "Delete Geofences",
+            "Geofences"),
+
+        new(
+            PermissionKeys.Geofences.ViewEvents,
+            "View Geofence Events",
+            "Geofences"),
+
+        // Phase 7: Demo Fleet
+        new(
+            PermissionKeys.DemoFleet.View,
+            "View Demo Fleet Simulator",
+            "DemoFleet"),
+
+        new(
+            PermissionKeys.DemoFleet.Manage,
+            "Manage Demo Fleet Simulator",
+            "DemoFleet")
     ];
 
     public static async Task SeedAsync(

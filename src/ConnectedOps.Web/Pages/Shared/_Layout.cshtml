@@ -525,6 +525,26 @@
                             </a>
                         </li>
 
+                        <li class="nav-header">MAPS &amp; GEOFENCING</li>
+                        <li class="nav-item">
+                            <a href="/Maps/Live" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Maps/Live") ? "active" : "")">
+                                <i class="nav-icon bi bi-map"></i>
+                                <p>Live Fleet Map</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Maps/History" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Maps/History") ? "active" : "")">
+                                <i class="nav-icon bi bi-clock-history"></i>
+                                <p>Route Replay</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Maps/Geofences" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Maps/Geofences") ? "active" : "")">
+                                <i class="nav-icon bi bi-bounding-box-circles"></i>
+                                <p>Geofences</p>
+                            </a>
+                        </li>
+
                         <li class="nav-header">TELEMATICS</li>
                         <li class="nav-item">
                             <a href="/Telematics/Dashboard" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Telematics/Dashboard") ? "active" : "")">
@@ -548,6 +568,14 @@
                             <a href="/Telematics/Health" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Telematics/Health") ? "active" : "")">
                                 <i class="nav-icon bi bi-heart-pulse"></i>
                                 <p>Device Health</p>
+                            </a>
+                        </li>
+
+                        <li class="nav-header">SIMULATION &amp; DEMO</li>
+                        <li class="nav-item">
+                            <a href="/Demo/FleetSimulator" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Demo/FleetSimulator") ? "active" : "")">
+                                <i class="nav-icon bi bi-cpu-fill text-warning"></i>
+                                <p>Fleet Simulator</p>
                             </a>
                         </li>
 

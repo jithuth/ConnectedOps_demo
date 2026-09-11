@@ -66,5 +66,14 @@ public enum AuditAction
     TrackingDeviceAssignmentEnded = 62,
     TelematicsSettingsUpdated = 63,
     DeviceCommandCreated = 64,
-    DeviceCommandCancelled = 65
+    DeviceCommandCancelled = 65,
+    GeofenceCreated = 66,
+    GeofenceUpdated = 67,
+    GeofenceDeleted = 68,
+    GeofenceActivated = 69,
+    GeofenceDeactivated = 70,
+    DemoFleetCreated = 71,
+    DemoSimulationStarted = 72,
+    DemoSimulationStopped = 73,
+    DemoSimulationReset = 74
 }

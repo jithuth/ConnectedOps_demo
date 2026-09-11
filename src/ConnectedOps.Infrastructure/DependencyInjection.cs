@@ -59,6 +59,12 @@ using ConnectedOps.Infrastructure.FleetOperations;
 using ConnectedOps.Application.Telematics;
 using ConnectedOps.Infrastructure.Telematics;
 using ConnectedOps.Infrastructure.Telematics.Providers;
+using ConnectedOps.Application.Maps;
+using ConnectedOps.Infrastructure.Maps;
+using ConnectedOps.Application.Geofences;
+using ConnectedOps.Infrastructure.Geofences;
+using ConnectedOps.Application.Demo;
+using ConnectedOps.Infrastructure.Demo;
 
 
 
@@ -141,6 +147,8 @@ public static class DependencyInjection
         AddFleetOperationsServices(services);
 
         AddTelematicsServices(services);
+
+        AddMapsAndGeofencingServices(services, configuration);
 
         AddValidation(
             services);
@@ -741,5 +749,22 @@ public static class DependencyInjection
         services.AddScoped<IDeviceCommandService, DeviceCommandService>();
         services.AddScoped<ITelematicsDashboardService, TelematicsDashboardService>();
         services.AddScoped<ITelematicsSettingsService, TelematicsSettingsService>();
+    }
+
+    // ================================================================
+    // PHASE 7 - MAPS, GEOFENCING & DEMO VEHICLE SIMULATION
+    // ================================================================
+    private static void AddMapsAndGeofencingServices(
+        IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services.Configure<MapSettings>(configuration.GetSection(MapSettings.SectionName));
+        services.Configure<DemoFleetSettings>(configuration.GetSection(DemoFleetSettings.SectionName));
+
+        services.AddScoped<IFleetMapService, FleetMapService>();
+        services.AddScoped<IGeofenceService, GeofenceService>();
+        services.AddScoped<IGeofenceEvaluationService, GeofenceEvaluationService>();
+        services.AddScoped<IDemoFleetSimulator, DemoFleetSimulator>();
+        services.AddHostedService<DemoFleetBackgroundService>();
     }
 }

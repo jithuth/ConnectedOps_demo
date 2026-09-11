@@ -30,4 +30,9 @@ Write-Host "Downloading Tabulator 6.3.0..."
 Invoke-WebRequest -Uri "https://cdn.jsdelivr.net/npm/tabulator-tables@6.3.0/dist/css/tabulator_bootstrap5.min.css" -OutFile "$vendorRoot\tabulator\css\tabulator_bootstrap5.min.css"
 Invoke-WebRequest -Uri "https://cdn.jsdelivr.net/npm/tabulator-tables@6.3.0/dist/js/tabulator.min.js" -OutFile "$vendorRoot\tabulator\js\tabulator.min.js"
 
+Write-Host "Downloading MapLibre GL JS 4.7.1..."
+New-Item -ItemType Directory -Force -Path "$vendorRoot\maplibre-gl" | Out-Null
+Invoke-WebRequest -Uri "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js" -OutFile "$vendorRoot\maplibre-gl\maplibre-gl.js"
+Invoke-WebRequest -Uri "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" -OutFile "$vendorRoot\maplibre-gl\maplibre-gl.css"
+
 Write-Host "Vendor assets downloaded successfully."

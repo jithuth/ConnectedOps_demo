@@ -1,4 +1,5 @@
 using ConnectedOps.Application.Telematics;
+using ConnectedOps.Application.Geofences;
 using ConnectedOps.Application.Vehicles;
 using ConnectedOps.Domain.Telematics;
 using ConnectedOps.Domain.Vehicles;
@@ -14,6 +15,7 @@ public sealed class TelemetryIngestionService : ITelemetryIngestionService
     private readonly ITelemetryValidationService _validationService;
     private readonly ITelemetryDeduplicationService _deduplicationService;
     private readonly IVehicleOdometerService _odometerService;
+    private readonly IGeofenceEvaluationService? _geofenceEvaluationService;
     private readonly ILogger<TelemetryIngestionService> _logger;
 
     public TelemetryIngestionService(
@@ -21,13 +23,15 @@ public sealed class TelemetryIngestionService : ITelemetryIngestionService
         ITelemetryValidationService validationService,
         ITelemetryDeduplicationService deduplicationService,
         IVehicleOdometerService odometerService,
-        ILogger<TelemetryIngestionService> logger)
+        ILogger<TelemetryIngestionService> logger,
+        IGeofenceEvaluationService? geofenceEvaluationService = null)
     {
         _dbContext = dbContext;
         _validationService = validationService;
         _deduplicationService = deduplicationService;
         _odometerService = odometerService;
         _logger = logger;
+        _geofenceEvaluationService = geofenceEvaluationService;
     }
 
     public async Task<TelemetryIngestionResult> IngestAsync(
@@ -244,7 +248,29 @@ public sealed class TelemetryIngestionService : ITelemetryIngestionService
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        // 10. Phase 3 Odometer Integration: conditional update if threshold met
+        // 10. Phase 7 Geofencing Integration: evaluate vehicle position against active geofences
+        if (_geofenceEvaluationService != null && vehicle != null && message.Latitude.HasValue && message.Longitude.HasValue)
+        {
+            try
+            {
+                await _geofenceEvaluationService.EvaluatePositionAsync(
+                    tenantId,
+                    vehicle.Id,
+                    message.Latitude.Value,
+                    message.Longitude.Value,
+                    message.RecordedAtUtc,
+                    message.ReceivedAtUtc,
+                    device.Id,
+                    telemetryRecord.Id,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Geofence evaluation failed for vehicle '{VehicleId}'", vehicle.Id);
+            }
+        }
+
+        // 11. Phase 3 Odometer Integration: conditional update if threshold met
         if (vehicle != null && message.OdometerKm.HasValue && message.OdometerKm.Value > vehicle.CurrentOdometer)
         {
             var diff = message.OdometerKm.Value - vehicle.CurrentOdometer;

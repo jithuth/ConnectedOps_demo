@@ -1,0 +1,623 @@
+@page
+@model ConnectedOps.Web.Pages.Maps.LiveModel
+@{
+    ViewData["Title"] = "Live Fleet Tracking & Maps";
+    ViewData["Subtitle"] = "Interactive open-source geospatial tracking with live telemetry, geofences, and clustering";
+}
+
+@section HeaderActions {
+    <div class="d-flex align-items-center gap-2">
+        <div class="dropdown">
+            <button class="btn btn-outline-secondary dropdown-toggle d-flex align-items-center gap-1 shadow-sm" type="button" data-bs-toggle="dropdown">
+                <i class="bi bi-clock-history"></i>
+                <span id="refresh-rate-label">Auto-Refresh (10s)</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                <li><a class="dropdown-item" href="javascript:void(0)" onclick="setRefreshInterval(5000, 'Auto-Refresh (5s)')">5 Seconds</a></li>
+                <li><a class="dropdown-item" href="javascript:void(0)" onclick="setRefreshInterval(10000, 'Auto-Refresh (10s)')">10 Seconds (Default)</a></li>
+                <li><a class="dropdown-item" href="javascript:void(0)" onclick="setRefreshInterval(30000, 'Auto-Refresh (30s)')">30 Seconds</a></li>
+                <li><a class="dropdown-item" href="javascript:void(0)" onclick="setRefreshInterval(60000, 'Auto-Refresh (1m)')">1 Minute</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item text-danger" href="javascript:void(0)" onclick="setRefreshInterval(0, 'Paused')">Pause Refresh</a></li>
+            </ul>
+        </div>
+        <button class="btn btn-primary d-flex align-items-center gap-1 shadow-sm" id="btn-manual-refresh" onclick="refreshFleetMap()">
+            <i class="bi bi-arrow-clockwise" id="refresh-spinner"></i>
+            <span>Refresh</span>
+        </button>
+    </div>
+}
+
+<!-- METRIC STRIP -->
+<div class="row g-2 mb-3">
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="card border-0 shadow-sm text-center py-2 h-100">
+            <div class="card-body p-2">
+                <h4 class="fw-bold text-primary mb-0" id="kpi-total">@Model.Metrics.TrackedVehicles</h4>
+                <span class="small text-muted fw-semibold text-uppercase" style="font-size: 0.7rem;">Total Tracked</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="card border-0 shadow-sm text-center py-2 h-100">
+            <div class="card-body p-2">
+                <h4 class="fw-bold text-success mb-0" id="kpi-online">@Model.Metrics.OnlineVehicles</h4>
+                <span class="small text-muted fw-semibold text-uppercase" style="font-size: 0.7rem;">Online</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="card border-0 shadow-sm text-center py-2 h-100">
+            <div class="card-body p-2">
+                <h4 class="fw-bold text-info mb-0" id="kpi-moving">@Model.Metrics.MovingVehicles</h4>
+                <span class="small text-muted fw-semibold text-uppercase" style="font-size: 0.7rem;">Moving</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="card border-0 shadow-sm text-center py-2 h-100">
+            <div class="card-body p-2">
+                <h4 class="fw-bold text-secondary mb-0" id="kpi-stopped">@Model.Metrics.StoppedVehicles</h4>
+                <span class="small text-muted fw-semibold text-uppercase" style="font-size: 0.7rem;">Stopped</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="card border-0 shadow-sm text-center py-2 h-100">
+            <div class="card-body p-2">
+                <h4 class="fw-bold text-danger mb-0" id="kpi-offline">@Model.Metrics.OfflineVehicles</h4>
+                <span class="small text-muted fw-semibold text-uppercase" style="font-size: 0.7rem;">Offline</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="card border-0 shadow-sm text-center py-2 h-100">
+            <div class="card-body p-2">
+                <h4 class="fw-bold text-warning mb-0" id="kpi-geofences">@Model.Metrics.ActiveGeofences</h4>
+                <span class="small text-muted fw-semibold text-uppercase" style="font-size: 0.7rem;">Geofences</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MAIN WORKSPACE -->
+<div class="row g-3">
+    <!-- SIDEBAR: VEHICLE LIST & FILTERS (Col 4) -->
+    <div class="col-12 col-lg-4 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-3 h-100 d-flex flex-column" style="min-height: 720px; max-height: 820px;">
+            <!-- Filter Header -->
+            <div class="card-header bg-transparent border-bottom p-3">
+                <div class="input-group mb-2">
+                    <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search"></i></span>
+                    <input type="text" id="filter-search" class="form-control border-start-0" placeholder="Search vehicle, license, driver..." oninput="filterVehicleList()">
+                </div>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <select id="filter-branch" class="form-select form-select-sm" onchange="filterVehicleList()">
+                            <option value="">All Branches</option>
+                            @foreach (var b in Model.Branches)
+                            {
+                                <option value="@b.Id">@b.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <select id="filter-status" class="form-select form-select-sm" onchange="filterVehicleList()">
+                            <option value="">All Statuses</option>
+                            <option value="moving">Moving</option>
+                            <option value="stopped">Stopped</option>
+                            <option value="online">Online</option>
+                            <option value="offline">Offline</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vehicle Scroll List -->
+            <div class="card-body p-2 overflow-y-auto flex-grow-1" id="vehicle-list-container">
+                <div class="text-center py-5 text-muted" id="vehicle-list-loading">
+                    <div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div>
+                    <div class="small">Loading fleet positions...</div>
+                </div>
+                <div id="vehicle-list-items" class="d-none d-flex flex-column gap-2"></div>
+                <div id="vehicle-list-empty" class="d-none text-center py-5 text-muted small">
+                    <i class="bi bi-truck fs-3 d-block mb-1"></i>
+                    No vehicles match your criteria.
+                </div>
+            </div>
+
+            <!-- Footer Stats -->
+            <div class="card-footer bg-transparent border-top p-2 d-flex justify-content-between align-items-center small text-muted">
+                <span id="filtered-count-label">Showing 0 vehicles</span>
+                <button class="btn btn-sm btn-link text-decoration-none p-0" onclick="resetFilters()">Reset Filters</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAP CANVAS & DRAWER (Col 8) -->
+    <div class="col-12 col-lg-8 col-xl-9">
+        <div class="card border-0 shadow-sm rounded-3 position-relative overflow-hidden" style="min-height: 720px; height: 820px;">
+            <!-- Floating Map Toolbar -->
+            <div class="position-absolute top-0 start-0 m-3 z-3 d-flex flex-wrap gap-2">
+                <div class="btn-group shadow-sm bg-white rounded-2">
+                    <button type="button" class="btn btn-sm btn-light active border" id="btn-style-bright" onclick="setMapStyle('bright')">
+                        <i class="bi bi-sun me-1"></i>Map
+                    </button>
+                    <button type="button" class="btn btn-sm btn-light border" id="btn-style-dark" onclick="setMapStyle('dark')">
+                        <i class="bi bi-moon me-1"></i>Dark
+                    </button>
+                    <button type="button" class="btn btn-sm btn-light border" id="btn-style-topo" onclick="setMapStyle('topo')">
+                        <i class="bi bi-map me-1"></i>Topo
+                    </button>
+                </div>
+
+                <button class="btn btn-sm btn-light border shadow-sm rounded-2 d-flex align-items-center gap-1" onclick="coMap.fitBoundsToFleet()">
+                    <i class="bi bi-arrows-fullscreen"></i>
+                    <span class="d-none d-sm-inline">Fit All Fleet</span>
+                </button>
+
+                <button class="btn btn-sm btn-light border shadow-sm rounded-2 d-flex align-items-center gap-1 active" id="btn-toggle-geofences" onclick="toggleGeofencesOverlay()">
+                    <i class="bi bi-bounding-box-circles text-primary"></i>
+                    <span class="d-none d-sm-inline">Geofences</span>
+                </button>
+
+                <button class="btn btn-sm btn-light border shadow-sm rounded-2 d-flex align-items-center gap-1 active" id="btn-toggle-clusters" onclick="toggleClustering()">
+                    <i class="bi bi-grid-3x3-gap"></i>
+                    <span class="d-none d-sm-inline">Clustering</span>
+                </button>
+            </div>
+
+            <!-- Map Container -->
+            <div id="live-map-container" class="w-100 h-100" style="background: #e5e7eb;"></div>
+
+            <!-- Vehicle Detail Slide-Over Drawer -->
+            <div id="vehicle-drawer" class="position-absolute top-0 end-0 h-100 bg-white shadow-lg z-3 d-none flex-column" style="width: 360px; max-width: 90%; transition: transform 0.3s ease;">
+                <div class="p-3 border-bottom d-flex justify-content-between align-items-center bg-light">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge" id="drawer-badge">Online</span>
+                        <h6 class="fw-bold mb-0 text-truncate" id="drawer-title" style="max-width: 200px;">Vehicle</h6>
+                    </div>
+                    <button type="button" class="btn-close" aria-label="Close" onclick="closeVehicleDrawer()"></button>
+                </div>
+
+                <div class="p-3 overflow-y-auto flex-grow-1" id="drawer-content">
+                    <!-- Quick Metrics -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <div class="p-2 border rounded-2 bg-light text-center">
+                                <div class="text-muted small">Speed</div>
+                                <div class="fs-5 fw-bold text-info" id="drawer-speed">0 km/h</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-2 border rounded-2 bg-light text-center">
+                                <div class="text-muted small">Ignition</div>
+                                <div class="fs-5 fw-bold" id="drawer-ignition">OFF</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Details List -->
+                    <div class="list-group list-group-flush border rounded-2 small mb-3">
+                        <div class="list-group-item d-flex justify-content-between py-2">
+                            <span class="text-muted">Plate / Reg</span>
+                            <span class="fw-semibold" id="drawer-plate">—</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between py-2">
+                            <span class="text-muted">Make / Model</span>
+                            <span class="fw-semibold" id="drawer-make-model">—</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between py-2">
+                            <span class="text-muted">Current Driver</span>
+                            <span class="fw-semibold" id="drawer-driver">—</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between py-2">
+                            <span class="text-muted">Assigned Branch</span>
+                            <span class="fw-semibold" id="drawer-branch">—</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between py-2">
+                            <span class="text-muted">Battery / Fuel</span>
+                            <span class="fw-semibold" id="drawer-battery-fuel">—</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between py-2">
+                            <span class="text-muted">Odometer</span>
+                            <span class="fw-semibold" id="drawer-odometer">—</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between py-2">
+                            <span class="text-muted">Last Position</span>
+                            <span class="fw-semibold font-monospace" style="font-size: 0.75rem;" id="drawer-coords">—</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between py-2">
+                            <span class="text-muted">Last Recorded</span>
+                            <span class="fw-semibold" id="drawer-timestamp">—</span>
+                        </div>
+                    </div>
+
+                    <!-- Geofences Section -->
+                    <div class="mb-3">
+                        <h6 class="fw-bold small text-uppercase text-muted mb-2"><i class="bi bi-bounding-box-circles me-1"></i>Inside Geofences</h6>
+                        <div id="drawer-geofences-list" class="d-flex flex-column gap-1">
+                            <span class="text-muted small">None</span>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary btn-sm d-flex align-items-center justify-content-center gap-1" id="drawer-btn-trail" onclick="toggleSelectedVehicleTrail()">
+                            <i class="bi bi-bezier2"></i>
+                            <span id="drawer-trail-label">Show Movement Trail (100 pts)</span>
+                        </button>
+                        <a href="#" class="btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-center gap-1" id="drawer-btn-history">
+                            <i class="bi bi-clock-history"></i>
+                            <span>Replay History</span>
+                        </a>
+                        <a href="#" class="btn btn-light border btn-sm d-flex align-items-center justify-content-center gap-1" id="drawer-btn-details">
+                            <i class="bi bi-box-arrow-up-right"></i>
+                            <span>Open Vehicle Profile</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="~/vendor/maplibre-gl/maplibre-gl.css" />
+    <script src="~/vendor/maplibre-gl/maplibre-gl.js"></script>
+    <script src="~/js/maps/connectedops-map.js"></script>
+
+    <script>
+        let coMap = null;
+        let fleetVehicles = [];
+        let geofencesData = [];
+        let autoRefreshTimer = null;
+        let refreshIntervalMs = 10000;
+        let isGeofencesVisible = true;
+        let isClusteringEnabled = true;
+        let activeTrailVehicleId = null;
+        let selectedVehicle = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initMap();
+        });
+
+        function initMap() {
+            coMap = new ConnectedOpsMap('live-map-container', {
+                styleUrl: 'https://tiles.openfreemap.org/styles/bright',
+                enableClustering: true,
+                onVehicleSelect: (v) => handleVehicleSelected(v),
+                onReady: () => {
+                    loadGeofences();
+                    refreshFleetMap();
+                    startAutoRefresh();
+                }
+            });
+        }
+
+        async function refreshFleetMap() {
+            const spinner = document.getElementById('refresh-spinner');
+            if (spinner) spinner.classList.add('spin-animation');
+
+            try {
+                // 1. Fetch live fleet list
+                const search = document.getElementById('filter-search')?.value || '';
+                const branchId = document.getElementById('filter-branch')?.value || '';
+                const status = document.getElementById('filter-status')?.value || '';
+
+                let query = `?handler=FleetData`;
+                if (search) query += `&Search=${encodeURIComponent(search)}`;
+                if (branchId) query += `&BranchId=${encodeURIComponent(branchId)}`;
+                if (status === 'online') query += `&ConnectivityStatus=1`;
+                if (status === 'offline') query += `&ConnectivityStatus=2`;
+                if (status === 'moving') query += `&IsMoving=true`;
+                if (status === 'stopped') query += `&IsMoving=false`;
+
+                const res = await fetch(query);
+                if (!res.ok) throw new Error('Failed to fetch fleet data');
+                fleetVehicles = await res.json();
+
+                // 2. Render map features
+                coMap.setVehicles(fleetVehicles);
+
+                // 3. Render sidebar list
+                renderVehicleList();
+
+                // 4. Update KPIs
+                updateMetrics();
+
+                // 5. Update active trail if selected
+                if (activeTrailVehicleId) {
+                    await refreshVehicleTrail(activeTrailVehicleId);
+                }
+
+                // 6. Update drawer if open
+                if (selectedVehicle) {
+                    const updated = fleetVehicles.find(v => (v.id || v.vehicleId) === (selectedVehicle.id || selectedVehicle.vehicleId));
+                    if (updated) {
+                        renderDrawerDetails(updated);
+                    }
+                }
+            } catch (err) {
+                console.error('Error refreshing fleet map:', err);
+            } finally {
+                if (spinner) spinner.classList.remove('spin-animation');
+            }
+        }
+
+        async function loadGeofences() {
+            try {
+                const res = await fetch(`?handler=GeofencesData`);
+                if (res.ok) {
+                    geofencesData = await res.json();
+                    if (isGeofencesVisible) {
+                        coMap.setGeofences(geofencesData);
+                    }
+                }
+            } catch (err) {
+                console.error('Error loading geofences:', err);
+            }
+        }
+
+        async function updateMetrics() {
+            try {
+                const res = await fetch(`?handler=Metrics`);
+                if (res.ok) {
+                    const m = await res.json();
+                    document.getElementById('kpi-total').textContent = m.totalVehicles ?? 0;
+                    document.getElementById('kpi-online').textContent = m.onlineCount ?? 0;
+                    document.getElementById('kpi-moving').textContent = m.movingCount ?? 0;
+                    document.getElementById('kpi-stopped').textContent = m.stoppedCount ?? 0;
+                    document.getElementById('kpi-offline').textContent = m.offlineCount ?? 0;
+                    document.getElementById('kpi-geofences').textContent = m.activeGeofences ?? 0;
+                }
+            } catch (e) {}
+        }
+
+        function renderVehicleList() {
+            const container = document.getElementById('vehicle-list-items');
+            const loading = document.getElementById('vehicle-list-loading');
+            const empty = document.getElementById('vehicle-list-empty');
+            const countLabel = document.getElementById('filtered-count-label');
+
+            loading.classList.add('d-none');
+
+            if (!fleetVehicles || fleetVehicles.length === 0) {
+                container.classList.add('d-none');
+                empty.classList.remove('d-none');
+                countLabel.textContent = 'Showing 0 vehicles';
+                return;
+            }
+
+            empty.classList.add('d-none');
+            container.classList.remove('d-none');
+            countLabel.textContent = `Showing ${fleetVehicles.length} vehicles`;
+
+            container.innerHTML = fleetVehicles.map(v => {
+                const id = v.id || v.vehicleId;
+                const isOnline = v.isOnline || v.connectivityStatus === 1 || v.connectivityStatus === 'Online';
+                const isMoving = (v.speedKph || 0) > 0;
+                const statusBadge = isOnline
+                    ? (isMoving ? '<span class="badge bg-success-subtle text-success">Moving</span>' : '<span class="badge bg-primary-subtle text-primary">Online</span>')
+                    : '<span class="badge bg-danger-subtle text-danger">Offline</span>';
+
+                const ignBadge = v.ignitionOn
+                    ? '<i class="bi bi-key-fill text-success" title="Ignition ON"></i>'
+                    : '<i class="bi bi-key text-muted" title="Ignition OFF"></i>';
+
+                return `
+                    <div class="card border rounded-2 p-2 vehicle-list-card" style="cursor: pointer;" onclick="focusVehicle('${id}')" id="v-card-${id}">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <div class="fw-bold text-truncate" style="max-width: 170px;">
+                                ${escapeHtml(v.vehicleName || v.displayName || 'Vehicle')}
+                            </div>
+                            <div>${statusBadge}</div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center small text-muted">
+                            <span>${escapeHtml(v.vehicleNumber || v.licensePlate || '—')}</span>
+                            <span>${ignBadge} ${(v.speedKph || 0).toFixed(0)} km/h</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center small text-secondary mt-1">
+                            <span class="text-truncate" style="max-width: 140px;">
+                                <i class="bi bi-person me-1"></i>${escapeHtml(v.currentDriverName || 'No Driver')}
+                            </span>
+                            <span style="font-size: 0.7rem;">${escapeHtml(v.branchName || '')}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterVehicleList() {
+            refreshFleetMap();
+        }
+
+        function resetFilters() {
+            document.getElementById('filter-search').value = '';
+            document.getElementById('filter-branch').value = '';
+            document.getElementById('filter-status').value = '';
+            refreshFleetMap();
+        }
+
+        function focusVehicle(id) {
+            const v = fleetVehicles.find(x => (x.id || x.vehicleId) === id);
+            if (v && v.latitude && v.longitude) {
+                coMap.flyToVehicle(id, [v.longitude, v.latitude], 16);
+                handleVehicleSelected(v);
+            }
+        }
+
+        function handleVehicleSelected(v) {
+            selectedVehicle = v;
+            renderDrawerDetails(v);
+        }
+
+        async function renderDrawerDetails(v) {
+            const id = v.id || v.vehicleId;
+            const drawer = document.getElementById('vehicle-drawer');
+            drawer.classList.remove('d-none');
+            drawer.classList.add('d-flex');
+
+            const isOnline = v.isOnline || v.connectivityStatus === 1 || v.connectivityStatus === 'Online';
+            const isMoving = (v.speedKph || 0) > 0;
+
+            const badge = document.getElementById('drawer-badge');
+            badge.className = isOnline ? (isMoving ? 'badge bg-success' : 'badge bg-primary') : 'badge bg-danger';
+            badge.textContent = isOnline ? (isMoving ? 'Moving' : 'Online') : 'Offline';
+
+            document.getElementById('drawer-title').textContent = v.vehicleName || v.displayName || 'Vehicle Details';
+            document.getElementById('drawer-speed').textContent = `${(v.speedKph || 0).toFixed(0)} km/h`;
+            document.getElementById('drawer-ignition').textContent = v.ignitionOn ? 'ON' : 'OFF';
+            document.getElementById('drawer-ignition').className = v.ignitionOn ? 'fs-5 fw-bold text-success' : 'fs-5 fw-bold text-muted';
+
+            document.getElementById('drawer-plate').textContent = `${v.vehicleNumber || ''} / ${v.registrationNumber || v.licensePlate || '—'}`;
+            document.getElementById('drawer-make-model').textContent = `${v.vehicleMake || ''} ${v.vehicleModel || '—'}`;
+            document.getElementById('drawer-driver').textContent = v.currentDriverName || '—';
+            document.getElementById('drawer-branch').textContent = v.branchName || '—';
+
+            const bat = v.batteryLevelPercent != null ? `${v.batteryLevelPercent}%` : '—';
+            const fuel = v.fuelLevelPercent != null ? `${v.fuelLevelPercent}%` : '—';
+            document.getElementById('drawer-battery-fuel').textContent = `Bat: ${bat} | Fuel: ${fuel}`;
+
+            document.getElementById('drawer-odometer').textContent = v.odometerKm != null ? `${v.odometerKm.toLocaleString()} km` : '—';
+            document.getElementById('drawer-coords').textContent = `${(v.latitude || 0).toFixed(5)}, ${(v.longitude || 0).toFixed(5)}`;
+            document.getElementById('drawer-timestamp').textContent = v.recordedAtUtc ? new Date(v.recordedAtUtc).toLocaleTimeString() : '—';
+
+            // Links
+            document.getElementById('drawer-btn-history').href = `/Maps/History?vehicleId=${id}`;
+            document.getElementById('drawer-btn-details').href = `/Vehicles/Details?id=${id}`;
+
+            // Check if trail is active
+            const trailLabel = document.getElementById('drawer-trail-label');
+            trailLabel.textContent = activeTrailVehicleId === id ? 'Hide Movement Trail' : 'Show Movement Trail (100 pts)';
+
+            // Fetch full details with Geofence presences
+            try {
+                const res = await fetch(`?handler=VehicleDetails&id=${id}`);
+                if (res.ok) {
+                    const full = await res.json();
+                    const geoList = document.getElementById('drawer-geofences-list');
+                    if (full.currentGeofences && full.currentGeofences.length > 0) {
+                        geoList.innerHTML = full.currentGeofences.map(g => `
+                            <div class="badge bg-info-subtle text-info border p-2 text-start d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-geo-alt-fill me-1"></i>${escapeHtml(g.geofenceName || 'Geofence')}</span>
+                                <span class="small font-monospace" style="font-size: 0.65rem;">${new Date(g.enteredAtUtc).toLocaleTimeString()}</span>
+                            </div>
+                        `).join('');
+                    } else {
+                        geoList.innerHTML = `<span class="text-muted small">Not currently inside any active geofences</span>`;
+                    }
+                }
+            } catch (e) {}
+        }
+
+        function closeVehicleDrawer() {
+            const drawer = document.getElementById('vehicle-drawer');
+            drawer.classList.remove('d-flex');
+            drawer.classList.add('d-none');
+            selectedVehicle = null;
+        }
+
+        async function toggleSelectedVehicleTrail() {
+            if (!selectedVehicle) return;
+            const id = selectedVehicle.id || selectedVehicle.vehicleId;
+
+            if (activeTrailVehicleId === id) {
+                coMap.clearTrail();
+                activeTrailVehicleId = null;
+                document.getElementById('drawer-trail-label').textContent = 'Show Movement Trail (100 pts)';
+            } else {
+                activeTrailVehicleId = id;
+                await refreshVehicleTrail(id);
+                document.getElementById('drawer-trail-label').textContent = 'Hide Movement Trail';
+            }
+        }
+
+        async function refreshVehicleTrail(id) {
+            try {
+                const res = await fetch(`?handler=VehicleTrail&id=${id}&points=100`);
+                if (res.ok) {
+                    const trail = await res.json();
+                    coMap.setTrail(trail);
+                }
+            } catch (err) {
+                console.error('Error fetching trail:', err);
+            }
+        }
+
+        function toggleGeofencesOverlay() {
+            isGeofencesVisible = !isGeofencesVisible;
+            const btn = document.getElementById('btn-toggle-geofences');
+            if (isGeofencesVisible) {
+                btn.classList.add('active');
+                coMap.setGeofences(geofencesData);
+            } else {
+                btn.classList.remove('active');
+                coMap.clearGeofences();
+            }
+        }
+
+        function toggleClustering() {
+            isClusteringEnabled = !isClusteringEnabled;
+            const btn = document.getElementById('btn-toggle-clusters');
+            btn.classList.toggle('active', isClusteringEnabled);
+            // Re-render
+            coMap.setVehicles(fleetVehicles);
+        }
+
+        function setMapStyle(styleType) {
+            let url = 'https://tiles.openfreemap.org/styles/bright';
+            if (styleType === 'dark') url = 'https://tiles.openfreemap.org/styles/dark';
+            if (styleType === 'topo') url = 'https://tiles.openfreemap.org/styles/positron';
+
+            document.getElementById('btn-style-bright').classList.toggle('active', styleType === 'bright');
+            document.getElementById('btn-style-dark').classList.toggle('active', styleType === 'dark');
+            document.getElementById('btn-style-topo').classList.toggle('active', styleType === 'topo');
+
+            coMap.setStyle(url);
+            setTimeout(() => {
+                coMap.setVehicles(fleetVehicles);
+                if (isGeofencesVisible) coMap.setGeofences(geofencesData);
+            }, 800);
+        }
+
+        function setRefreshInterval(ms, label) {
+            refreshIntervalMs = ms;
+            document.getElementById('refresh-rate-label').textContent = label;
+            startAutoRefresh();
+        }
+
+        function startAutoRefresh() {
+            if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+            if (refreshIntervalMs > 0) {
+                autoRefreshTimer = setInterval(() => {
+                    refreshFleetMap();
+                }, refreshIntervalMs);
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>"']/g, s => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            })[s]);
+        }
+    </script>
+
+    <style>
+        .spin-animation {
+            animation: spin 0.8s linear infinite;
+        }
+        @@keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+        .vehicle-list-card:hover {
+            border-color: var(--co-primary) !important;
+            background-color: rgba(37, 99, 235, 0.04);
+        }
+    </style>
+}

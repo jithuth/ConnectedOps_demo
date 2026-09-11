@@ -1,0 +1,808 @@
+@page
+@model ConnectedOps.Web.Pages.Maps.GeofencesModel
+@{
+    ViewData["Title"] = "Geofence Management";
+    ViewData["Subtitle"] = "Create, monitor, and manage circular and polygonal boundaries with automated transition detection";
+}
+
+@Html.AntiForgeryToken()
+
+@section HeaderActions {
+    <div class="d-flex align-items-center gap-2">
+        <button class="btn btn-outline-secondary d-flex align-items-center gap-1 shadow-sm" onclick="openEventsHistoryModal()">
+            <i class="bi bi-clock-history"></i>
+            <span>Event History</span>
+        </button>
+        <button class="btn btn-primary d-flex align-items-center gap-1 shadow-sm" onclick="openCreateGeofenceModal()">
+            <i class="bi bi-plus-lg"></i>
+            <span>Create Geofence</span>
+        </button>
+    </div>
+}
+
+<!-- KPI STRIP -->
+<div class="row g-2 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center py-2 h-100">
+            <div class="card-body p-2">
+                <h4 class="fw-bold text-primary mb-0">@Model.Geofences.Count</h4>
+                <span class="small text-muted fw-semibold text-uppercase">Total Geofences</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center py-2 h-100">
+            <div class="card-body p-2">
+                <h4 class="fw-bold text-info mb-0">@Model.Geofences.Count(g => g.GeofenceType == ConnectedOps.Domain.Geofences.GeofenceType.Circle)</h4>
+                <span class="small text-muted fw-semibold text-uppercase">Circle Zones</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center py-2 h-100">
+            <div class="card-body p-2">
+                <h4 class="fw-bold" style="color: #8b5cf6;">@Model.Geofences.Count(g => g.GeofenceType == ConnectedOps.Domain.Geofences.GeofenceType.Polygon)</h4>
+                <span class="small text-muted fw-semibold text-uppercase">Polygons</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center py-2 h-100">
+            <div class="card-body p-2">
+                <h4 class="fw-bold text-success mb-0">@Model.Geofences.Sum(g => g.ActiveVehiclesInsideCount)</h4>
+                <span class="small text-muted fw-semibold text-uppercase">Vehicles Inside</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FILTER CARD -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-body p-3">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-lg-4 col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search"></i></span>
+                    <input type="text" name="Filter.Search" value="@Model.Filter.Search" class="form-control border-start-0" placeholder="Search by name, code...">
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <select name="Filter.GeofenceType" class="form-select">
+                    <option value="">All Boundary Types</option>
+                    <option value="1" selected="@(Model.Filter.GeofenceType == ConnectedOps.Domain.Geofences.GeofenceType.Circle ? "selected" : null)">Circle</option>
+                    <option value="2" selected="@(Model.Filter.GeofenceType == ConnectedOps.Domain.Geofences.GeofenceType.Polygon ? "selected" : null)">Polygon</option>
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <select name="Filter.BranchId" class="form-select">
+                    <option value="">All Branches</option>
+                    @foreach (var b in Model.Branches)
+                    {
+                        <option value="@b.Id" selected="@(Model.Filter.BranchId == b.Id ? "selected" : null)">@b.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <select name="Filter.IsActive" class="form-select">
+                    <option value="">All Statuses</option>
+                    <option value="true" selected="@(Model.Filter.IsActive == true ? "selected" : null)">Active</option>
+                    <option value="false" selected="@(Model.Filter.IsActive == false ? "selected" : null)">Inactive</option>
+                </select>
+            </div>
+            <div class="col-lg-1 col-md-12">
+                <button type="submit" class="btn btn-primary w-100">Filter</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- GEOFENCES TABLE -->
+<div class="card border-0 shadow-sm rounded-3">
+    <div class="card-body p-0">
+        @if (!Model.Geofences.Any())
+        {
+            <div class="text-center p-5 text-muted">
+                <i class="bi bi-bounding-box-circles fs-1 d-block mb-2"></i>
+                <h5>No Geofences Found</h5>
+                <p class="small">Draw boundaries around your branches, customer sites, or restricted zones to monitor fleet movement.</p>
+                <button class="btn btn-primary btn-sm" onclick="openCreateGeofenceModal()">
+                    <i class="bi bi-plus-lg me-1"></i> Create First Geofence
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Name &amp; Code</th>
+                            <th>Type</th>
+                            <th>Center / Dimensions</th>
+                            <th>Assigned Branch</th>
+                            <th>Active Presence</th>
+                            <th>Status</th>
+                            <th class="text-end pe-3">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var g in Model.Geofences)
+                        {
+                            var badgeBg = g.ColorHex ?? "#3b82f6";
+                            <tr>
+                                <td class="ps-3">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="rounded-circle d-inline-block" style="width: 12px; height: 12px; background-color: @badgeBg;"></span>
+                                        <div>
+                                            <div class="fw-bold">@g.Name</div>
+                                            <span class="badge bg-secondary-subtle text-secondary font-monospace" style="font-size: 0.7rem;">@g.Code</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    @if (g.GeofenceType == ConnectedOps.Domain.Geofences.GeofenceType.Circle)
+                                    {
+                                        <span class="badge bg-info-subtle text-info"><i class="bi bi-circle me-1"></i>Circle</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge" style="background-color: rgba(139, 92, 246, 0.15); color: #8b5cf6;"><i class="bi bi-bounding-box me-1"></i>Polygon</span>
+                                    }
+                                </td>
+                                <td class="small">
+                                    @if (g.CenterLatitude.HasValue && g.CenterLongitude.HasValue)
+                                    {
+                                        <div><span class="text-muted">Coords:</span> @g.CenterLatitude.Value.ToString("F4"), @g.CenterLongitude.Value.ToString("F4")</div>
+                                    }
+                                    @if (g.GeofenceType == ConnectedOps.Domain.Geofences.GeofenceType.Circle && g.RadiusMeters.HasValue)
+                                    {
+                                        <div><span class="text-muted">Radius:</span> @g.RadiusMeters.Value.ToString("N0") m</div>
+                                    }
+                                </td>
+                                <td class="small">@(g.BranchName ?? "—")</td>
+                                <td>
+                                    @if (g.ActiveVehiclesInsideCount > 0)
+                                    {
+                                        <button class="btn btn-sm btn-success-subtle text-success border-success-subtle d-flex align-items-center gap-1" onclick="openPresenceModal('@g.Id', '@g.Name')">
+                                            <i class="bi bi-truck"></i>
+                                            <span class="fw-bold">@g.ActiveVehiclesInsideCount Inside</span>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">0 vehicles</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (g.IsActive)
+                                    {
+                                        <span class="badge bg-success-subtle text-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary-subtle text-secondary">Inactive</span>
+                                    }
+                                </td>
+                                <td class="text-end pe-3">
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-light border" type="button" data-bs-toggle="dropdown">
+                                            <i class="bi bi-three-dots-vertical"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                            <li>
+                                                <a class="dropdown-item" href="javascript:void(0)" onclick="openPresenceModal('@g.Id', '@g.Name')">
+                                                    <i class="bi bi-truck me-2"></i>View Present Vehicles
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" href="javascript:void(0)" onclick="openEventsHistoryModal('@g.Id', '@g.Name')">
+                                                    <i class="bi bi-clock-history me-2"></i>Transition History
+                                                </a>
+                                            </li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <a class="dropdown-item" href="javascript:void(0)" onclick="openEditGeofenceModal('@g.Id')">
+                                                    <i class="bi bi-pencil me-2"></i>Edit Geofence
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" href="javascript:void(0)" onclick="toggleGeofenceActive('@g.Id', @((!g.IsActive).ToString().ToLower()))">
+                                                    <i class="bi bi-power me-2"></i>@(g.IsActive ? "Deactivate" : "Activate")
+                                                </a>
+                                            </li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <a class="dropdown-item text-danger" href="javascript:void(0)" onclick="deleteGeofence('@g.Id', '@g.Name')">
+                                                    <i class="bi bi-trash me-2"></i>Delete
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- MODAL: CREATE / EDIT GEOFENCE WITH DRAWING MAP -->
+<div class="modal fade" id="geofenceModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="geofenceModalTitle"><i class="bi bi-bounding-box-circles me-2 text-primary"></i>Create Geofence</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="row g-0">
+                    <!-- Form Controls (Col 5) -->
+                    <div class="col-lg-5 p-4 border-end overflow-y-auto" style="max-height: 600px;">
+                        <form id="geofenceForm">
+                            <input type="hidden" id="geo-id" />
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Geofence Name <span class="text-danger">*</span></label>
+                                <input type="text" id="geo-name" class="form-control" placeholder="e.g. Dubai Central Warehouse" required />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Code / Identifier <span class="text-danger">*</span></label>
+                                <input type="text" id="geo-code" class="form-control" placeholder="e.g. GEO-DXB-01" required />
+                            </div>
+
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label fw-semibold">Type <span class="text-danger">*</span></label>
+                                    <select id="geo-type" class="form-select" onchange="onTypeChanged()">
+                                        <option value="1">Circle</option>
+                                        <option value="2">Polygon</option>
+                                    </select>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label fw-semibold">Color</label>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <input type="color" id="geo-color" class="form-control form-control-color" value="#3b82f6" title="Choose color" onchange="onColorChanged()" />
+                                        <span class="small text-muted" id="geo-color-hex">#3b82f6</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Branch</label>
+                                <select id="geo-branch" class="form-select">
+                                    <option value="">(None)</option>
+                                    @foreach (var b in Model.Branches)
+                                    {
+                                        <option value="@b.Id">@b.Name</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <!-- Circle Specific Controls -->
+                            <div id="circle-controls" class="border rounded-2 p-3 bg-light mb-3">
+                                <h6 class="fw-bold small mb-2"><i class="bi bi-circle me-1 text-primary"></i>Circle Geometry</h6>
+                                <div class="mb-2">
+                                    <label class="form-label small text-muted">Radius (Meters): <span class="fw-bold text-dark" id="radius-val-label">500 m</span></label>
+                                    <input type="range" id="geo-radius-slider" class="form-range" min="20" max="10000" step="10" value="500" oninput="onRadiusSliderChanged(this.value)">
+                                </div>
+                                <div class="row g-2 small">
+                                    <div class="col-6">
+                                        <label class="text-muted">Center Lat</label>
+                                        <input type="number" step="0.000001" id="geo-lat" class="form-control form-control-sm" readonly />
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="text-muted">Center Lng</label>
+                                        <input type="number" step="0.000001" id="geo-lng" class="form-control form-control-sm" readonly />
+                                    </div>
+                                </div>
+                                <div class="small text-muted mt-2">
+                                    <i class="bi bi-info-circle me-1"></i>Click on the map to place the center point or adjust radius.
+                                </div>
+                            </div>
+
+                            <!-- Polygon Specific Controls -->
+                            <div id="polygon-controls" class="border rounded-2 p-3 bg-light mb-3 d-none">
+                                <h6 class="fw-bold small mb-2"><i class="bi bi-bounding-box me-1" style="color: #8b5cf6;"></i>Polygon Geometry</h6>
+                                <div class="d-flex gap-2 mb-2">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="undoPolygonPoint()">
+                                        <i class="bi bi-arrow-counterclockwise me-1"></i>Undo Point
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="clearDraw()">
+                                        <i class="bi bi-trash me-1"></i>Clear
+                                    </button>
+                                </div>
+                                <div class="small text-muted">
+                                    <i class="bi bi-cursor me-1"></i>Click on map to add vertices. Double-click or click first point to close polygon (minimum 3 points).
+                                </div>
+                                <input type="hidden" id="geo-polygon-geojson" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Description</label>
+                                <textarea id="geo-description" class="form-control" rows="2" placeholder="Optional notes..."></textarea>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Map Canvas (Col 7) -->
+                    <div class="col-lg-7 position-relative" style="height: 600px; background: #e5e7eb;">
+                        <div id="draw-map-container" class="w-100 h-100"></div>
+                        <div class="position-absolute top-0 start-0 m-3 z-3 bg-white bg-opacity-90 px-3 py-1 rounded-2 shadow-sm small border">
+                            <span id="draw-instructions"><i class="bi bi-geo-alt text-primary me-1"></i>Click on map to place circle center</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="btn-save-geofence" onclick="saveGeofence()">
+                    <span id="save-btn-text">Save Geofence</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: VEHICLES INSIDE PRESENCE -->
+<div class="modal fade" id="presenceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="bi bi-truck me-2 text-success"></i>Vehicles Currently Inside: <span id="presence-modal-title"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="presence-loading" class="text-center py-5">
+                    <div class="spinner-border spinner-border-sm text-primary mb-2"></div>
+                    <div class="small text-muted">Checking presence...</div>
+                </div>
+                <div id="presence-table-container" class="d-none table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Vehicle</th>
+                                <th>Driver</th>
+                                <th>Entered At</th>
+                                <th class="text-end pe-3">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="presence-tbody"></tbody>
+                    </table>
+                </div>
+                <div id="presence-empty" class="d-none text-center py-5 text-muted">
+                    <i class="bi bi-check-circle fs-2 d-block mb-1 text-muted"></i>
+                    No vehicles currently inside this geofence.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: EVENT HISTORY -->
+<div class="modal fade" id="eventsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="bi bi-clock-history me-2 text-primary"></i>Geofence Transition Event Log <span id="events-modal-subtitle" class="text-muted small fw-normal"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-3">
+                <div class="table-responsive" style="max-height: 450px; overflow-y: auto;">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th>Timestamp (UTC)</th>
+                                <th>Event Type</th>
+                                <th>Geofence</th>
+                                <th>Vehicle</th>
+                                <th>Driver</th>
+                                <th>Coordinates</th>
+                            </tr>
+                        </thead>
+                        <tbody id="events-tbody">
+                            <tr><td colspan="6" class="text-center py-4 text-muted">Loading events...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="~/vendor/maplibre-gl/maplibre-gl.css" />
+    <script src="~/vendor/maplibre-gl/maplibre-gl.js"></script>
+    <script src="~/js/maps/connectedops-map.js"></script>
+    <script src="~/js/maps/connectedops-geofence-draw.js"></script>
+
+    <script>
+        let drawMap = null;
+        let drawTool = null;
+        let geofenceModalInstance = null;
+        let presenceModalInstance = null;
+        let eventsModalInstance = null;
+        const antiforgeryToken = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            geofenceModalInstance = new bootstrap.Modal(document.getElementById('geofenceModal'));
+            presenceModalInstance = new bootstrap.Modal(document.getElementById('presenceModal'));
+            eventsModalInstance = new bootstrap.Modal(document.getElementById('eventsModal'));
+
+            document.getElementById('geofenceModal').addEventListener('shown.bs.modal', () => {
+                if (!drawMap) {
+                    drawMap = new ConnectedOpsMap('draw-map-container', {
+                        styleUrl: 'https://tiles.openfreemap.org/styles/bright',
+                        enableClustering: false,
+                        onReady: () => {
+                            drawTool = new ConnectedOpsGeofenceDraw(drawMap, {
+                                onShapeChange: (shape) => handleShapeChanged(shape)
+                            });
+                            initDrawingMode();
+                        }
+                    });
+                } else {
+                    drawMap.map.resize();
+                    initDrawingMode();
+                }
+            });
+        });
+
+        function openCreateGeofenceModal() {
+            document.getElementById('geofenceModalTitle').innerHTML = '<i class="bi bi-bounding-box-circles me-2 text-primary"></i>Create Geofence';
+            document.getElementById('save-btn-text').textContent = 'Create Geofence';
+            document.getElementById('geo-id').value = '';
+            document.getElementById('geo-name').value = '';
+            document.getElementById('geo-code').value = 'GEO-' + Math.floor(1000 + Math.random() * 9000);
+            document.getElementById('geo-type').value = '1';
+            document.getElementById('geo-branch').value = '';
+            document.getElementById('geo-description').value = '';
+            document.getElementById('geo-color').value = '#3b82f6';
+            document.getElementById('geo-color-hex').textContent = '#3b82f6';
+            document.getElementById('geo-radius-slider').value = 500;
+            document.getElementById('radius-val-label').textContent = '500 m';
+            document.getElementById('geo-lat').value = '';
+            document.getElementById('geo-lng').value = '';
+            document.getElementById('geo-polygon-geojson').value = '';
+
+            onTypeChanged();
+            geofenceModalInstance.show();
+        }
+
+        async function openEditGeofenceModal(id) {
+            try {
+                const res = await fetch(`?handler=GeofenceDetails&id=${id}`);
+                if (!res.ok) throw new Error('Could not load geofence');
+                const g = await res.json();
+
+                document.getElementById('geofenceModalTitle').innerHTML = '<i class="bi bi-pencil me-2 text-primary"></i>Edit Geofence';
+                document.getElementById('save-btn-text').textContent = 'Save Changes';
+                document.getElementById('geo-id').value = g.id;
+                document.getElementById('geo-name').value = g.name;
+                document.getElementById('geo-code').value = g.code;
+                document.getElementById('geo-type').value = g.geofenceType === 1 || g.geofenceType === 'Circle' ? '1' : '2';
+                document.getElementById('geo-branch').value = g.branchId || '';
+                document.getElementById('geo-description').value = g.description || '';
+                document.getElementById('geo-color').value = g.colorHex || '#3b82f6';
+                document.getElementById('geo-color-hex').textContent = g.colorHex || '#3b82f6';
+                document.getElementById('geo-lat').value = g.centerLatitude || '';
+                document.getElementById('geo-lng').value = g.centerLongitude || '';
+
+                if (g.geofenceType === 1 || g.geofenceType === 'Circle') {
+                    document.getElementById('geo-radius-slider').value = g.radiusMeters || 500;
+                    document.getElementById('radius-val-label').textContent = `${(g.radiusMeters || 500).toLocaleString()} m`;
+                } else {
+                    document.getElementById('geo-polygon-geojson').value = g.polygonGeoJson || '';
+                }
+
+                onTypeChanged();
+                geofenceModalInstance.show();
+            } catch (err) {
+                alert('Error loading geofence details');
+            }
+        }
+
+        function onTypeChanged() {
+            const type = document.getElementById('geo-type').value;
+            const circleBox = document.getElementById('circle-controls');
+            const polygonBox = document.getElementById('polygon-controls');
+            const instr = document.getElementById('draw-instructions');
+
+            if (type === '1') {
+                circleBox.classList.remove('d-none');
+                polygonBox.classList.add('d-none');
+                instr.innerHTML = '<i class="bi bi-geo-alt text-primary me-1"></i>Click on map to place circle center or adjust radius';
+            } else {
+                circleBox.classList.add('d-none');
+                polygonBox.classList.remove('d-none');
+                instr.innerHTML = '<i class="bi bi-bounding-box me-1" style="color: #8b5cf6;"></i>Click on map to add vertices, double-click to close polygon';
+            }
+
+            if (drawTool) {
+                initDrawingMode();
+            }
+        }
+
+        function initDrawingMode() {
+            if (!drawTool) return;
+            const type = document.getElementById('geo-type').value;
+            const lat = parseFloat(document.getElementById('geo-lat').value);
+            const lng = parseFloat(document.getElementById('geo-lng').value);
+
+            if (type === '1') {
+                const radius = parseFloat(document.getElementById('geo-radius-slider').value) || 500;
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    drawTool.startCircle({ lat, lng }, radius);
+                    drawMap.flyToCoordinates([lng, lat], 14);
+                } else {
+                    drawTool.startCircle(null, radius);
+                }
+            } else {
+                const geoJsonStr = document.getElementById('geo-polygon-geojson').value;
+                let coords = null;
+                if (geoJsonStr) {
+                    try {
+                        const parsed = JSON.parse(geoJsonStr);
+                        if (parsed.coordinates && parsed.coordinates[0]) {
+                            coords = parsed.coordinates[0];
+                        }
+                    } catch (e) {}
+                }
+                drawTool.startPolygon(coords);
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    drawMap.flyToCoordinates([lng, lat], 14);
+                }
+            }
+        }
+
+        function handleShapeChanged(shape) {
+            if (!shape) return;
+            if (shape.type === 'Circle') {
+                document.getElementById('geo-lat').value = shape.latitude.toFixed(6);
+                document.getElementById('geo-lng').value = shape.longitude.toFixed(6);
+                document.getElementById('geo-radius-slider').value = shape.radiusMeters;
+                document.getElementById('radius-val-label').textContent = `${shape.radiusMeters.toLocaleString()} m`;
+            } else if (shape.type === 'Polygon') {
+                document.getElementById('geo-lat').value = shape.latitude.toFixed(6);
+                document.getElementById('geo-lng').value = shape.longitude.toFixed(6);
+                document.getElementById('geo-polygon-geojson').value = shape.polygonGeoJson;
+            }
+        }
+
+        function onRadiusSliderChanged(val) {
+            document.getElementById('radius-val-label').textContent = `${parseInt(val).toLocaleString()} m`;
+            if (drawTool) {
+                drawTool.setCircleRadius(parseFloat(val));
+            }
+        }
+
+        function onColorChanged() {
+            const c = document.getElementById('geo-color').value;
+            document.getElementById('geo-color-hex').textContent = c;
+        }
+
+        function undoPolygonPoint() {
+            if (drawTool) drawTool.undoLastPoint();
+        }
+
+        function clearDraw() {
+            if (drawTool) {
+                drawTool.clear();
+                document.getElementById('geo-lat').value = '';
+                document.getElementById('geo-lng').value = '';
+                document.getElementById('geo-polygon-geojson').value = '';
+                initDrawingMode();
+            }
+        }
+
+        async function saveGeofence() {
+            const id = document.getElementById('geo-id').value;
+            const name = document.getElementById('geo-name').value.trim();
+            const code = document.getElementById('geo-code').value.trim();
+            const type = parseInt(document.getElementById('geo-type').value);
+            const branchId = document.getElementById('geo-branch').value || null;
+            const description = document.getElementById('geo-description').value.trim() || null;
+            const colorHex = document.getElementById('geo-color').value;
+
+            const lat = parseFloat(document.getElementById('geo-lat').value);
+            const lng = parseFloat(document.getElementById('geo-lng').value);
+
+            if (!name) {
+                alert('Please enter a Geofence Name.');
+                return;
+            }
+
+            if (!code && !id) {
+                alert('Please enter a Geofence Code.');
+                return;
+            }
+
+            if (isNaN(lat) || isNaN(lng)) {
+                alert('Please draw the geofence on the map first.');
+                return;
+            }
+
+            const btn = document.getElementById('btn-save-geofence');
+            btn.disabled = true;
+
+            try {
+                let res;
+                if (id) {
+                    const updatePayload = {
+                        name,
+                        geofenceType: type,
+                        description,
+                        centerLatitude: lat,
+                        centerLongitude: lng,
+                        radiusMeters: type === 1 ? parseFloat(document.getElementById('geo-radius-slider').value) : null,
+                        polygonGeoJson: type === 2 ? document.getElementById('geo-polygon-geojson').value : null,
+                        branchId,
+                        colorHex
+                    };
+                    res = await fetch(`?handler=Update&id=${id}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': antiforgeryToken
+                        },
+                        body: JSON.stringify(updatePayload)
+                    });
+                } else {
+                    const createPayload = {
+                        name,
+                        code,
+                        geofenceType: type,
+                        description,
+                        centerLatitude: lat,
+                        centerLongitude: lng,
+                        radiusMeters: type === 1 ? parseFloat(document.getElementById('geo-radius-slider').value) : null,
+                        polygonGeoJson: type === 2 ? document.getElementById('geo-polygon-geojson').value : null,
+                        branchId,
+                        colorHex
+                    };
+                    res = await fetch(`?handler=Create`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': antiforgeryToken
+                        },
+                        body: JSON.stringify(createPayload)
+                    });
+                }
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    alert('Save failed: ' + (err.errors ? err.errors.join(', ') : 'Unknown error'));
+                    return;
+                }
+
+                geofenceModalInstance.hide();
+                location.reload();
+            } catch (err) {
+                alert('An error occurred while saving.');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function toggleGeofenceActive(id, active) {
+            try {
+                const res = await fetch(`?handler=ToggleActive&id=${id}&active=${active}`, {
+                    method: 'POST',
+                    headers: { 'RequestVerificationToken': antiforgeryToken }
+                });
+                if (res.ok) location.reload();
+                else alert('Action failed');
+            } catch (e) {
+                alert('Failed to update status');
+            }
+        }
+
+        async function deleteGeofence(id, name) {
+            if (!confirm(`Are you sure you want to delete geofence "${name}"?`)) return;
+            try {
+                const res = await fetch(`?handler=Delete&id=${id}`, {
+                    method: 'POST',
+                    headers: { 'RequestVerificationToken': antiforgeryToken }
+                });
+                if (res.ok) location.reload();
+                else alert('Delete failed');
+            } catch (e) {
+                alert('Failed to delete');
+            }
+        }
+
+        async function openPresenceModal(id, name) {
+            document.getElementById('presence-modal-title').textContent = name;
+            document.getElementById('presence-loading').classList.remove('d-none');
+            document.getElementById('presence-table-container').classList.add('d-none');
+            document.getElementById('presence-empty').classList.add('d-none');
+            presenceModalInstance.show();
+
+            try {
+                const res = await fetch(`?handler=Presence&id=${id}`);
+                const data = await res.json();
+
+                document.getElementById('presence-loading').classList.add('d-none');
+                if (!data || data.length === 0) {
+                    document.getElementById('presence-empty').classList.remove('d-none');
+                } else {
+                    document.getElementById('presence-table-container').classList.remove('d-none');
+                    document.getElementById('presence-tbody').innerHTML = data.map(p => `
+                        <tr>
+                            <td class="ps-3">
+                                <div class="fw-bold">${escapeHtml(p.displayName || p.vehicleNumber)}</div>
+                                <span class="small text-muted">${escapeHtml(p.registrationNumber || '')}</span>
+                            </td>
+                            <td class="small">${escapeHtml(p.driverName || '—')}</td>
+                            <td class="small font-monospace">${new Date(p.lastEnteredAtUtc).toLocaleString()}</td>
+                            <td class="text-end pe-3">
+                                <a href="/Maps/Live" class="btn btn-sm btn-outline-primary"><i class="bi bi-geo-alt"></i> Locate</a>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (e) {
+                document.getElementById('presence-loading').classList.add('d-none');
+                alert('Failed to load presence details');
+            }
+        }
+
+        async function openEventsHistoryModal(geofenceId = null, name = null) {
+            document.getElementById('events-modal-subtitle').textContent = name ? `for ${name}` : '';
+            eventsModalInstance.show();
+
+            let url = `?handler=Events&pageSize=50`;
+            if (geofenceId) url += `&GeofenceId=${geofenceId}`;
+
+            try {
+                const res = await fetch(url);
+                const events = await res.json();
+                const tbody = document.getElementById('events-tbody');
+
+                if (!events || events.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">No transition events recorded yet.</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = events.map(e => {
+                    const isEntered = e.eventType === 1 || e.eventType === 'Entered';
+                    const badge = isEntered
+                        ? '<span class="badge bg-success-subtle text-success"><i class="bi bi-box-arrow-in-right me-1"></i>Entered</span>'
+                        : '<span class="badge bg-warning-subtle text-warning"><i class="bi bi-box-arrow-right me-1"></i>Exited</span>';
+
+                    return `
+                        <tr>
+                            <td class="font-monospace small">${new Date(e.occurredAtUtc).toLocaleString()}</td>
+                            <td>${badge}</td>
+                            <td class="fw-semibold">${escapeHtml(e.geofenceName)}</td>
+                            <td>${escapeHtml(e.vehicleDisplayName || e.vehicleNumber)}</td>
+                            <td class="text-muted small">${escapeHtml(e.driverName || '—')}</td>
+                            <td class="small font-monospace text-muted">${(e.latitude || 0).toFixed(4)}, ${(e.longitude || 0).toFixed(4)}</td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (e) {
+                document.getElementById('events-tbody').innerHTML = `<tr><td colspan="6" class="text-center py-4 text-danger">Failed to load events.</td></tr>`;
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>"']/g, s => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            })[s]);
+        }
+    </script>
+}

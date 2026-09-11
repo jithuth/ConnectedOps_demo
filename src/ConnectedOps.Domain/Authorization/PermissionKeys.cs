@@ -229,4 +229,26 @@ public static class PermissionKeys
         public const string ViewDashboard = "Telematics.ViewDashboard";
         public const string SendCommands = "Telematics.SendCommands";
     }
+
+    public static class Maps
+    {
+        public const string View = "Maps.View";
+        public const string ViewLive = "Maps.ViewLive";
+        public const string ViewHistory = "Maps.ViewHistory";
+    }
+
+    public static class Geofences
+    {
+        public const string View = "Geofences.View";
+        public const string Create = "Geofences.Create";
+        public const string Edit = "Geofences.Edit";
+        public const string Delete = "Geofences.Delete";
+        public const string ViewEvents = "Geofences.ViewEvents";
+    }
+
+    public static class DemoFleet
+    {
+        public const string View = "DemoFleet.View";
+        public const string Manage = "DemoFleet.Manage";
+    }
 }

@@ -373,7 +373,20 @@ public sealed class TenantProvisioningService
                 PermissionKeys.Telematics.ViewHistory,
                 PermissionKeys.Telematics.ViewDeviceHealth,
                 PermissionKeys.Telematics.ViewDashboard,
-                PermissionKeys.Telematics.SendCommands
+                PermissionKeys.Telematics.SendCommands,
+
+                PermissionKeys.Maps.View,
+                PermissionKeys.Maps.ViewLive,
+                PermissionKeys.Maps.ViewHistory,
+
+                PermissionKeys.Geofences.View,
+                PermissionKeys.Geofences.Create,
+                PermissionKeys.Geofences.Edit,
+                PermissionKeys.Geofences.Delete,
+                PermissionKeys.Geofences.ViewEvents,
+
+                PermissionKeys.DemoFleet.View,
+                PermissionKeys.DemoFleet.Manage
             ]);
 
         AssignPermissions(
@@ -440,7 +453,20 @@ public sealed class TenantProvisioningService
                 PermissionKeys.Telematics.ViewLive,
                 PermissionKeys.Telematics.ViewHistory,
                 PermissionKeys.Telematics.ViewDeviceHealth,
-                PermissionKeys.Telematics.ViewDashboard
+                PermissionKeys.Telematics.ViewDashboard,
+
+                PermissionKeys.Maps.View,
+                PermissionKeys.Maps.ViewLive,
+                PermissionKeys.Maps.ViewHistory,
+
+                PermissionKeys.Geofences.View,
+                PermissionKeys.Geofences.Create,
+                PermissionKeys.Geofences.Edit,
+                PermissionKeys.Geofences.Delete,
+                PermissionKeys.Geofences.ViewEvents,
+
+                PermissionKeys.DemoFleet.View,
+                PermissionKeys.DemoFleet.Manage
             ]);
 
         AssignPermissions(
@@ -469,7 +495,13 @@ public sealed class TenantProvisioningService
 
                 PermissionKeys.Telematics.View,
                 PermissionKeys.Telematics.ViewLive,
-                PermissionKeys.Telematics.ViewDashboard
+                PermissionKeys.Telematics.ViewDashboard,
+
+                PermissionKeys.Maps.View,
+                PermissionKeys.Maps.ViewLive,
+
+                PermissionKeys.Geofences.View,
+                PermissionKeys.Geofences.ViewEvents
             ]);
 
         AssignPermissions(

@@ -16,6 +16,8 @@ using ConnectedOps.Domain.Vehicles;
 using ConnectedOps.Domain.Drivers;
 using ConnectedOps.Domain.FleetOperations;
 using ConnectedOps.Domain.Telematics;
+using ConnectedOps.Domain.Geofences;
+using ConnectedOps.Domain.Demo;
 
 namespace ConnectedOps.Infrastructure.Persistence;
 
@@ -209,6 +211,21 @@ public sealed class ConnectedOpsDbContext
 
     public DbSet<TelemetryIngestionFailure> TelemetryIngestionFailures =>
         Set<TelemetryIngestionFailure>();
+
+    public DbSet<Geofence> Geofences =>
+        Set<Geofence>();
+
+    public DbSet<GeofenceEvent> GeofenceEvents =>
+        Set<GeofenceEvent>();
+
+    public DbSet<VehicleGeofenceState> VehicleGeofenceStates =>
+        Set<VehicleGeofenceState>();
+
+    public DbSet<DemoRoute> DemoRoutes =>
+        Set<DemoRoute>();
+
+    public DbSet<DemoRoutePoint> DemoRoutePoints =>
+        Set<DemoRoutePoint>();
 
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)
