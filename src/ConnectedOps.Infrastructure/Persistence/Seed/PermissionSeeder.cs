@@ -143,6 +143,61 @@ public static class PermissionSeeder
             "Vehicles"),
 
         new(
+            PermissionKeys.Vehicles.ManageStatus,
+            "Manage Vehicle Status",
+            "Vehicles"),
+
+        new(
+            PermissionKeys.Vehicles.ManageOdometer,
+            "Manage Vehicle Odometer",
+            "Vehicles"),
+
+        new(
+            PermissionKeys.Vehicles.ManageDocuments,
+            "Manage Vehicle Documents",
+            "Vehicles"),
+
+        new(
+            PermissionKeys.Vehicles.ManageNotes,
+            "Manage Vehicle Notes",
+            "Vehicles"),
+
+        new(
+            PermissionKeys.VehicleCategories.View,
+            "View Vehicle Categories",
+            "Vehicles"),
+
+        new(
+            PermissionKeys.VehicleCategories.Manage,
+            "Manage Vehicle Categories",
+            "Vehicles"),
+
+        new(
+            PermissionKeys.VehicleMakes.View,
+            "View Vehicle Makes",
+            "Vehicles"),
+
+        new(
+            PermissionKeys.VehicleMakes.Manage,
+            "Manage Vehicle Makes",
+            "Vehicles"),
+
+        new(
+            PermissionKeys.VehicleModels.View,
+            "View Vehicle Models",
+            "Vehicles"),
+
+        new(
+            PermissionKeys.VehicleModels.Manage,
+            "Manage Vehicle Models",
+            "Vehicles"),
+
+        new(
+            PermissionKeys.VehicleDashboard.View,
+            "View Fleet Dashboard",
+            "Vehicles"),
+
+        new(
             PermissionKeys.Drivers.View,
             "View Drivers",
             "Drivers"),

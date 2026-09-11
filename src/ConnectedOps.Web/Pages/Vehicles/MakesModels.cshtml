@@ -1,0 +1,685 @@
+@page "/Vehicles/MakesModels"
+@model ConnectedOps.Web.Pages.Vehicles.MakesModelsModel
+@{
+    ViewData["Title"] = "Makes & Models Catalog";
+    var totalMakes = Model.Makes.Count;
+    var totalModels = Model.Models.Count;
+    var totalVehiclesInMakes = Model.Makes.Sum(m => m.VehicleCount);
+    var activeTab = string.Equals(Model.ActiveTab, "models", StringComparison.OrdinalIgnoreCase) ? "models" : "makes";
+}
+
+<div class="app-content-header">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col-sm-6">
+                <h3 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-car-front text-primary me-2"></i>Makes &amp; Models Catalog
+                </h3>
+                <div class="text-muted small mt-1">Manage automotive manufacturers and model lines for your fleet inventory.</div>
+            </div>
+            <div class="col-sm-6 text-end d-flex justify-content-sm-end gap-2 mt-2 mt-sm-0">
+                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#createMakeModal">
+                    <i class="bi bi-plus-lg me-1"></i> Add Make
+                </button>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModelModal">
+                    <i class="bi bi-plus-lg me-1"></i> Add Model
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="app-content mt-3">
+    <div class="container-fluid">
+        @if (TempData["Feedback"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i>@TempData["Feedback"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["Error"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <!-- Metric KPI Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-body p-3 d-flex align-items-center">
+                        <div class="rounded-3 bg-primary bg-opacity-10 p-3 text-primary me-3">
+                            <i class="bi bi-building fs-3"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small text-uppercase fw-semibold">Manufacturers (Makes)</div>
+                            <div class="fs-4 fw-bold text-dark">@totalMakes</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-body p-3 d-flex align-items-center">
+                        <div class="rounded-3 bg-info bg-opacity-10 p-3 text-info me-3">
+                            <i class="bi bi-car-front-fill fs-3"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small text-uppercase fw-semibold">Vehicle Models</div>
+                            <div class="fs-4 fw-bold text-dark">@totalModels</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-body p-3 d-flex align-items-center">
+                        <div class="rounded-3 bg-warning bg-opacity-10 p-3 text-warning me-3">
+                            <i class="bi bi-tags-fill fs-3"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small text-uppercase fw-semibold">Categories In Use</div>
+                            <div class="fs-4 fw-bold text-dark">@Model.Categories.Count</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-body p-3 d-flex align-items-center">
+                        <div class="rounded-3 bg-success bg-opacity-10 p-3 text-success me-3">
+                            <i class="bi bi-truck fs-3"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small text-uppercase fw-semibold">Total Fleet Vehicles</div>
+                            <div class="fs-4 fw-bold text-dark">@totalVehiclesInMakes</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabbed Container -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white border-bottom pt-3 pb-0">
+                <ul class="nav nav-tabs card-header-tabs" id="catalogTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-semibold px-4 @(activeTab == "makes" ? "active text-primary" : "text-secondary")" 
+                                id="makes-tab" data-bs-toggle="tab" data-bs-target="#makes-pane" type="button" role="tab" aria-controls="makes-pane" aria-selected="@(activeTab == "makes")">
+                            <i class="bi bi-building me-2"></i>Makes (@totalMakes)
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-semibold px-4 @(activeTab == "models" ? "active text-primary" : "text-secondary")" 
+                                id="models-tab" data-bs-toggle="tab" data-bs-target="#models-pane" type="button" role="tab" aria-controls="models-pane" aria-selected="@(activeTab == "models")">
+                            <i class="bi bi-car-front me-2"></i>Models (@totalModels)
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="card-body p-0">
+                <div class="tab-content" id="catalogTabsContent">
+                    <!-- Tab 1: Makes -->
+                    <div class="tab-pane fade @(activeTab == "makes" ? "show active" : "")" id="makes-pane" role="tabpanel" aria-labelledby="makes-tab">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light text-muted small text-uppercase">
+                                    <tr>
+                                        <th scope="col" style="width: 35%;">Manufacturer Name</th>
+                                        <th scope="col" style="width: 20%;">Country</th>
+                                        <th scope="col" style="width: 15%;">Model Variants</th>
+                                        <th scope="col" style="width: 15%;">Fleet Vehicles</th>
+                                        <th scope="col" style="width: 15%;" class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (!Model.Makes.Any())
+                                    {
+                                        <tr>
+                                            <td colspan="5" class="text-center py-5 text-muted">
+                                                <i class="bi bi-building display-5 d-block mb-3 text-secondary"></i>
+                                                <h5>No vehicle manufacturers found</h5>
+                                                <p class="small text-muted mb-3">Add common makes such as Ford, Toyota, Mercedes-Benz, Volvo, or Scania.</p>
+                                                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#createMakeModal">
+                                                    <i class="bi bi-plus-lg me-1"></i> Add Make
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var make in Model.Makes)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <div class="fw-bold text-dark fs-6">@make.Name</div>
+                                                </td>
+                                                <td>
+                                                    @if (!string.IsNullOrWhiteSpace(make.CountryCode))
+                                                    {
+                                                        <span class="badge bg-secondary-subtle text-secondary font-monospace px-2 py-1">
+                                                            <i class="bi bi-geo-alt me-1"></i>@make.CountryCode.ToUpperInvariant()
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted small">—</span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <a href="/Vehicles/MakesModels?ActiveTab=models&SelectedMakeId=@make.Id" class="badge bg-info-subtle text-info text-decoration-none border border-info-subtle px-2 py-1" title="View models for @make.Name">
+                                                        <i class="bi bi-car-front me-1"></i>@make.ModelCount models
+                                                    </a>
+                                                </td>
+                                                <td>
+                                                    <a href="/Vehicles/Index?MakeId=@make.Id" class="badge bg-light text-dark text-decoration-none border px-2 py-1" title="View fleet vehicles for @make.Name">
+                                                        <i class="bi bi-truck me-1"></i>@make.VehicleCount vehicles
+                                                    </a>
+                                                </td>
+                                                <td class="text-end">
+                                                    <div class="dropdown">
+                                                        <button class="btn btn-sm btn-light border dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                            Actions
+                                                        </button>
+                                                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                                            <li>
+                                                                <button type="button" class="dropdown-item edit-make-btn"
+                                                                        data-id="@make.Id"
+                                                                        data-name="@make.Name"
+                                                                        data-country="@make.CountryCode">
+                                                                    <i class="bi bi-pencil me-2 text-primary"></i>Edit Make
+                                                                </button>
+                                                            </li>
+                                                            <li>
+                                                                <button type="button" class="dropdown-item add-model-for-make-btn"
+                                                                        data-make-id="@make.Id"
+                                                                        data-make-name="@make.Name">
+                                                                    <i class="bi bi-plus-circle me-2 text-success"></i>Add Model Line
+                                                                </button>
+                                                            </li>
+                                                            <li><hr class="dropdown-divider"></li>
+                                                            <li>
+                                                                <button type="button" class="dropdown-item text-danger delete-make-btn"
+                                                                        data-id="@make.Id"
+                                                                        data-name="@make.Name"
+                                                                        data-models="@make.ModelCount"
+                                                                        data-vehicles="@make.VehicleCount">
+                                                                    <i class="bi bi-trash me-2"></i>Delete Make
+                                                                </button>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tab 2: Models -->
+                    <div class="tab-pane fade @(activeTab == "models" ? "show active" : "")" id="models-pane" role="tabpanel" aria-labelledby="models-tab">
+                        <!-- Model Filters Bar -->
+                        <div class="p-3 bg-light border-bottom">
+                            <form method="get" class="row g-2 align-items-center">
+                                <input type="hidden" name="ActiveTab" value="models" />
+                                <div class="col-sm-5 col-md-4">
+                                    <label class="visually-hidden" for="filterMakeSelect">Filter by Make</label>
+                                    <select class="form-select form-select-sm" id="filterMakeSelect" name="SelectedMakeId" onchange="this.form.submit()">
+                                        <option value="">All Manufacturers (@totalMakes)</option>
+                                        @foreach (var m in Model.Makes)
+                                        {
+                                            <option value="@m.Id" selected="@(Model.SelectedMakeId == m.Id)">@m.Name (@m.ModelCount)</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-sm-4 col-md-3">
+                                    <div class="form-check form-switch mb-0">
+                                        <input class="form-check-input" type="checkbox" role="switch" id="modelsIncludeInactiveSwitch" 
+                                               name="IncludeInactive" value="true" @(Model.IncludeInactive ? "checked" : "") onchange="this.form.submit()">
+                                        <label class="form-check-label small text-muted" for="modelsIncludeInactiveSwitch">Include Inactive</label>
+                                    </div>
+                                </div>
+                                @if (Model.SelectedMakeId.HasValue && Model.SelectedMakeId.Value != Guid.Empty)
+                                {
+                                    <div class="col-sm-3 col-md-2">
+                                        <a href="/Vehicles/MakesModels?ActiveTab=models" class="btn btn-sm btn-outline-secondary">
+                                            <i class="bi bi-x me-1"></i>Clear Filter
+                                        </a>
+                                    </div>
+                                }
+                            </form>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light text-muted small text-uppercase">
+                                    <tr>
+                                        <th scope="col" style="width: 25%;">Manufacturer</th>
+                                        <th scope="col" style="width: 30%;">Model Name</th>
+                                        <th scope="col" style="width: 25%;">Default Category</th>
+                                        <th scope="col" style="width: 10%;">Vehicles</th>
+                                        <th scope="col" style="width: 10%;" class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (!Model.Models.Any())
+                                    {
+                                        <tr>
+                                            <td colspan="5" class="text-center py-5 text-muted">
+                                                <i class="bi bi-car-front display-5 d-block mb-3 text-secondary"></i>
+                                                <h5>No vehicle models found</h5>
+                                                <p class="small text-muted mb-3">Add model definitions (e.g. Transit, F-150, Hilux, Sprinter, Actros).</p>
+                                                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#createModelModal">
+                                                    <i class="bi bi-plus-lg me-1"></i> Add Model
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var mod in Model.Models)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <span class="badge bg-primary-subtle text-primary font-monospace fw-semibold px-2 py-1">
+                                                        @mod.MakeName
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div class="fw-bold text-dark fs-6">@mod.Name</div>
+                                                </td>
+                                                <td>
+                                                    @if (!string.IsNullOrWhiteSpace(mod.DefaultCategoryName))
+                                                    {
+                                                        <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2 py-1">
+                                                            <i class="bi bi-tag me-1"></i>@mod.DefaultCategoryName
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted small">Not specified</span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-light text-dark border px-2 py-1">
+                                                        @mod.VehicleCount
+                                                    </span>
+                                                </td>
+                                                <td class="text-end">
+                                                    <div class="dropdown">
+                                                        <button class="btn btn-sm btn-light border dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                            Actions
+                                                        </button>
+                                                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                                            <li>
+                                                                <button type="button" class="dropdown-item edit-model-btn"
+                                                                        data-id="@mod.Id"
+                                                                        data-make-name="@mod.MakeName"
+                                                                        data-name="@mod.Name"
+                                                                        data-cat-id="@mod.DefaultCategoryId">
+                                                                    <i class="bi bi-pencil me-2 text-primary"></i>Edit Model
+                                                                </button>
+                                                            </li>
+                                                            <li><hr class="dropdown-divider"></li>
+                                                            <li>
+                                                                <button type="button" class="dropdown-item text-danger delete-model-btn"
+                                                                        data-id="@mod.Id"
+                                                                        data-name="@mod.Name"
+                                                                        data-make="@mod.MakeName"
+                                                                        data-vehicles="@mod.VehicleCount">
+                                                                    <i class="bi bi-trash me-2"></i>Delete Model
+                                                                </button>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Create Make -->
+<div class="modal fade" id="createMakeModal" tabindex="-1" aria-labelledby="createMakeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form method="post" asp-page-handler="CreateMake" asp-route-activeTab="makes">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="createMakeModalLabel">
+                        <i class="bi bi-plus-circle text-primary me-2"></i>Add Vehicle Manufacturer (Make)
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="createMakeName" class="form-label fw-semibold">Make Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="createMakeName" name="name" required maxlength="100" placeholder="e.g. Ford, Toyota, Volvo, Scania">
+                    </div>
+                    <div class="mb-3">
+                        <label for="createMakeCountry" class="form-label fw-semibold">Country Code</label>
+                        <input type="text" class="form-control text-uppercase" id="createMakeCountry" name="countryCode" maxlength="10" placeholder="e.g. US, JP, DE, SE">
+                        <div class="form-text">2 or 3-letter ISO country code of headquarters.</div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-check-lg me-1"></i> Create Make
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Edit Make -->
+<div class="modal fade" id="editMakeModal" tabindex="-1" aria-labelledby="editMakeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form method="post" asp-page-handler="EditMake" asp-route-activeTab="makes">
+                <input type="hidden" id="editMakeId" name="id" />
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="editMakeModalLabel">
+                        <i class="bi bi-pencil-square text-primary me-2"></i>Edit Vehicle Manufacturer
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="editMakeName" class="form-label fw-semibold">Make Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="editMakeName" name="name" required maxlength="100">
+                    </div>
+                    <div class="mb-3">
+                        <label for="editMakeCountry" class="form-label fw-semibold">Country Code</label>
+                        <input type="text" class="form-control text-uppercase" id="editMakeCountry" name="countryCode" maxlength="10">
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-check-lg me-1"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Delete Make -->
+<div class="modal fade" id="deleteMakeModal" tabindex="-1" aria-labelledby="deleteMakeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form method="post" asp-page-handler="DeleteMake" asp-route-activeTab="makes">
+                <input type="hidden" id="deleteMakeId" name="id" />
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold text-danger" id="deleteMakeModalLabel">
+                        <i class="bi bi-trash text-danger me-2"></i>Delete Manufacturer
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete manufacturer <strong id="deleteMakeName"></strong>?</p>
+                    <div id="deleteMakeWarning" class="alert alert-warning d-none">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        Cannot delete this make because it has <strong id="deleteMakeModelCount">0</strong> models and <strong id="deleteMakeVehicleCount">0</strong> vehicles linked. Delete or reassign those first.
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" id="deleteMakeSubmitBtn" class="btn btn-danger px-4">
+                        <i class="bi bi-trash me-1"></i> Delete
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Create Model -->
+<div class="modal fade" id="createModelModal" tabindex="-1" aria-labelledby="createModelModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form method="post" asp-page-handler="CreateModel" asp-route-activeTab="models">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="createModelModalLabel">
+                        <i class="bi bi-plus-circle text-primary me-2"></i>Add Vehicle Model Line
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="createModelMakeId" class="form-label fw-semibold">Manufacturer (Make) <span class="text-danger">*</span></label>
+                        <select class="form-select" id="createModelMakeId" name="vehicleMakeId" required>
+                            <option value="">Select Manufacturer...</option>
+                            @foreach (var make in Model.Makes)
+                            {
+                                <option value="@make.Id" selected="@(Model.SelectedMakeId == make.Id)">@make.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="createModelName" class="form-label fw-semibold">Model Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="createModelName" name="name" required maxlength="100" placeholder="e.g. Transit 350, F-150, Hilux, Sprinter">
+                    </div>
+                    <div class="mb-3">
+                        <label for="createModelCatId" class="form-label fw-semibold">Default Category</label>
+                        <select class="form-select" id="createModelCatId" name="defaultCategoryId">
+                            <option value="">Select Category (Optional)...</option>
+                            @foreach (var cat in Model.Categories)
+                            {
+                                <option value="@cat.Id">@cat.Name (@cat.Code)</option>
+                            }
+                        </select>
+                        <div class="form-text">Will be automatically assigned to new vehicles created with this model.</div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-check-lg me-1"></i> Create Model
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Edit Model -->
+<div class="modal fade" id="editModelModal" tabindex="-1" aria-labelledby="editModelModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form method="post" asp-page-handler="EditModel" asp-route-activeTab="models" asp-route-returnMakeId="@Model.SelectedMakeId">
+                <input type="hidden" id="editModelId" name="id" />
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="editModelModalLabel">
+                        <i class="bi bi-pencil-square text-primary me-2"></i>Edit Vehicle Model
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Manufacturer</label>
+                        <input type="text" class="form-control-plaintext fw-bold ps-2 text-primary" id="editModelMakeName" readonly />
+                    </div>
+                    <div class="mb-3">
+                        <label for="editModelName" class="form-label fw-semibold">Model Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="editModelName" name="name" required maxlength="100">
+                    </div>
+                    <div class="mb-3">
+                        <label for="editModelCatId" class="form-label fw-semibold">Default Category</label>
+                        <select class="form-select" id="editModelCatId" name="defaultCategoryId">
+                            <option value="">Select Category (Optional)...</option>
+                            @foreach (var cat in Model.Categories)
+                            {
+                                <option value="@cat.Id">@cat.Name (@cat.Code)</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-check-lg me-1"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Delete Model -->
+<div class="modal fade" id="deleteModelModal" tabindex="-1" aria-labelledby="deleteModelModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form method="post" asp-page-handler="DeleteModel" asp-route-activeTab="models" asp-route-returnMakeId="@Model.SelectedMakeId">
+                <input type="hidden" id="deleteModelId" name="id" />
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold text-danger" id="deleteModelModalLabel">
+                        <i class="bi bi-trash text-danger me-2"></i>Delete Vehicle Model
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete model <strong id="deleteModelName"></strong> (<span id="deleteModelMake"></span>)?</p>
+                    <div id="deleteModelWarning" class="alert alert-warning d-none">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        Cannot delete this model because it is currently assigned to <strong id="deleteModelVehicleCount">0</strong> vehicles.
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" id="deleteModelSubmitBtn" class="btn btn-danger px-4">
+                        <i class="bi bi-trash me-1"></i> Delete
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Edit Make modal
+            document.querySelectorAll('.edit-make-btn').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const id = this.getAttribute('data-id');
+                    const name = this.getAttribute('data-name');
+                    const country = this.getAttribute('data-country');
+
+                    document.getElementById('editMakeId').value = id;
+                    document.getElementById('editMakeName').value = name;
+                    document.getElementById('editMakeCountry').value = country || '';
+
+                    const modal = new bootstrap.Modal(document.getElementById('editMakeModal'));
+                    modal.show();
+                });
+            });
+
+            // Add Model for specific Make button
+            document.querySelectorAll('.add-model-for-make-btn').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const makeId = this.getAttribute('data-make-id');
+                    const makeSelect = document.getElementById('createModelMakeId');
+                    if (makeSelect) {
+                        makeSelect.value = makeId;
+                    }
+                    const modal = new bootstrap.Modal(document.getElementById('createModelModal'));
+                    modal.show();
+                });
+            });
+
+            // Delete Make modal
+            document.querySelectorAll('.delete-make-btn').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const id = this.getAttribute('data-id');
+                    const name = this.getAttribute('data-name');
+                    const models = parseInt(this.getAttribute('data-models') || '0', 10);
+                    const vehicles = parseInt(this.getAttribute('data-vehicles') || '0', 10);
+
+                    document.getElementById('deleteMakeId').value = id;
+                    document.getElementById('deleteMakeName').textContent = name;
+
+                    const warningDiv = document.getElementById('deleteMakeWarning');
+                    const modelSpan = document.getElementById('deleteMakeModelCount');
+                    const vehicleSpan = document.getElementById('deleteMakeVehicleCount');
+                    const submitBtn = document.getElementById('deleteMakeSubmitBtn');
+
+                    if (models > 0 || vehicles > 0) {
+                        warningDiv.classList.remove('d-none');
+                        modelSpan.textContent = models;
+                        vehicleSpan.textContent = vehicles;
+                        submitBtn.disabled = true;
+                    } else {
+                        warningDiv.classList.add('d-none');
+                        submitBtn.disabled = false;
+                    }
+
+                    const modal = new bootstrap.Modal(document.getElementById('deleteMakeModal'));
+                    modal.show();
+                });
+            });
+
+            // Edit Model modal
+            document.querySelectorAll('.edit-model-btn').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const id = this.getAttribute('data-id');
+                    const makeName = this.getAttribute('data-make-name');
+                    const name = this.getAttribute('data-name');
+                    const catId = this.getAttribute('data-cat-id');
+
+                    document.getElementById('editModelId').value = id;
+                    document.getElementById('editModelMakeName').value = makeName;
+                    document.getElementById('editModelName').value = name;
+                    document.getElementById('editModelCatId').value = catId || '';
+
+                    const modal = new bootstrap.Modal(document.getElementById('editModelModal'));
+                    modal.show();
+                });
+            });
+
+            // Delete Model modal
+            document.querySelectorAll('.delete-model-btn').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const id = this.getAttribute('data-id');
+                    const name = this.getAttribute('data-name');
+                    const make = this.getAttribute('data-make');
+                    const vehicles = parseInt(this.getAttribute('data-vehicles') || '0', 10);
+
+                    document.getElementById('deleteModelId').value = id;
+                    document.getElementById('deleteModelName').textContent = name;
+                    document.getElementById('deleteModelMake').textContent = make;
+
+                    const warningDiv = document.getElementById('deleteModelWarning');
+                    const vehicleSpan = document.getElementById('deleteModelVehicleCount');
+                    const submitBtn = document.getElementById('deleteModelSubmitBtn');
+
+                    if (vehicles > 0) {
+                        warningDiv.classList.remove('d-none');
+                        vehicleSpan.textContent = vehicles;
+                        submitBtn.disabled = true;
+                    } else {
+                        warningDiv.classList.add('d-none');
+                        submitBtn.disabled = false;
+                    }
+
+                    const modal = new bootstrap.Modal(document.getElementById('deleteModelModal'));
+                    modal.show();
+                });
+            });
+        });
+    </script>
+}

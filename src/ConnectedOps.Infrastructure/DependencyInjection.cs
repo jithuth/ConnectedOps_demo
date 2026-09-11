@@ -50,6 +50,8 @@ using ConnectedOps.Application.Accounting;
 using ConnectedOps.Infrastructure.Accounting;
 using ConnectedOps.Application.Notifications;
 using ConnectedOps.Infrastructure.Notifications;
+using ConnectedOps.Application.Vehicles;
+using ConnectedOps.Infrastructure.Vehicles;
 
 
 
@@ -124,6 +126,8 @@ public static class DependencyInjection
         AddBillingAndAccountingServices(services);
 
         AddNotificationServices(services);
+
+        AddVehicleServices(services);
             
         AddValidation(
             services);
@@ -596,5 +600,36 @@ public static class DependencyInjection
         services.AddScoped<
             IEmailNotificationService,
             EmailNotificationService>();
+    }
+
+    // ================================================================
+    // PHASE 3 - VEHICLE MANAGEMENT
+    // ================================================================
+    private static void AddVehicleServices(
+        IServiceCollection services)
+    {
+        services.AddScoped<
+            IVehicleCategoryService,
+            VehicleCategoryService>();
+
+        services.AddScoped<
+            IVehicleMakeModelService,
+            VehicleMakeModelService>();
+
+        services.AddScoped<
+            IVehicleOdometerService,
+            VehicleOdometerService>();
+
+        services.AddScoped<
+            IVehicleDocumentService,
+            VehicleDocumentService>();
+
+        services.AddScoped<
+            IVehicleDashboardService,
+            VehicleDashboardService>();
+
+        services.AddScoped<
+            IVehicleService,
+            VehicleService>();
     }
 }

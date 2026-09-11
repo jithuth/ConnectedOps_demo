@@ -12,6 +12,7 @@ using ConnectedOps.Domain.Billing;
 using ConnectedOps.Domain.Organization;
 using ConnectedOps.Domain.Platform;
 using ConnectedOps.Domain.Security;
+using ConnectedOps.Domain.Vehicles;
 
 namespace ConnectedOps.Infrastructure.Persistence;
 
@@ -103,6 +104,33 @@ public sealed class ConnectedOpsDbContext
 
     public DbSet<LedgerEntry> LedgerEntries =>
         Set<LedgerEntry>();
+
+    public DbSet<Vehicle> Vehicles =>
+        Set<Vehicle>();
+
+    public DbSet<VehicleCategory> VehicleCategories =>
+        Set<VehicleCategory>();
+
+    public DbSet<VehicleMake> VehicleMakes =>
+        Set<VehicleMake>();
+
+    public DbSet<VehicleModel> VehicleModels =>
+        Set<VehicleModel>();
+
+    public DbSet<VehicleSpecification> VehicleSpecifications =>
+        Set<VehicleSpecification>();
+
+    public DbSet<VehicleRegistration> VehicleRegistrations =>
+        Set<VehicleRegistration>();
+
+    public DbSet<VehicleOdometerEntry> VehicleOdometerEntries =>
+        Set<VehicleOdometerEntry>();
+
+    public DbSet<VehicleDocument> VehicleDocuments =>
+        Set<VehicleDocument>();
+
+    public DbSet<VehicleNote> VehicleNotes =>
+        Set<VehicleNote>();
 
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)

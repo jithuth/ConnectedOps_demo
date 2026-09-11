@@ -18,5 +18,10 @@ public enum AuditAction
     Issued = 14,
     Paid = 15,
     Voided = 16,
-    Refunded = 17
+    Refunded = 17,
+    StatusChanged = 18,
+    OdometerRecorded = 19,
+    DocumentAdded = 20,
+    DocumentUpdated = 21,
+    DocumentRemoved = 22
 }

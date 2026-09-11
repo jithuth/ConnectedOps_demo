@@ -1,0 +1,409 @@
+@page "/Vehicles/Categories"
+@model ConnectedOps.Web.Pages.Vehicles.CategoriesModel
+@{
+    ViewData["Title"] = "Vehicle Categories";
+    var totalCount = Model.Categories.Count;
+    var motorizedCount = Model.Categories.Count(c => c.IsMotorized);
+    var nonMotorizedCount = totalCount - motorizedCount;
+    var activeCount = Model.Categories.Count(c => c.IsActive);
+}
+
+<div class="app-content-header">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col-sm-6">
+                <h3 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-tags text-primary me-2"></i>Vehicle Categories
+                </h3>
+                <div class="text-muted small mt-1">Classify and organize your fleet by vehicle types, equipment, and trailers.</div>
+            </div>
+            <div class="col-sm-6 text-end">
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createCategoryModal">
+                    <i class="bi bi-plus-lg me-1"></i> Add Category
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="app-content mt-3">
+    <div class="container-fluid">
+        @if (TempData["Feedback"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i>@TempData["Feedback"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["Error"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <!-- Metric KPI Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-body p-3 d-flex align-items-center">
+                        <div class="rounded-3 bg-primary bg-opacity-10 p-3 text-primary me-3">
+                            <i class="bi bi-tags fs-3"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small text-uppercase fw-semibold">Total Categories</div>
+                            <div class="fs-4 fw-bold text-dark">@totalCount</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-body p-3 d-flex align-items-center">
+                        <div class="rounded-3 bg-info bg-opacity-10 p-3 text-info me-3">
+                            <i class="bi bi-fuel-pump fs-3"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small text-uppercase fw-semibold">Motorized</div>
+                            <div class="fs-4 fw-bold text-dark">@motorizedCount</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-body p-3 d-flex align-items-center">
+                        <div class="rounded-3 bg-warning bg-opacity-10 p-3 text-warning me-3">
+                            <i class="bi bi-box-seam fs-3"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small text-uppercase fw-semibold">Non-Motorized / Trailers</div>
+                            <div class="fs-4 fw-bold text-dark">@nonMotorizedCount</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-body p-3 d-flex align-items-center">
+                        <div class="rounded-3 bg-success bg-opacity-10 p-3 text-success me-3">
+                            <i class="bi bi-check-circle fs-3"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small text-uppercase fw-semibold">Active Categories</div>
+                            <div class="fs-4 fw-bold text-dark">@activeCount</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Categories Card -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-transparent border-0 pt-3 pb-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h5 class="card-title fw-bold mb-0">Category Directory</h5>
+                <form method="get" class="d-flex align-items-center gap-2">
+                    <div class="form-check form-switch mb-0">
+                        <input class="form-check-input" type="checkbox" role="switch" id="includeInactiveSwitch" 
+                               name="IncludeInactive" value="true" @(Model.IncludeInactive ? "checked" : "") onchange="this.form.submit()">
+                        <label class="form-check-label small text-muted" for="includeInactiveSwitch">Include Inactive</label>
+                    </div>
+                </form>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light text-muted small text-uppercase">
+                        <tr>
+                            <th scope="col" style="width: 15%;">Code</th>
+                            <th scope="col" style="width: 25%;">Name</th>
+                            <th scope="col" style="width: 30%;">Description</th>
+                            <th scope="col" style="width: 10%;">Type</th>
+                            <th scope="col" style="width: 10%;">Vehicles</th>
+                            <th scope="col" style="width: 10%;">Status</th>
+                            <th scope="col" class="text-end" style="width: 10%;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Categories.Any())
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center py-5 text-muted">
+                                    <i class="bi bi-tags display-5 d-block mb-3 text-secondary"></i>
+                                    <h5>No vehicle categories found</h5>
+                                    <p class="small text-muted mb-3">Create your first category (e.g., Heavy Truck, Van, Sedan, Trailer) to organize vehicles.</p>
+                                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#createCategoryModal">
+                                        <i class="bi bi-plus-lg me-1"></i> Add Category
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var cat in Model.Categories)
+                            {
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-secondary-subtle text-secondary font-monospace fw-semibold fs-7 px-2 py-1">
+                                            @cat.Code
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold text-dark">@cat.Name</div>
+                                    </td>
+                                    <td>
+                                        <span class="text-muted small">
+                                            @(string.IsNullOrWhiteSpace(cat.Description) ? "—" : cat.Description)
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if (cat.IsMotorized)
+                                        {
+                                            <span class="badge bg-info-subtle text-info border border-info-subtle rounded-pill px-2 py-1">
+                                                <i class="bi bi-fuel-pump me-1"></i>Motorized
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-2 py-1">
+                                                <i class="bi bi-box-seam me-1"></i>Non-Motorized
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <a href="/Vehicles/Index?CategoryId=@cat.Id" class="badge bg-light text-dark text-decoration-none border px-2 py-1" title="View Vehicles in this Category">
+                                            <i class="bi bi-truck me-1"></i>@cat.VehicleCount vehicles
+                                        </a>
+                                    </td>
+                                    <td>
+                                        @if (cat.IsActive)
+                                        {
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1">
+                                                <i class="bi bi-check-circle-fill me-1"></i>Active
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2 py-1">
+                                                <i class="bi bi-dash-circle-fill me-1"></i>Inactive
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-light border dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                Actions
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                                <li>
+                                                    <button type="button" class="dropdown-item edit-cat-btn"
+                                                            data-id="@cat.Id"
+                                                            data-code="@cat.Code"
+                                                            data-name="@cat.Name"
+                                                            data-desc="@cat.Description"
+                                                            data-motorized="@cat.IsMotorized.ToString().ToLowerInvariant()">
+                                                        <i class="bi bi-pencil me-2 text-primary"></i>Edit
+                                                    </button>
+                                                </li>
+                                                <li>
+                                                    <form method="post" asp-page-handler="ToggleActive" asp-route-id="@cat.Id" asp-route-activate="@(!cat.IsActive)" asp-route-includeInactive="@Model.IncludeInactive" class="d-inline">
+                                                        <button type="submit" class="dropdown-item">
+                                                            @if (cat.IsActive)
+                                                            {
+                                                                <span><i class="bi bi-pause-circle me-2 text-warning"></i>Deactivate</span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span><i class="bi bi-play-circle me-2 text-success"></i>Activate</span>
+                                                            }
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <button type="button" class="dropdown-item text-danger delete-cat-btn"
+                                                            data-id="@cat.Id"
+                                                            data-name="@cat.Name"
+                                                            data-count="@cat.VehicleCount">
+                                                        <i class="bi bi-trash me-2"></i>Delete
+                                                    </button>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Create Category -->
+<div class="modal fade" id="createCategoryModal" tabindex="-1" aria-labelledby="createCategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form method="post" asp-page-handler="Create" asp-route-includeInactive="@Model.IncludeInactive">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="createCategoryModalLabel">
+                        <i class="bi bi-plus-circle text-primary me-2"></i>Add Vehicle Category
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="createCatCode" class="form-label fw-semibold">Code <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control text-uppercase" id="createCatCode" name="code" required maxlength="50" placeholder="e.g. HEAVY-TRUCK">
+                        <div class="form-text">Unique system identifier for the category. Cannot be changed after creation.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="createCatName" class="form-label fw-semibold">Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="createCatName" name="name" required maxlength="100" placeholder="e.g. Heavy Commercial Truck">
+                    </div>
+                    <div class="mb-3">
+                        <label for="createCatDesc" class="form-label fw-semibold">Description</label>
+                        <textarea class="form-control" id="createCatDesc" name="description" rows="3" maxlength="500" placeholder="Optional description or operational scope..."></textarea>
+                    </div>
+                    <div class="form-check form-switch mt-3">
+                        <input class="form-check-input" type="checkbox" role="switch" id="createCatMotorized" name="isMotorized" value="true" checked>
+                        <label class="form-check-label fw-semibold" for="createCatMotorized">Motorized Vehicle</label>
+                        <div class="form-text">Leave unchecked for trailers, towed implements, or unpowered equipment.</div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-check-lg me-1"></i> Create Category
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Edit Category -->
+<div class="modal fade" id="editCategoryModal" tabindex="-1" aria-labelledby="editCategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form method="post" asp-page-handler="Edit" asp-route-includeInactive="@Model.IncludeInactive">
+                <input type="hidden" id="editCatId" name="id" />
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="editCategoryModalLabel">
+                        <i class="bi bi-pencil-square text-primary me-2"></i>Edit Vehicle Category
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Category Code</label>
+                        <input type="text" class="form-control-plaintext font-monospace fw-bold ps-2" id="editCatCode" readonly />
+                    </div>
+                    <div class="mb-3">
+                        <label for="editCatName" class="form-label fw-semibold">Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="editCatName" name="name" required maxlength="100">
+                    </div>
+                    <div class="mb-3">
+                        <label for="editCatDesc" class="form-label fw-semibold">Description</label>
+                        <textarea class="form-control" id="editCatDesc" name="description" rows="3" maxlength="500"></textarea>
+                    </div>
+                    <div class="form-check form-switch mt-3">
+                        <input class="form-check-input" type="checkbox" role="switch" id="editCatMotorized" name="isMotorized" value="true">
+                        <label class="form-check-label fw-semibold" for="editCatMotorized">Motorized Vehicle</label>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-check-lg me-1"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Delete Category -->
+<div class="modal fade" id="deleteCategoryModal" tabindex="-1" aria-labelledby="deleteCategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form method="post" asp-page-handler="Delete" asp-route-includeInactive="@Model.IncludeInactive">
+                <input type="hidden" id="deleteCatId" name="id" />
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold text-danger" id="deleteCategoryModalLabel">
+                        <i class="bi bi-trash text-danger me-2"></i>Delete Category
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to permanently delete category <strong id="deleteCatName"></strong>?</p>
+                    <div id="deleteCatWarning" class="alert alert-warning d-none">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        This category has <strong id="deleteCatCount">0</strong> vehicles associated with it and cannot be deleted. You may deactivate it instead.
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" id="deleteCatSubmitBtn" class="btn btn-danger px-4">
+                        <i class="bi bi-trash me-1"></i> Delete
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Edit modal population
+            document.querySelectorAll('.edit-cat-btn').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const id = this.getAttribute('data-id');
+                    const code = this.getAttribute('data-code');
+                    const name = this.getAttribute('data-name');
+                    const desc = this.getAttribute('data-desc');
+                    const isMotorized = this.getAttribute('data-motorized') === 'true';
+
+                    document.getElementById('editCatId').value = id;
+                    document.getElementById('editCatCode').value = code;
+                    document.getElementById('editCatName').value = name;
+                    document.getElementById('editCatDesc').value = desc || '';
+                    document.getElementById('editCatMotorized').checked = isMotorized;
+
+                    const editModal = new bootstrap.Modal(document.getElementById('editCategoryModal'));
+                    editModal.show();
+                });
+            });
+
+            // Delete modal population
+            document.querySelectorAll('.delete-cat-btn').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const id = this.getAttribute('data-id');
+                    const name = this.getAttribute('data-name');
+                    const count = parseInt(this.getAttribute('data-count') || '0', 10);
+
+                    document.getElementById('deleteCatId').value = id;
+                    document.getElementById('deleteCatName').textContent = name;
+
+                    const warningDiv = document.getElementById('deleteCatWarning');
+                    const countSpan = document.getElementById('deleteCatCount');
+                    const submitBtn = document.getElementById('deleteCatSubmitBtn');
+
+                    if (count > 0) {
+                        warningDiv.classList.remove('d-none');
+                        countSpan.textContent = count;
+                        submitBtn.disabled = true;
+                    } else {
+                        warningDiv.classList.add('d-none');
+                        submitBtn.disabled = false;
+                    }
+
+                    const delModal = new bootstrap.Modal(document.getElementById('deleteCategoryModal'));
+                    delModal.show();
+                });
+            });
+        });
+    </script>
+}

@@ -1,0 +1,342 @@
+@page "/Vehicles/Edit/{id:guid}"
+@model ConnectedOps.Web.Pages.Vehicles.EditModel
+@{
+    ViewData["Title"] = $"Edit Vehicle {Model.Vehicle?.VehicleNumber}";
+    ViewData["Subtitle"] = "Update vehicle identifiers, classification, specifications, and organizational assignment";
+}
+
+<!-- PAGE HEADER -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <h4 class="fw-bold mb-1">
+            <i class="bi bi-pencil-square text-primary me-2"></i>Edit Vehicle: <span class="text-primary">@Model.Vehicle?.VehicleNumber</span>
+        </h4>
+        <p class="text-secondary small mb-0">Modify specifications, ownership, identifiers, or assignment.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/Vehicles/Details/@Model.VehicleId" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-eye me-1"></i> View Control Center
+        </a>
+        <a href="/Vehicles/Index" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back to Fleet
+        </a>
+    </div>
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<form method="post">
+    @Html.AntiForgeryToken()
+
+    <div class="row g-4">
+        <!-- LEFT COLUMN: IDENTIFICATION & CLASSIFICATION -->
+        <div class="col-lg-7">
+            <!-- SECTION 1: IDENTIFIERS -->
+            <div class="card border-0 shadow-sm bg-body mb-4">
+                <div class="card-header bg-transparent border-bottom py-3">
+                    <h6 class="fw-bold mb-0 text-primary">
+                        <i class="bi bi-tag-fill me-2"></i>1. Identification &amp; Recognition
+                    </h6>
+                </div>
+                <div class="card-body p-3 p-md-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Vehicle Number <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" asp-for="Input.VehicleNumber" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Display / Friendly Name</label>
+                            <input type="text" class="form-control" asp-for="Input.DisplayName" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Registration / License Plate</label>
+                            <input type="text" class="form-control" asp-for="Input.RegistrationNumber" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Internal Asset Code</label>
+                            <input type="text" class="form-control" asp-for="Input.InternalCode" />
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold">VIN (Vehicle Identification Number)</label>
+                            <input type="text" class="form-control" asp-for="Input.VIN" maxlength="50" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Chassis Number</label>
+                            <input type="text" class="form-control" asp-for="Input.ChassisNumber" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Engine Serial Number</label>
+                            <input type="text" class="form-control" asp-for="Input.EngineNumber" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 2: CLASSIFICATION & MAKE/MODEL -->
+            <div class="card border-0 shadow-sm bg-body mb-4">
+                <div class="card-header bg-transparent border-bottom py-3">
+                    <h6 class="fw-bold mb-0 text-primary">
+                        <i class="bi bi-diagram-3-fill me-2"></i>2. Classification &amp; Manufacturer
+                    </h6>
+                </div>
+                <div class="card-body p-3 p-md-4">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+                            <select class="form-select" asp-for="Input.CategoryId" required>
+                                @foreach (var cat in Model.Categories)
+                                {
+                                    <option value="@cat.Id">@cat.Name (@cat.Code)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Make / Manufacturer <span class="text-danger">*</span></label>
+                            <select class="form-select" id="makeSelect" asp-for="Input.MakeId" required>
+                                @foreach (var make in Model.Makes)
+                                {
+                                    <option value="@make.Id">@make.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Model <span class="text-danger">*</span></label>
+                            <select class="form-select" id="modelSelect" asp-for="Input.ModelId" required>
+                                @foreach (var mod in Model.AllModels)
+                                {
+                                    <option value="@mod.Id" data-make="@mod.VehicleMakeId">@mod.Name</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Model Year</label>
+                            <input type="number" class="form-control" asp-for="Input.ModelYear" min="1950" max="2100" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Manufacture Year</label>
+                            <input type="number" class="form-control" asp-for="Input.ManufactureYear" min="1950" max="2100" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 3: TECHNICAL & ENGINEERING -->
+            <div class="card border-0 shadow-sm bg-body mb-4">
+                <div class="card-header bg-transparent border-bottom py-3">
+                    <h6 class="fw-bold mb-0 text-primary">
+                        <i class="bi bi-gear-wide-connected me-2"></i>3. Technical Specifications
+                    </h6>
+                </div>
+                <div class="card-body p-3 p-md-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Fuel / Powertrain</label>
+                            <select class="form-select" asp-for="Input.FuelType">
+                                @foreach (var f in Enum.GetValues<ConnectedOps.Domain.Vehicles.FuelType>())
+                                {
+                                    <option value="@f">@f</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Transmission</label>
+                            <select class="form-select" asp-for="Input.TransmissionType">
+                                @foreach (var t in Enum.GetValues<ConnectedOps.Domain.Vehicles.TransmissionType>())
+                                {
+                                    <option value="@t">@t</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Exterior Color</label>
+                            <input type="text" class="form-control" asp-for="Input.Color" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Seating Capacity</label>
+                            <input type="number" class="form-control" asp-for="Input.NumberOfSeats" min="1" max="120" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Gross Vehicle Weight (kg)</label>
+                            <input type="number" step="0.01" class="form-control" asp-for="Input.GrossVehicleWeight" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Max Payload Capacity (kg)</label>
+                            <input type="number" step="0.01" class="form-control" asp-for="Input.PayloadCapacity" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: ASSIGNMENT & OWNERSHIP -->
+        <div class="col-lg-5">
+            <!-- SECTION 4: ORGANIZATIONAL ASSIGNMENT -->
+            <div class="card border-0 shadow-sm bg-body mb-4">
+                <div class="card-header bg-transparent border-bottom py-3">
+                    <h6 class="fw-bold mb-0 text-primary">
+                        <i class="bi bi-geo-alt-fill me-2"></i>4. Deployment &amp; Base Location
+                    </h6>
+                </div>
+                <div class="card-body p-3 p-md-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Assigned Branch</label>
+                        <select class="form-select" asp-for="Input.BranchId" id="branchSelect">
+                            <option value="">-- No Branch Assigned --</option>
+                            @foreach (var branch in Model.Branches)
+                            {
+                                <option value="@branch.Id">@branch.Name (@branch.Code)</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Facility / Location</label>
+                        <select class="form-select" asp-for="Input.LocationId" id="locationSelect">
+                            <option value="">-- No Facility Assigned --</option>
+                            @foreach (var loc in Model.Locations)
+                            {
+                                <option value="@loc.Id" data-branch="@loc.BranchId">@loc.Name (@loc.Code)</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 5: OWNERSHIP & FINANCIALS -->
+            <div class="card border-0 shadow-sm bg-body mb-4">
+                <div class="card-header bg-transparent border-bottom py-3">
+                    <h6 class="fw-bold mb-0 text-primary">
+                        <i class="bi bi-briefcase-fill me-2"></i>5. Ownership &amp; Acquisition
+                    </h6>
+                </div>
+                <div class="card-body p-3 p-md-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Ownership Model <span class="text-danger">*</span></label>
+                        <select class="form-select" asp-for="Input.OwnershipType" id="ownershipTypeSelect" required>
+                            @foreach (var o in Enum.GetValues<ConnectedOps.Domain.Vehicles.OwnershipType>())
+                            {
+                                <option value="@o">@o</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-7">
+                            <label class="form-label fw-semibold">Purchase Price</label>
+                            <input type="number" step="0.01" class="form-control" asp-for="Input.PurchasePrice" />
+                        </div>
+                        <div class="col-5">
+                            <label class="form-label fw-semibold">Currency</label>
+                            <input type="text" class="form-control text-uppercase" asp-for="Input.CurrencyCode" maxlength="3" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Purchase Date</label>
+                        <input type="date" class="form-control" asp-for="Input.PurchaseDate" />
+                    </div>
+
+                    <!-- LEASE DETAILS SECTION -->
+                    <div id="leaseFieldsSection" class="p-3 bg-body-tertiary rounded mb-3 border">
+                        <div class="fw-semibold small text-primary mb-2"><i class="bi bi-file-earmark-text me-1"></i>Lease Particulars</div>
+                        <div class="mb-2">
+                            <label class="form-label small">Lease Company / Lessor</label>
+                            <input type="text" class="form-control form-control-sm" asp-for="Input.LeaseCompany" />
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <label class="form-label small">Lease Start Date</label>
+                                <input type="date" class="form-control form-control-sm" asp-for="Input.LeaseStartDate" />
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small">Lease End Date</label>
+                                <input type="date" class="form-control form-control-sm" asp-for="Input.LeaseEndDate" />
+                            </div>
+                        </div>
+                        <div>
+                            <label class="form-label small">Monthly Lease Cost</label>
+                            <input type="number" step="0.01" class="form-control form-control-sm" asp-for="Input.MonthlyLeaseCost" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 6: NOTES & SAVE -->
+            <div class="card border-0 shadow-sm bg-body mb-4">
+                <div class="card-header bg-transparent border-bottom py-3">
+                    <h6 class="fw-bold mb-0 text-primary">
+                        <i class="bi bi-chat-left-text-fill me-2"></i>6. Operational Notes
+                    </h6>
+                </div>
+                <div class="card-body p-3 p-md-4">
+                    <div class="mb-3">
+                        <textarea class="form-control" rows="3" asp-for="Input.Notes"></textarea>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary py-2 fw-semibold">
+                            <i class="bi bi-check2-circle me-1"></i> Save Changes
+                        </button>
+                        <a href="/Vehicles/Details/@Model.VehicleId" class="btn btn-outline-secondary btn-sm">Cancel</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const makeSelect = document.getElementById('makeSelect');
+            const modelSelect = document.getElementById('modelSelect');
+            const allModelOptions = Array.from(modelSelect.querySelectorAll('option[data-make]'));
+
+            function filterModels() {
+                const selectedMakeId = makeSelect.value;
+                const currentModelValue = modelSelect.value;
+
+                allModelOptions.forEach(opt => {
+                    const makeId = opt.getAttribute('data-make');
+                    if (!selectedMakeId || makeId === selectedMakeId) {
+                        opt.style.display = '';
+                    } else {
+                        opt.style.display = 'none';
+                        if (opt.value === currentModelValue) {
+                            modelSelect.value = '';
+                        }
+                    }
+                });
+            }
+
+            makeSelect.addEventListener('change', filterModels);
+            filterModels();
+
+            const ownershipSelect = document.getElementById('ownershipTypeSelect');
+            const leaseSection = document.getElementById('leaseFieldsSection');
+
+            function toggleLease() {
+                if (ownershipSelect.value === 'Leased' || ownershipSelect.value === '2') {
+                    leaseSection.style.display = 'block';
+                } else {
+                    leaseSection.style.display = 'none';
+                }
+            }
+
+            ownershipSelect.addEventListener('change', toggleLease);
+            toggleLease();
+        });
+    </script>
+}

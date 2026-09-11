@@ -1,0 +1,940 @@
+@page "/Vehicles/Details/{id:guid}"
+@model ConnectedOps.Web.Pages.Vehicles.DetailsModel
+@{
+    ViewData["Title"] = $"Vehicle {Model.Vehicle.VehicleNumber} Control Center";
+    ViewData["Subtitle"] = $"{Model.Vehicle.DisplayName} - Complete lifecycle intelligence, telemetry, and compliance hub";
+}
+
+<!-- ACTION / STATUS HEADER -->
+<div class="card border-0 shadow-sm bg-body mb-4">
+    <div class="card-body p-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-3 bg-primary text-white d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 58px; height: 58px; font-size: 1.6rem;">
+                    <i class="bi bi-truck"></i>
+                </div>
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <h3 class="fw-bold mb-0">@Model.Vehicle.VehicleNumber</h3>
+                        @switch (Model.Vehicle.Status)
+                        {
+                            case ConnectedOps.Domain.Vehicles.VehicleStatus.InService:
+                                <span class="badge bg-success px-3 py-2 fs-6"><i class="bi bi-check-circle me-1"></i>In Service</span>
+                                break;
+                            case ConnectedOps.Domain.Vehicles.VehicleStatus.Active:
+                                <span class="badge bg-primary px-3 py-2 fs-6">Active</span>
+                                break;
+                            case ConnectedOps.Domain.Vehicles.VehicleStatus.UnderMaintenance:
+                                <span class="badge bg-warning text-dark px-3 py-2 fs-6"><i class="bi bi-wrench-adjustable me-1"></i>Maintenance</span>
+                                break;
+                            case ConnectedOps.Domain.Vehicles.VehicleStatus.OutOfService:
+                                <span class="badge bg-danger px-3 py-2 fs-6"><i class="bi bi-x-circle me-1"></i>Out of Service</span>
+                                break;
+                            case ConnectedOps.Domain.Vehicles.VehicleStatus.Reserved:
+                                <span class="badge bg-info px-3 py-2 fs-6"><i class="bi bi-bookmark me-1"></i>Reserved</span>
+                                break;
+                            default:
+                                <span class="badge bg-secondary px-3 py-2 fs-6">@Model.Vehicle.StatusName</span>
+                                break;
+                        }
+                    </div>
+                    <div class="text-secondary fw-semibold">
+                        @Model.Vehicle.DisplayName &bull; <span class="text-body">@Model.Vehicle.MakeName @Model.Vehicle.ModelName</span> (@(Model.Vehicle.ModelYear?.ToString() ?? "Year N/A"))
+                    </div>
+                </div>
+            </div>
+
+            <!-- ACTION BUTTONS -->
+            <div class="d-flex flex-wrap gap-2">
+                <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#odometerModal">
+                    <i class="bi bi-speedometer me-1"></i> Record Odometer
+                </button>
+                <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#statusModal">
+                    <i class="bi bi-arrow-repeat me-1"></i> Change Status
+                </button>
+                <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#documentModal">
+                    <i class="bi bi-file-earmark-plus me-1"></i> Add Document
+                </button>
+                <a href="/Vehicles/Edit/@Model.VehicleId" class="btn btn-warning btn-sm">
+                    <i class="bi bi-pencil me-1"></i> Edit Vehicle
+                </a>
+                <a href="/Vehicles/Index" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Fleet Directory
+                </a>
+            </div>
+        </div>
+
+        <hr class="my-3 opacity-25" />
+
+        <!-- QUICK KPI RIBBON -->
+        <div class="row g-3 text-center text-sm-start">
+            <div class="col-6 col-md-3">
+                <div class="small text-secondary fw-semibold text-uppercase">Current Odometer</div>
+                <div class="fs-4 fw-bold text-primary">
+                    @Model.Vehicle.CurrentOdometer.ToString("N0") <span class="fs-6 fw-normal text-muted">@Model.Vehicle.OdometerUnit</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="small text-secondary fw-semibold text-uppercase">Classification</div>
+                <div class="fs-5 fw-bold text-body">
+                    @Model.Vehicle.CategoryName
+                </div>
+                <div class="small text-muted">@Model.Vehicle.FuelTypeName &bull; @Model.Vehicle.TransmissionTypeName</div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="small text-secondary fw-semibold text-uppercase">Assigned Station</div>
+                <div class="fs-5 fw-bold text-body">
+                    @(Model.Vehicle.BranchName ?? "Unassigned")
+                </div>
+                <div class="small text-muted">@(Model.Vehicle.LocationName ?? "No depot assigned")</div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="small text-secondary fw-semibold text-uppercase">Ownership &amp; Compliance</div>
+                <div class="fs-5 fw-bold text-body">
+                    @Model.Vehicle.OwnershipTypeName
+                </div>
+                <div class="small">
+                    @{
+                        var expiringCount = Model.Vehicle.Documents.Count(d => d.IsExpiringSoon || d.IsExpired);
+                    }
+                    @if (expiringCount > 0)
+                    {
+                        <span class="text-danger fw-semibold"><i class="bi bi-exclamation-triangle-fill me-1"></i>@expiringCount doc(s) require attention</span>
+                    }
+                    else
+                    {
+                        <span class="text-success"><i class="bi bi-shield-check me-1"></i>@Model.Vehicle.Documents.Count doc(s) up to date</span>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FEEDBACK ALERTS -->
+@if (TempData["Feedback"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> @TempData["Feedback"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- CONTROL CENTER TABS -->
+<div class="card border-0 shadow-sm bg-body">
+    <div class="card-header bg-transparent border-bottom p-0">
+        <ul class="nav nav-tabs card-header-tabs mx-3 mt-2" id="vehicleTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active fw-semibold" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
+                    <i class="bi bi-card-heading me-1 text-primary"></i> Overview
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-semibold" id="specs-tab" data-bs-toggle="tab" data-bs-target="#specs" type="button" role="tab">
+                    <i class="bi bi-sliders2 me-1 text-info"></i> Technical Specs
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-semibold" id="reg-tab" data-bs-toggle="tab" data-bs-target="#reg" type="button" role="tab">
+                    <i class="bi bi-postcard me-1 text-success"></i> Registrations (@Model.Vehicle.Registrations.Count)
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-semibold" id="docs-tab" data-bs-toggle="tab" data-bs-target="#docs" type="button" role="tab">
+                    <i class="bi bi-files me-1 text-warning"></i> Documents (@Model.Vehicle.Documents.Count)
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-semibold" id="odometer-tab" data-bs-toggle="tab" data-bs-target="#odometer" type="button" role="tab">
+                    <i class="bi bi-speedometer2 me-1 text-purple"></i> Odometer Logs
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-semibold" id="activity-tab" data-bs-toggle="tab" data-bs-target="#activity" type="button" role="tab">
+                    <i class="bi bi-chat-left-dots me-1 text-secondary"></i> Notes &amp; Activity (@Model.Vehicle.NotesList.Count)
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <div class="card-body p-4">
+        <div class="tab-content" id="vehicleTabsContent">
+            <!-- TAB 1: OVERVIEW -->
+            <div class="tab-pane fade show active" id="overview" role="tabpanel">
+                <div class="row g-4">
+                    <div class="col-lg-6">
+                        <h6 class="fw-bold text-primary mb-3"><i class="bi bi-upc-scan me-2"></i>Identification &amp; Codes</h6>
+                        <table class="table table-bordered table-sm mb-4">
+                            <tbody>
+                                <tr>
+                                    <th class="bg-body-tertiary" style="width: 40%;">Vehicle Number</th>
+                                    <td class="fw-bold">@Model.Vehicle.VehicleNumber</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-body-tertiary">Registration Plate</th>
+                                    <td>@(Model.Vehicle.RegistrationNumber ?? "Not Registered")</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-body-tertiary">Internal Code</th>
+                                    <td>@(Model.Vehicle.InternalCode ?? "N/A")</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-body-tertiary">VIN</th>
+                                    <td class="font-monospace">@(Model.Vehicle.VIN ?? "N/A")</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-body-tertiary">Chassis Number</th>
+                                    <td class="font-monospace">@(Model.Vehicle.ChassisNumber ?? "N/A")</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-body-tertiary">Engine Number</th>
+                                    <td class="font-monospace">@(Model.Vehicle.EngineNumber ?? "N/A")</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h6 class="fw-bold text-primary mb-3"><i class="bi bi-building me-2"></i>Deployment &amp; Operations</h6>
+                        <table class="table table-bordered table-sm mb-0">
+                            <tbody>
+                                <tr>
+                                    <th class="bg-body-tertiary" style="width: 40%;">Branch</th>
+                                    <td>@(Model.Vehicle.BranchName ?? "None")</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-body-tertiary">Depot / Yard</th>
+                                    <td>@(Model.Vehicle.LocationName ?? "None")</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-body-tertiary">In-Service Date</th>
+                                    <td>@(Model.Vehicle.InServiceDate?.ToString("yyyy-MM-dd") ?? "N/A")</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-body-tertiary">Out-of-Service Date</th>
+                                    <td>@(Model.Vehicle.OutOfServiceDate?.ToString("yyyy-MM-dd") ?? "Operational")</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <h6 class="fw-bold text-primary mb-3"><i class="bi bi-briefcase me-2"></i>Acquisition &amp; Ownership</h6>
+                        <table class="table table-bordered table-sm mb-4">
+                            <tbody>
+                                <tr>
+                                    <th class="bg-body-tertiary" style="width: 40%;">Ownership Type</th>
+                                    <td class="fw-bold">@Model.Vehicle.OwnershipTypeName</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-body-tertiary">Registered Owner</th>
+                                    <td>@(Model.Vehicle.OwnerName ?? "Company")</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-body-tertiary">Purchase Date</th>
+                                    <td>@(Model.Vehicle.PurchaseDate?.ToString("yyyy-MM-dd") ?? "N/A")</td>
+                                </tr>
+                                <tr>
+                                    <th class="bg-body-tertiary">Purchase Price</th>
+                                    <td>@(Model.Vehicle.PurchasePrice.HasValue ? $"{Model.Vehicle.CurrencyCode} {Model.Vehicle.PurchasePrice.Value:N2}" : "N/A")</td>
+                                </tr>
+                                @if (Model.Vehicle.OwnershipType == ConnectedOps.Domain.Vehicles.OwnershipType.Leased)
+                                {
+                                    <tr>
+                                        <th class="bg-body-tertiary">Lessor / Lease Co.</th>
+                                        <td>@(Model.Vehicle.LeaseCompany ?? "N/A")</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-body-tertiary">Lease Term</th>
+                                        <td>@(Model.Vehicle.LeaseStartDate?.ToString("yyyy-MM-dd") ?? "N/A") to @(Model.Vehicle.LeaseEndDate?.ToString("yyyy-MM-dd") ?? "N/A")</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-body-tertiary">Monthly Lease Cost</th>
+                                        <td>@(Model.Vehicle.MonthlyLeaseCost.HasValue ? $"{Model.Vehicle.CurrencyCode} {Model.Vehicle.MonthlyLeaseCost.Value:N2}" : "N/A")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+
+                        <h6 class="fw-bold text-primary mb-3"><i class="bi bi-sticky me-2"></i>Operational Remarks</h6>
+                        <div class="p-3 bg-body-tertiary rounded border">
+                            <p class="mb-0 text-secondary">
+                                @(string.IsNullOrWhiteSpace(Model.Vehicle.Notes) ? "No operational remarks recorded." : Model.Vehicle.Notes)
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: TECHNICAL SPECIFICATIONS -->
+            <div class="tab-pane fade" id="specs" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold text-primary mb-0"><i class="bi bi-sliders2 me-2"></i>Engineering &amp; Capacity Specifications</h6>
+                    <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#specsModal">
+                        <i class="bi bi-pencil me-1"></i> Edit Specifications
+                    </button>
+                </div>
+
+                @if (Model.Vehicle.Specification is null)
+                {
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-sliders2 fs-1 mb-2 d-block text-secondary"></i>
+                        <h5>No detailed technical specifications configured</h5>
+                        <p class="small text-muted mb-3">Add engine displacement, dimensions, gross weight rating, and axle configuration.</p>
+                        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#specsModal">
+                            <i class="bi bi-plus-lg me-1"></i> Configure Specifications
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <h6 class="fw-semibold text-secondary mb-2">Powertrain &amp; Electrical</h6>
+                            <table class="table table-bordered table-sm mb-4">
+                                <tbody>
+                                    <tr>
+                                        <th class="bg-body-tertiary" style="width: 45%;">Engine Displacement</th>
+                                        <td>@(Model.Vehicle.Specification.EngineCapacityCc.HasValue ? $"{Model.Vehicle.Specification.EngineCapacityCc:N0} cc" : "N/A")</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-body-tertiary">Engine Power</th>
+                                        <td>@(Model.Vehicle.Specification.EnginePowerKw.HasValue ? $"{Model.Vehicle.Specification.EnginePowerKw:N1} kW" : "N/A")</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-body-tertiary">Cylinders</th>
+                                        <td>@(Model.Vehicle.Specification.CylinderCount?.ToString() ?? "N/A")</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-body-tertiary">Fuel Tank Capacity</th>
+                                        <td>@(Model.Vehicle.Specification.FuelTankCapacity.HasValue ? $"{Model.Vehicle.Specification.FuelTankCapacity:N1} L" : "N/A")</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-body-tertiary">Battery Voltage</th>
+                                        <td>@(Model.Vehicle.Specification.BatteryVoltage.HasValue ? $"{Model.Vehicle.Specification.BatteryVoltage:N1} V" : "N/A")</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-body-tertiary">Drive Configuration</th>
+                                        <td><span class="badge bg-primary-subtle text-primary">@Model.Vehicle.Specification.DriveTypeName</span></td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-body-tertiary">Emission Standard</th>
+                                        <td>@(Model.Vehicle.Specification.EmissionStandard ?? "N/A")</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="col-md-6">
+                            <h6 class="fw-semibold text-secondary mb-2">Dimensions &amp; Weights</h6>
+                            <table class="table table-bordered table-sm mb-4">
+                                <tbody>
+                                    <tr>
+                                        <th class="bg-body-tertiary" style="width: 45%;">Dimensions (L &times; W &times; H)</th>
+                                        <td>
+                                            @(Model.Vehicle.Specification.LengthMm.HasValue ? $"{Model.Vehicle.Specification.LengthMm:N0}" : "-") &times;
+                                            @(Model.Vehicle.Specification.WidthMm.HasValue ? $"{Model.Vehicle.Specification.WidthMm:N0}" : "-") &times;
+                                            @(Model.Vehicle.Specification.HeightMm.HasValue ? $"{Model.Vehicle.Specification.HeightMm:N0}" : "-") mm
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-body-tertiary">Gross Vehicle Weight (GVW)</th>
+                                        <td>@(Model.Vehicle.Specification.GrossVehicleWeightKg.HasValue ? $"{Model.Vehicle.Specification.GrossVehicleWeightKg:N0} kg" : "N/A")</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-body-tertiary">Kerb Weight</th>
+                                        <td>@(Model.Vehicle.Specification.KerbWeightKg.HasValue ? $"{Model.Vehicle.Specification.KerbWeightKg:N0} kg" : "N/A")</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-body-tertiary">Payload Capacity</th>
+                                        <td>@(Model.Vehicle.Specification.PayloadCapacityKg.HasValue ? $"{Model.Vehicle.Specification.PayloadCapacityKg:N0} kg" : "N/A")</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-body-tertiary">Axle &amp; Wheel Count</th>
+                                        <td>@(Model.Vehicle.Specification.AxleCount?.ToString() ?? "N/A") axles, @(Model.Vehicle.Specification.WheelCount?.ToString() ?? "N/A") wheels</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-body-tertiary">Seating Capacity</th>
+                                        <td>@(Model.Vehicle.Specification.SeatCount?.ToString() ?? "N/A") seats</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-body-tertiary">Tyre Size (Front / Rear)</th>
+                                        <td>@(Model.Vehicle.Specification.TyreSizeFront ?? "N/A") / @(Model.Vehicle.Specification.TyreSizeRear ?? "N/A")</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- TAB 3: REGISTRATIONS -->
+            <div class="tab-pane fade" id="reg" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold text-primary mb-0"><i class="bi bi-postcard me-2"></i>Official Registration History</h6>
+                    <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#registrationModal">
+                        <i class="bi bi-plus-lg me-1"></i> Add Registration Record
+                    </button>
+                </div>
+
+                @if (!Model.Vehicle.Registrations.Any())
+                {
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-postcard fs-1 text-secondary mb-2 d-block"></i>
+                        <p class="mb-0">No registration history records found.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Status</th>
+                                    <th>Plate / Registration</th>
+                                    <th>Issuing State / Country</th>
+                                    <th>Issuing Authority</th>
+                                    <th>Registration Date</th>
+                                    <th>Expiry Date</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var r in Model.Vehicle.Registrations)
+                                {
+                                    <tr>
+                                        <td>
+                                            @if (r.IsCurrent)
+                                            {
+                                                <span class="badge bg-success">CURRENT</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary-subtle text-secondary">Historical</span>
+                                            }
+                                        </td>
+                                        <td class="fw-bold">@r.RegistrationNumber</td>
+                                        <td>@(r.RegistrationStateProvince ?? "-") @(r.RegistrationCountryCode ?? "")</td>
+                                        <td>@(r.IssuingAuthority ?? "N/A")</td>
+                                        <td>@(r.RegistrationDate?.ToString("yyyy-MM-dd") ?? "N/A")</td>
+                                        <td>
+                                            @if (r.ExpiryDate.HasValue)
+                                            {
+                                                <span class="@(r.IsExpired ? "text-danger fw-bold" : "")">
+                                                    @r.ExpiryDate.Value.ToString("yyyy-MM-dd")
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">No Expiry</span>
+                                            }
+                                        </td>
+                                        <td class="small text-muted">@(r.Notes ?? "-")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+
+            <!-- TAB 4: DOCUMENTS -->
+            <div class="tab-pane fade" id="docs" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold text-primary mb-0"><i class="bi bi-files me-2"></i>Compliance &amp; Vehicle Documents</h6>
+                    <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#documentModal">
+                        <i class="bi bi-upload me-1"></i> Upload Document
+                    </button>
+                </div>
+
+                @if (!Model.Vehicle.Documents.Any())
+                {
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-file-earmark-medical fs-1 text-secondary mb-2 d-block"></i>
+                        <h5>No documents uploaded</h5>
+                        <p class="small text-muted mb-3">Upload insurance certificates, roadworthiness permits, emission tests, and lease agreements.</p>
+                        <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#documentModal">
+                            <i class="bi bi-upload me-1"></i> Upload First Document
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Title</th>
+                                    <th>Document Number</th>
+                                    <th>Issuing Authority</th>
+                                    <th>Expiry Date</th>
+                                    <th>Compliance Status</th>
+                                    <th class="text-end">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var d in Model.Vehicle.Documents)
+                                {
+                                    <tr>
+                                        <td><span class="badge bg-secondary-subtle text-secondary border">@d.DocumentTypeName</span></td>
+                                        <td class="fw-bold">@d.Title</td>
+                                        <td class="font-monospace small">@(d.DocumentNumber ?? "-")</td>
+                                        <td>@(d.IssuingAuthority ?? "N/A")</td>
+                                        <td>@(d.ExpiryDate?.ToString("yyyy-MM-dd") ?? "N/A")</td>
+                                        <td>
+                                            @if (d.IsExpired)
+                                            {
+                                                <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>EXPIRED</span>
+                                            }
+                                            else if (d.IsExpiringSoon)
+                                            {
+                                                <span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle me-1"></i>EXPIRING SOON</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-success-subtle text-success"><i class="bi bi-check-circle me-1"></i>VALID</span>
+                                            }
+                                        </td>
+                                        <td class="text-end">
+                                            <form method="post" asp-page-handler="DeleteDocument" class="d-inline" onsubmit="return confirm('Remove this document?');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="documentId" value="@d.Id" />
+                                                <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2" title="Delete document">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+
+            <!-- TAB 5: ODOMETER -->
+            <div class="tab-pane fade" id="odometer" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold text-primary mb-0"><i class="bi bi-speedometer2 me-2"></i>Odometer Telemetry &amp; Log Entries</h6>
+                    <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#odometerModal">
+                        <i class="bi bi-plus-lg me-1"></i> Log Reading
+                    </button>
+                </div>
+
+                @if (!Model.Vehicle.RecentOdometerEntries.Any())
+                {
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-speedometer fs-1 text-secondary mb-2 d-block"></i>
+                        <p class="mb-0">No odometer entries logged yet.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Reading Date (UTC)</th>
+                                    <th>Odometer Reading</th>
+                                    <th>Source</th>
+                                    <th>Recorded By</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var o in Model.Vehicle.RecentOdometerEntries)
+                                {
+                                    <tr>
+                                        <td>@o.ReadingDateUtc.ToString("yyyy-MM-dd HH:mm")</td>
+                                        <td class="fw-bold fs-6">@o.Reading.ToString("N0") <span class="small fw-normal text-muted">@o.UnitName</span></td>
+                                        <td><span class="badge bg-info-subtle text-info border">@o.SourceName</span></td>
+                                        <td class="small text-muted">@(o.RecordedByUserId?.ToString() ?? "System")</td>
+                                        <td class="small text-muted">@(o.Notes ?? "-")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+
+            <!-- TAB 6: ACTIVITY & NOTES -->
+            <div class="tab-pane fade" id="activity" role="tabpanel">
+                <div class="row g-4">
+                    <div class="col-lg-7">
+                        <h6 class="fw-bold text-primary mb-3"><i class="bi bi-chat-left-text me-2"></i>Vehicle Notes Timeline</h6>
+                        @if (!Model.Vehicle.NotesList.Any())
+                        {
+                            <div class="p-4 text-center text-muted bg-body-tertiary rounded">
+                                <i class="bi bi-chat-left-dots fs-2 mb-2 d-block"></i>
+                                <p class="mb-0">No notes posted yet for this vehicle.</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="timeline">
+                                @foreach (var n in Model.Vehicle.NotesList)
+                                {
+                                    <div class="card border-0 shadow-sm bg-body mb-3">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <span class="fw-bold text-primary small">
+                                                    <i class="bi bi-person-circle me-1"></i>@(n.CreatedByUserName ?? "Staff Member")
+                                                </span>
+                                                <span class="small text-muted">@n.CreatedAtUtc.ToString("yyyy-MM-dd HH:mm")</span>
+                                            </div>
+                                            <p class="mb-0 text-secondary">@n.NoteText</p>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    <div class="col-lg-5">
+                        <div class="card border-0 shadow-sm bg-body">
+                            <div class="card-header bg-transparent border-bottom py-3">
+                                <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-pencil-square me-2"></i>Post New Note</h6>
+                            </div>
+                            <div class="card-body p-3">
+                                <form method="post" asp-page-handler="AddNote">
+                                    @Html.AntiForgeryToken()
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold small">Note Content</label>
+                                        <textarea name="noteText" class="form-control" rows="4" placeholder="Record maintenance observation, route incident, tyre change, or inspection..." required></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary btn-sm w-100 fw-semibold">
+                                        <i class="bi bi-send me-1"></i> Post Note
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ODOMETER MODAL -->
+<div class="modal fade" id="odometerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="RecordOdometer">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-speedometer text-primary me-2"></i>Log Odometer Reading</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="small text-muted mb-3">
+                        Current recorded odometer: <strong class="text-primary">@Model.Vehicle.CurrentOdometer.ToString("N0") @Model.Vehicle.OdometerUnit</strong>.
+                        New reading must be equal to or greater than current reading.
+                    </p>
+                    <div class="row g-2 mb-3">
+                        <div class="col-7">
+                            <label class="form-label fw-semibold">New Reading <span class="text-danger">*</span></label>
+                            <input type="number" step="0.1" name="reading" class="form-control" min="@Model.Vehicle.CurrentOdometer" required />
+                        </div>
+                        <div class="col-5">
+                            <label class="form-label fw-semibold">Unit</label>
+                            <select name="unit" class="form-select">
+                                @foreach (var u in Enum.GetValues<ConnectedOps.Domain.Vehicles.OdometerUnit>())
+                                {
+                                    <option value="@u" selected="@(Model.Vehicle.OdometerUnit == u ? "selected" : null)">@u</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Data Source</label>
+                        <select name="source" class="form-select">
+                            @foreach (var src in Enum.GetValues<ConnectedOps.Domain.Vehicles.OdometerSource>())
+                            {
+                                <option value="@src">@src</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Operational Notes</label>
+                        <input type="text" name="notes" class="form-control" placeholder="Optional notes (e.g. at refuel stop, service bay)" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Save Reading</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- CHANGE STATUS MODAL -->
+<div class="modal fade" id="statusModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="ChangeStatus">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-arrow-repeat text-info me-2"></i>Change Vehicle Status</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Target Operational Status</label>
+                        <select name="newStatus" class="form-select" required>
+                            @foreach (var s in Enum.GetValues<ConnectedOps.Domain.Vehicles.VehicleStatus>())
+                            {
+                                <option value="@s" selected="@(Model.Vehicle.Status == s ? "selected" : null)">@s</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Reason / Operational Remark</label>
+                        <textarea name="notes" class="form-control" rows="3" placeholder="Reason for transition (e.g. dispatched on route, undergoing scheduled maintenance...)"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Update Status</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- REGISTRATION MODAL -->
+<div class="modal fade" id="registrationModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="AddRegistration">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-postcard text-success me-2"></i>Add Registration Record</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Registration / License Plate Number <span class="text-danger">*</span></label>
+                        <input type="text" asp-for="RegInput.RegistrationNumber" class="form-control" required />
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small">State / Province</label>
+                            <input type="text" asp-for="RegInput.RegistrationStateProvince" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small">Country Code</label>
+                            <input type="text" asp-for="RegInput.RegistrationCountryCode" class="form-control form-control-sm text-uppercase" maxlength="10" />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small">Issuing Authority</label>
+                        <input type="text" asp-for="RegInput.IssuingAuthority" class="form-control form-control-sm" placeholder="e.g. Department of Motor Vehicles" />
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small">Registration Date</label>
+                            <input type="date" asp-for="RegInput.RegistrationDate" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small">Expiry Date</label>
+                            <input type="date" asp-for="RegInput.ExpiryDate" class="form-control form-control-sm" />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small">Notes</label>
+                        <input type="text" asp-for="RegInput.Notes" class="form-control form-control-sm" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success btn-sm">Save Registration</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- DOCUMENT MODAL -->
+<div class="modal fade" id="documentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="AddDocument">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-file-earmark-plus text-success me-2"></i>Upload Vehicle Document</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Document Type <span class="text-danger">*</span></label>
+                        <select asp-for="DocInput.DocumentType" class="form-select" required>
+                            @foreach (var dt in Enum.GetValues<ConnectedOps.Domain.Vehicles.VehicleDocumentType>())
+                            {
+                                <option value="@dt">@dt</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Document Title <span class="text-danger">*</span></label>
+                        <input type="text" asp-for="DocInput.Title" class="form-control" placeholder="e.g. Commercial Fleet Insurance Policy 2026" required />
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small">Document Number</label>
+                            <input type="text" asp-for="DocInput.DocumentNumber" class="form-control form-control-sm" placeholder="e.g. POL-889102" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small">Issuing Authority</label>
+                            <input type="text" asp-for="DocInput.IssuingAuthority" class="form-control form-control-sm" placeholder="e.g. Travelers Insurance" />
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small">Issue Date</label>
+                            <input type="date" asp-for="DocInput.IssueDate" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small">Expiry Date</label>
+                            <input type="date" asp-for="DocInput.ExpiryDate" class="form-control form-control-sm" />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small">File Reference / Key</label>
+                        <input type="text" asp-for="DocInput.FileObjectKey" class="form-control form-control-sm" placeholder="docs/vehicles/policy.pdf" required />
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small">File Name</label>
+                            <input type="text" asp-for="DocInput.FileName" class="form-control form-control-sm" placeholder="policy.pdf" required />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small">Content Type</label>
+                            <input type="text" asp-for="DocInput.ContentType" class="form-control form-control-sm" placeholder="application/pdf" required />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small">Notes</label>
+                        <textarea asp-for="DocInput.Notes" class="form-control form-control-sm" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success btn-sm">Upload Document</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- TECHNICAL SPECS MODAL -->
+<div class="modal fade" id="specsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="UpsertSpecs">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-sliders2 text-primary me-2"></i>Configure Technical Specifications</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Engine Displacement (cc)</label>
+                            <input type="number" asp-for="SpecInput.EngineCapacityCc" class="form-control form-control-sm" placeholder="e.g. 6700" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Engine Power (kW)</label>
+                            <input type="number" step="0.1" asp-for="SpecInput.EnginePowerKw" class="form-control form-control-sm" placeholder="e.g. 240" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Cylinder Count</label>
+                            <input type="number" asp-for="SpecInput.CylinderCount" class="form-control form-control-sm" placeholder="e.g. 6" />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Fuel Tank Capacity (L)</label>
+                            <input type="number" step="0.1" asp-for="SpecInput.FuelTankCapacity" class="form-control form-control-sm" placeholder="e.g. 350" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Battery Voltage (V)</label>
+                            <input type="number" step="0.1" asp-for="SpecInput.BatteryVoltage" class="form-control form-control-sm" placeholder="e.g. 24" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Drive Type</label>
+                            <select asp-for="SpecInput.DriveType" class="form-select form-select-sm">
+                                @foreach (var d in Enum.GetValues<DriveType>())
+                                {
+                                    <option value="@d">@d</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Length (mm)</label>
+                            <input type="number" step="0.1" asp-for="SpecInput.LengthMm" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Width (mm)</label>
+                            <input type="number" step="0.1" asp-for="SpecInput.WidthMm" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Height (mm)</label>
+                            <input type="number" step="0.1" asp-for="SpecInput.HeightMm" class="form-control form-control-sm" />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Gross Weight (kg)</label>
+                            <input type="number" step="0.1" asp-for="SpecInput.GrossVehicleWeightKg" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Kerb Weight (kg)</label>
+                            <input type="number" step="0.1" asp-for="SpecInput.KerbWeightKg" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Payload Capacity (kg)</label>
+                            <input type="number" step="0.1" asp-for="SpecInput.PayloadCapacityKg" class="form-control form-control-sm" />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Axle Count</label>
+                            <input type="number" asp-for="SpecInput.AxleCount" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Wheel Count</label>
+                            <input type="number" asp-for="SpecInput.WheelCount" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Seat Count</label>
+                            <input type="number" asp-for="SpecInput.SeatCount" class="form-control form-control-sm" />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Body Type</label>
+                            <input type="text" asp-for="SpecInput.BodyType" class="form-control form-control-sm" placeholder="e.g. Box / Flatbed" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Tyre Size Front</label>
+                            <input type="text" asp-for="SpecInput.TyreSizeFront" class="form-control form-control-sm" placeholder="e.g. 295/80R22.5" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Tyre Size Rear</label>
+                            <input type="text" asp-for="SpecInput.TyreSizeRear" class="form-control form-control-sm" placeholder="e.g. 295/80R22.5" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Save Specifications</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

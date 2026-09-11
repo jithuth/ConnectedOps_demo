@@ -79,6 +79,33 @@ public static class PermissionKeys
         public const string Edit = "Vehicles.Edit";
         public const string Delete = "Vehicles.Delete";
         public const string AssignDriver = "Vehicles.AssignDriver";
+        public const string ManageStatus = "Vehicles.ManageStatus";
+        public const string ManageOdometer = "Vehicles.ManageOdometer";
+        public const string ManageDocuments = "Vehicles.ManageDocuments";
+        public const string ManageNotes = "Vehicles.ManageNotes";
+    }
+
+    public static class VehicleCategories
+    {
+        public const string View = "VehicleCategories.View";
+        public const string Manage = "VehicleCategories.Manage";
+    }
+
+    public static class VehicleMakes
+    {
+        public const string View = "VehicleMakes.View";
+        public const string Manage = "VehicleMakes.Manage";
+    }
+
+    public static class VehicleModels
+    {
+        public const string View = "VehicleModels.View";
+        public const string Manage = "VehicleModels.Manage";
+    }
+
+    public static class VehicleDashboard
+    {
+        public const string View = "VehicleDashboard.View";
     }
 
     public static class Drivers
