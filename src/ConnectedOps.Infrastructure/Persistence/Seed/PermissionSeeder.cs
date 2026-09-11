@@ -1,4 +1,4 @@
-﻿using ConnectedOps.Domain.Authorization;
+using ConnectedOps.Domain.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 namespace ConnectedOps.Infrastructure.Persistence.Seed;
@@ -41,6 +41,81 @@ public static class PermissionSeeder
             PermissionKeys.Users.ManageRoles,
             "Manage User Roles",
             "Users"),
+
+        new(
+            PermissionKeys.Organization.View,
+            "View Organization",
+            "Organization"),
+
+        new(
+            PermissionKeys.Organization.Manage,
+            "Manage Organization",
+            "Organization"),
+
+        new(
+            PermissionKeys.Branches.View,
+            "View Branches",
+            "Branches"),
+
+        new(
+            PermissionKeys.Branches.Manage,
+            "Manage Branches",
+            "Branches"),
+
+        new(
+            PermissionKeys.Locations.View,
+            "View Locations",
+            "Locations"),
+
+        new(
+            PermissionKeys.Locations.Manage,
+            "Manage Locations",
+            "Locations"),
+
+        new(
+            PermissionKeys.Departments.View,
+            "View Departments",
+            "Departments"),
+
+        new(
+            PermissionKeys.Departments.Manage,
+            "Manage Departments",
+            "Departments"),
+
+        new(
+            PermissionKeys.Teams.View,
+            "View Teams",
+            "Teams"),
+
+        new(
+            PermissionKeys.Teams.Manage,
+            "Manage Teams",
+            "Teams"),
+
+        new(
+            PermissionKeys.Employees.View,
+            "View Employees",
+            "Employees"),
+
+        new(
+            PermissionKeys.Employees.Create,
+            "Create Employees",
+            "Employees"),
+
+        new(
+            PermissionKeys.Employees.Edit,
+            "Edit Employees",
+            "Employees"),
+
+        new(
+            PermissionKeys.Employees.Delete,
+            "Delete Employees",
+            "Employees"),
+
+        new(
+            PermissionKeys.OrganizationDashboard.View,
+            "View Organization Dashboard",
+            "Organization"),
 
         new(
             PermissionKeys.Vehicles.View,

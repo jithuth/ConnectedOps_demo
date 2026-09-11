@@ -7,6 +7,7 @@ using ConnectedOps.Domain.Authorization;
 using ConnectedOps.Domain.Auth;
 using TenantSettingsEntity = ConnectedOps.Domain.Tenancy.TenantSettings;
 using ConnectedOps.Domain.Auditing;
+using ConnectedOps.Domain.Organization;
 using ConnectedOps.Domain.Platform;
 using ConnectedOps.Domain.Security;
 
@@ -58,6 +59,27 @@ public sealed class ConnectedOpsDbContext
 
     public DbSet<RolePermission> RolePermissions =>
         Set<RolePermission>();
+
+    public DbSet<OrganizationProfile> OrganizationProfiles =>
+        Set<OrganizationProfile>();
+
+    public DbSet<Branch> Branches =>
+        Set<Branch>();
+
+    public DbSet<Location> Locations =>
+        Set<Location>();
+
+    public DbSet<Department> Departments =>
+        Set<Department>();
+
+    public DbSet<Team> Teams =>
+        Set<Team>();
+
+    public DbSet<Employee> Employees =>
+        Set<Employee>();
+
+    public DbSet<OrganizationSettings> OrganizationSettings =>
+        Set<OrganizationSettings>();
 
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)

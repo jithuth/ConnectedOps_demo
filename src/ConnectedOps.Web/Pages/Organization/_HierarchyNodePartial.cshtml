@@ -1,0 +1,53 @@
+@model ConnectedOps.Application.Organization.OrganizationHierarchyNodeDto
+
+@{
+    var icon = Model.NodeType switch
+    {
+        "Organization" => "bi-building-fill text-primary",
+        "Branch" => "bi-geo-alt-fill text-danger",
+        "Location" => "bi-pin-map-fill text-info",
+        "Department" => "bi-diagram-2-fill text-warning",
+        "Team" => "bi-people-fill text-success",
+        "Employee" => "bi-person-fill text-secondary",
+        _ => "bi-circle-fill text-muted"
+    };
+
+    var badgeClass = Model.NodeType switch
+    {
+        "Organization" => "bg-primary-subtle text-primary",
+        "Branch" => "bg-danger-subtle text-danger",
+        "Location" => "bg-info-subtle text-info",
+        "Department" => "bg-warning-subtle text-warning",
+        "Team" => "bg-success-subtle text-success",
+        "Employee" => "bg-secondary-subtle text-secondary",
+        _ => "bg-light text-dark"
+    };
+}
+
+<ul>
+    <li>
+        <div class="tree-node-card">
+            <i class="bi @icon fs-5"></i>
+            <div>
+                <span class="fw-bold">@Model.Name</span>
+                @if (!string.IsNullOrWhiteSpace(Model.Code))
+                {
+                    <code class="ms-1 small">@Model.Code</code>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.SubTitle))
+                {
+                    <span class="text-secondary small ms-2">(@Model.SubTitle)</span>
+                }
+            </div>
+            <span class="badge @badgeClass ms-2">@Model.NodeType</span>
+        </div>
+
+        @if (Model.Children.Count > 0)
+        {
+            @foreach (var child in Model.Children)
+            {
+                @await Html.PartialAsync("_HierarchyNodePartial", child)
+            }
+        }
+    </li>
+</ul>

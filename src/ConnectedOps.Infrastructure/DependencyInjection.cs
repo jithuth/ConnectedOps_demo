@@ -41,6 +41,9 @@ using ConnectedOps.Infrastructure.Security;
 using ConnectedOps.Application.Platform;
 using ConnectedOps.Infrastructure.Platform;
 
+using ConnectedOps.Application.Organization;
+using ConnectedOps.Infrastructure.Organization;
+
 
 
 public static class DependencyInjection
@@ -108,6 +111,8 @@ public static class DependencyInjection
         AddSecurityLogging(services);
 
         AddPlatformServices(services, configuration);
+
+        AddOrganizationServices(services);
             
         AddValidation(
             services);
@@ -491,5 +496,52 @@ public static class DependencyInjection
         services.AddScoped<
             IPlatformSettingsService,
             PlatformSettingsService>();
+    }
+
+    // ================================================================
+    // PHASE 2 - ORGANIZATION & USER MANAGEMENT
+    // ================================================================
+    private static void AddOrganizationServices(
+        IServiceCollection services)
+    {
+        services.AddScoped<
+            IOrganizationProfileService,
+            OrganizationProfileService>();
+
+        services.AddScoped<
+            IBranchService,
+            BranchService>();
+
+        services.AddScoped<
+            ILocationService,
+            LocationService>();
+
+        services.AddScoped<
+            IDepartmentService,
+            DepartmentService>();
+
+        services.AddScoped<
+            ITeamService,
+            TeamService>();
+
+        services.AddScoped<
+            IEmployeeService,
+            EmployeeService>();
+
+        services.AddScoped<
+            IOrganizationHierarchyService,
+            OrganizationHierarchyService>();
+
+        services.AddScoped<
+            IOrganizationDashboardService,
+            OrganizationDashboardService>();
+
+        services.AddScoped<
+            IOrganizationSettingsService,
+            OrganizationSettingsService>();
+
+        services.AddScoped<
+            ITenantUserAdministrationService,
+            TenantUserAdministrationService>();
     }
 }

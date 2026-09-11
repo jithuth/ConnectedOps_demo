@@ -84,6 +84,13 @@ public sealed class LoginModel : PageModel
                 new(ClaimTypes.Role, user.PlatformRole.ToString())
             };
 
+            if (loginResult.Tenants.Count > 0)
+            {
+                var firstTenant = loginResult.Tenants.First();
+                claims.Add(new Claim(ConnectedOpsClaimTypes.TenantId, firstTenant.TenantId.ToString()));
+                claims.Add(new Claim(ConnectedOpsClaimTypes.TenantUserId, firstTenant.TenantUserId.ToString()));
+            }
+
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var principal = new ClaimsPrincipal(identity);
 

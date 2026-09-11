@@ -1,0 +1,155 @@
+@page "/Organization/Profile"
+@model ConnectedOps.Web.Pages.Organization.ProfileModel
+@{
+    ViewData["Title"] = "Company Profile & Identity";
+    ViewData["Subtitle"] = "Manage company legal structure, tax details, headquarters address, and localization";
+}
+
+@if (TempData["Feedback"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show small py-2 px-3 mb-3 d-flex align-items-center gap-2" role="alert">
+        <i class="bi bi-check-circle-fill fs-6"></i>
+        <div>@TempData["Feedback"]</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show small py-2 px-3 mb-3 d-flex align-items-center gap-2" role="alert">
+        <i class="bi bi-exclamation-triangle-fill fs-6"></i>
+        <div>@TempData["Error"]</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<form method="post">
+    @Html.AntiForgeryToken()
+    <div class="row g-4">
+        <!-- LEFT COLUMN: LEGAL & IDENTIFIERS -->
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm bg-body mb-4">
+                <div class="card-header bg-transparent border-bottom py-3">
+                    <h6 class="m-0 fw-bold"><i class="bi bi-building me-2 text-primary"></i>Legal Entity Information</h6>
+                </div>
+                <div class="card-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Legal Organization Name <span class="text-danger">*</span></label>
+                        <input type="text" name="Input.LegalName" value="@Model.Input?.LegalName" class="form-control" required maxlength="250" placeholder="e.g. Apex Global Logistics Ltd." />
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Trade / Doing Business As (DBA) Name</label>
+                            <input type="text" name="Input.TradeName" value="@Model.Input?.TradeName" class="form-control" maxlength="250" placeholder="e.g. Apex Freight" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Website</label>
+                            <input type="url" name="Input.Website" value="@Model.Input?.Website" class="form-control" maxlength="250" placeholder="https://www.example.com" />
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Company Registration Number</label>
+                            <input type="text" name="Input.RegistrationNumber" value="@Model.Input?.RegistrationNumber" class="form-control" maxlength="100" placeholder="e.g. CR-894218" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Tax Identification / VAT Number</label>
+                            <input type="text" name="Input.TaxNumber" value="@Model.Input?.TaxNumber" class="form-control" maxlength="100" placeholder="e.g. TAX-99410294" />
+                        </div>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Primary Contact Email</label>
+                            <input type="email" name="Input.PrimaryContactEmail" value="@Model.Input?.PrimaryContactEmail" class="form-control" maxlength="250" placeholder="contact@company.com" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Primary Contact Phone</label>
+                            <input type="tel" name="Input.PrimaryContactPhone" value="@Model.Input?.PrimaryContactPhone" class="form-control" maxlength="50" placeholder="+1 (555) 000-0000" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LOCALIZATION CARD -->
+            <div class="card border-0 shadow-sm bg-body">
+                <div class="card-header bg-transparent border-bottom py-3">
+                    <h6 class="m-0 fw-bold"><i class="bi bi-globe me-2 text-info"></i>Localization & Regional Standards</h6>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Default Operational Currency <span class="text-danger">*</span></label>
+                            <select name="Input.CurrencyCode" class="form-select" required>
+                                <option value="USD" selected="@(Model.Input?.CurrencyCode == "USD")">USD - US Dollar ($)</option>
+                                <option value="EUR" selected="@(Model.Input?.CurrencyCode == "EUR")">EUR - Euro (€)</option>
+                                <option value="GBP" selected="@(Model.Input?.CurrencyCode == "GBP")">GBP - British Pound (£)</option>
+                                <option value="AED" selected="@(Model.Input?.CurrencyCode == "AED")">AED - UAE Dirham</option>
+                                <option value="CAD" selected="@(Model.Input?.CurrencyCode == "CAD")">CAD - Canadian Dollar</option>
+                                <option value="AUD" selected="@(Model.Input?.CurrencyCode == "AUD")">AUD - Australian Dollar</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Primary Time Zone <span class="text-danger">*</span></label>
+                            <select name="Input.TimeZoneId" class="form-select" required>
+                                <option value="UTC" selected="@(Model.Input?.TimeZoneId == "UTC")">UTC - Universal Time Coordinated</option>
+                                <option value="Eastern Standard Time" selected="@(Model.Input?.TimeZoneId == "Eastern Standard Time")">Eastern Time (US & Canada)</option>
+                                <option value="Central Standard Time" selected="@(Model.Input?.TimeZoneId == "Central Standard Time")">Central Time (US & Canada)</option>
+                                <option value="Mountain Standard Time" selected="@(Model.Input?.TimeZoneId == "Mountain Standard Time")">Mountain Time (US & Canada)</option>
+                                <option value="Pacific Standard Time" selected="@(Model.Input?.TimeZoneId == "Pacific Standard Time")">Pacific Time (US & Canada)</option>
+                                <option value="GMT Standard Time" selected="@(Model.Input?.TimeZoneId == "GMT Standard Time")">London / Dublin (GMT)</option>
+                                <option value="Arabian Standard Time" selected="@(Model.Input?.TimeZoneId == "Arabian Standard Time")">Dubai / Abu Dhabi (GST)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: HEADQUARTERS ADDRESS -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm bg-body mb-4">
+                <div class="card-header bg-transparent border-bottom py-3">
+                    <h6 class="m-0 fw-bold"><i class="bi bi-geo-alt me-2 text-danger"></i>Headquarters Physical Address</h6>
+                </div>
+                <div class="card-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Address Line 1</label>
+                        <input type="text" name="Input.AddressLine1" value="@Model.Input?.AddressLine1" class="form-control" maxlength="250" placeholder="Street address, P.O. box" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Address Line 2</label>
+                        <input type="text" name="Input.AddressLine2" value="@Model.Input?.AddressLine2" class="form-control" maxlength="250" placeholder="Suite, unit, building, floor" />
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">City</label>
+                            <input type="text" name="Input.City" value="@Model.Input?.City" class="form-control" maxlength="100" placeholder="City" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">State / Province</label>
+                            <input type="text" name="Input.StateOrProvince" value="@Model.Input?.StateOrProvince" class="form-control" maxlength="100" placeholder="State or Region" />
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-4">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Postal / ZIP Code</label>
+                            <input type="text" name="Input.PostalCode" value="@Model.Input?.PostalCode" class="form-control" maxlength="20" placeholder="Postal Code" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Country Code</label>
+                            <input type="text" name="Input.CountryCode" value="@Model.Input?.CountryCode" class="form-control text-uppercase" maxlength="10" placeholder="e.g. US, AE, GB" />
+                        </div>
+                    </div>
+
+                    <hr class="my-4" />
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check2-circle me-1"></i>Save Profile Changes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>

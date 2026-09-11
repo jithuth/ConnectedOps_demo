@@ -1,0 +1,112 @@
+@page "/Organization/Hierarchy"
+@model ConnectedOps.Web.Pages.Organization.HierarchyModel
+@{
+    ViewData["Title"] = "Organization Hierarchy";
+    ViewData["Subtitle"] = "Interactive organizational tree spanning branches, divisions, teams, and human resources";
+}
+
+<div class="card border-0 shadow-sm bg-body">
+    <div class="card-header bg-transparent border-bottom py-3 d-flex align-items-center justify-content-between">
+        <h6 class="m-0 fw-bold"><i class="bi bi-bezier2 me-2 text-primary"></i>Structural Organization Chart</h6>
+        <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-secondary" onclick="expandAll()"><i class="bi bi-arrows-expand me-1"></i>Expand All</button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="collapseAll()"><i class="bi bi-arrows-collapse me-1"></i>Collapse All</button>
+        </div>
+    </div>
+    <div class="card-body p-4">
+        @if (Model.Hierarchy.Count == 0)
+        {
+            <div class="text-center py-5 text-secondary">
+                <i class="bi bi-diagram-3 fs-1 d-block mb-2 text-muted"></i>
+                <div>No organization hierarchy data available.</div>
+            </div>
+        }
+        else
+        {
+            <div class="org-tree">
+                @foreach (var root in Model.Hierarchy)
+                {
+                    @await Html.PartialAsync("_HierarchyNodePartial", root)
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .org-tree ul {
+            list-style-type: none;
+            padding-left: 24px;
+            position: relative;
+        }
+
+        .org-tree > ul {
+            padding-left: 0;
+        }
+
+        .org-tree li {
+            position: relative;
+            padding-top: 8px;
+            padding-bottom: 8px;
+        }
+
+        .org-tree li::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -14px;
+            bottom: 50%;
+            width: 12px;
+            border-left: 2px solid #cbd5e1;
+            border-bottom: 2px solid #cbd5e1;
+        }
+
+        .org-tree li::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: -14px;
+            bottom: 0;
+            border-left: 2px solid #cbd5e1;
+        }
+
+        .org-tree li:last-child::after {
+            display: none;
+        }
+
+        .org-tree > ul > li::before,
+        .org-tree > ul > li::after {
+            display: none;
+        }
+
+        .tree-node-card {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 14px;
+            border-radius: 8px;
+            background: var(--bs-body-bg);
+            border: 1px solid var(--bs-border-color);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: all 0.15s ease;
+        }
+
+        .tree-node-card:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.15);
+            transform: translateY(-1px);
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        function expandAll() {
+            document.querySelectorAll('.org-tree ul').forEach(el => el.style.display = 'block');
+        }
+        function collapseAll() {
+            document.querySelectorAll('.org-tree ul ul').forEach(el => el.style.display = 'none');
+        }
+    </script>
+}

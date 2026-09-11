@@ -1,0 +1,116 @@
+@page "/Organization/Settings"
+@model ConnectedOps.Web.Pages.Organization.SettingsModel
+@{
+    ViewData["Title"] = "Organization Policies & Settings";
+    ViewData["Subtitle"] = "Configure mandatory organizational placements, auto-provisioning rules, and fiscal calendar";
+}
+
+@if (TempData["Feedback"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show small py-2 px-3 mb-3 d-flex align-items-center gap-2" role="alert">
+        <i class="bi bi-check-circle-fill fs-6"></i>
+        <div>@TempData["Feedback"]</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show small py-2 px-3 mb-3 d-flex align-items-center gap-2" role="alert">
+        <i class="bi bi-exclamation-triangle-fill fs-6"></i>
+        <div>@TempData["Error"]</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<form method="post">
+    @Html.AntiForgeryToken()
+    <div class="row g-4">
+        <!-- PLACEMENT POLICIES -->
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm bg-body mb-4">
+                <div class="card-header bg-transparent border-bottom py-3">
+                    <h6 class="m-0 fw-bold"><i class="bi bi-shield-check me-2 text-primary"></i>Organizational Placement Governance</h6>
+                </div>
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between py-3 border-bottom">
+                        <div>
+                            <div class="fw-bold">Enforce Branch Assignment</div>
+                            <div class="small text-secondary">Require all active employees and fleet resources to be assigned to a designated branch</div>
+                        </div>
+                        <div class="form-check form-switch fs-5">
+                            <input class="form-check-input" type="checkbox" name="Input.EnforceBranchAssignment" value="true" @(Model.Input?.EnforceBranchAssignment == true ? "checked" : "") />
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center justify-content-between py-3 border-bottom">
+                        <div>
+                            <div class="fw-bold">Enforce Department Assignment</div>
+                            <div class="small text-secondary">Require all employee records to have a valid departmental parent unit</div>
+                        </div>
+                        <div class="form-check form-switch fs-5">
+                            <input class="form-check-input" type="checkbox" name="Input.EnforceDepartmentAssignment" value="true" @(Model.Input?.EnforceDepartmentAssignment == true ? "checked" : "") />
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center justify-content-between py-3">
+                        <div>
+                            <div class="fw-bold">Auto-Create Employee Profile For New Users</div>
+                            <div class="small text-secondary">When provisioning a tenant login account, automatically enroll an Employee directory card</div>
+                        </div>
+                        <div class="form-check form-switch fs-5">
+                            <input class="form-check-input" type="checkbox" name="Input.AutoCreateEmployeeForUser" value="true" @(Model.Input?.AutoCreateEmployeeForUser == true ? "checked" : "") />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FISCAL & CALENDAR -->
+            <div class="card border-0 shadow-sm bg-body">
+                <div class="card-header bg-transparent border-bottom py-3">
+                    <h6 class="m-0 fw-bold"><i class="bi bi-calendar3 me-2 text-info"></i>Calendar & Fiscal Policies</h6>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Fiscal Year Starting Month <span class="text-danger">*</span></label>
+                            <select name="Input.FiscalYearStartMonth" class="form-select" required>
+                                <option value="1" selected="@(Model.Input?.FiscalYearStartMonth == 1)">January (Calendar Year)</option>
+                                <option value="4" selected="@(Model.Input?.FiscalYearStartMonth == 4)">April (Q2 Start)</option>
+                                <option value="7" selected="@(Model.Input?.FiscalYearStartMonth == 7)">July (Mid-Year)</option>
+                                <option value="10" selected="@(Model.Input?.FiscalYearStartMonth == 10)">October (Q4 Start)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Standard Working Days Schedule</label>
+                            <input type="text" name="Input.DefaultWorkingDaysJson" value="@Model.Input?.DefaultWorkingDaysJson" class="form-control font-monospace small" placeholder='["Mon","Tue","Wed","Thu","Fri"]' />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: SUMMARY & SAVE -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm bg-body">
+                <div class="card-header bg-transparent border-bottom py-3">
+                    <h6 class="m-0 fw-bold"><i class="bi bi-info-circle me-2 text-secondary"></i>Policy Enforcement Summary</h6>
+                </div>
+                <div class="card-body p-4">
+                    <div class="alert alert-info small d-flex align-items-start gap-2 mb-4">
+                        <i class="bi bi-lightbulb-fill fs-5 mt-1"></i>
+                        <div>
+                            These governance rules ensure strict organizational hygiene. Enforced placement guarantees that fleet assets and operational logs map directly to defined cost centers and regional managers.
+                        </div>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check2-circle me-1"></i>Save Governance Policies
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>

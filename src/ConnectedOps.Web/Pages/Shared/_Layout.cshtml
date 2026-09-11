@@ -293,6 +293,68 @@
                             </a>
                         </li>
 
+                        <li class="nav-header">ORGANIZATION</li>
+                        <li class="nav-item">
+                            <a href="/Organization/Dashboard" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Organization/Dashboard") ? "active" : "")">
+                                <i class="nav-icon bi bi-speedometer"></i>
+                                <p>Org Dashboard</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Organization/Profile" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Organization/Profile") ? "active" : "")">
+                                <i class="nav-icon bi bi-building-gear"></i>
+                                <p>Company Profile</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Organization/Branches" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Organization/Branches") ? "active" : "")">
+                                <i class="nav-icon bi bi-geo-alt"></i>
+                                <p>Branches</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Organization/Locations" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Organization/Locations") ? "active" : "")">
+                                <i class="nav-icon bi bi-pin-map"></i>
+                                <p>Locations</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Organization/Departments" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Organization/Departments") ? "active" : "")">
+                                <i class="nav-icon bi bi-diagram-2"></i>
+                                <p>Departments</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Organization/Teams" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Organization/Teams") ? "active" : "")">
+                                <i class="nav-icon bi bi-people"></i>
+                                <p>Teams</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Organization/Employees" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Organization/Employees") ? "active" : "")">
+                                <i class="nav-icon bi bi-person-lines-fill"></i>
+                                <p>Employees</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Organization/Users" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Organization/Users") ? "active" : "")">
+                                <i class="nav-icon bi bi-person-badge-fill"></i>
+                                <p>Tenant Users</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Organization/Hierarchy" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Organization/Hierarchy") ? "active" : "")">
+                                <i class="nav-icon bi bi-bezier2"></i>
+                                <p>Hierarchy Tree</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Organization/Settings" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Organization/Settings") ? "active" : "")">
+                                <i class="nav-icon bi bi-sliders"></i>
+                                <p>Org Settings</p>
+                            </a>
+                        </li>
+
                         <li class="nav-header">MONITORING</li>
                         <li class="nav-item">
                             <a href="/Platform/AuditLogs" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Platform/AuditLogs") ? "active" : "")">

@@ -1,4 +1,4 @@
-﻿namespace ConnectedOps.Domain.Auditing;
+namespace ConnectedOps.Domain.Auditing;
 
 public enum AuditAction
 {
@@ -11,5 +11,8 @@ public enum AuditAction
     PermissionsUpdated = 7,
     SettingsUpdated = 8,
     InvitationCreated = 9,
-    InvitationAccepted = 10
+    InvitationAccepted = 10,
+    Linked = 11,
+    Unlinked = 12,
+    Assigned = 13
 }

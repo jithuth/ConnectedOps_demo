@@ -1,4 +1,4 @@
-﻿using ConnectedOps.Application.Common.Exceptions;
+using ConnectedOps.Application.Common.Exceptions;
 using ConnectedOps.Application.Tenants;
 using ConnectedOps.Domain.Authorization;
 using ConnectedOps.Domain.Tenancy;
@@ -291,6 +291,22 @@ public sealed class TenantProvisioningService
                 PermissionKeys.Users.Create,
                 PermissionKeys.Users.Edit,
                 PermissionKeys.Users.ManageRoles,
+
+                PermissionKeys.Organization.View,
+                PermissionKeys.Organization.Manage,
+                PermissionKeys.Branches.View,
+                PermissionKeys.Branches.Manage,
+                PermissionKeys.Locations.View,
+                PermissionKeys.Locations.Manage,
+                PermissionKeys.Departments.View,
+                PermissionKeys.Departments.Manage,
+                PermissionKeys.Teams.View,
+                PermissionKeys.Teams.Manage,
+                PermissionKeys.Employees.View,
+                PermissionKeys.Employees.Create,
+                PermissionKeys.Employees.Edit,
+                PermissionKeys.Employees.Delete,
+                PermissionKeys.OrganizationDashboard.View,
 
                 PermissionKeys.Vehicles.View,
                 PermissionKeys.Vehicles.Create,
