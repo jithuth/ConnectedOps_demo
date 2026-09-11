@@ -120,119 +120,136 @@ public static class PlatformBootstrapService
         ApplicationUser superAdmin,
         ILogger logger)
     {
-        logger.LogInformation("Provisioning default initial tenant 'Primary Operations Fleet'...");
-
-        var tenant = new Tenant(
-            "Primary Operations Fleet",
-            "PRIMARY-OPS",
-            superAdmin.Email);
-
-        dbContext.Tenants.Add(tenant);
-        await dbContext.SaveChangesAsync();
-
-        var roles = CreateDefaultRoles(tenant.Id);
-        dbContext.TenantRoles.AddRange(roles);
-        await dbContext.SaveChangesAsync();
-
-        var permissions = await dbContext.Permissions
-            .Where(x => x.IsActive)
-            .ToListAsync();
-
-        var ownerRole = roles.Single(x => x.Code == TenantRoleCodes.TenantOwner);
-
-        foreach (var permission in permissions)
+        try
         {
-            dbContext.RolePermissions.Add(
-                new RolePermission(ownerRole.Id, permission.Id));
+            var existingTenant = await dbContext.Tenants
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(t => t.Code == "PRIMARY-OPS");
+
+            if (existingTenant is not null)
+            {
+                await EnsureSuperAdminTenantMembershipAsync(dbContext, superAdmin, logger);
+                return;
+            }
+
+            logger.LogInformation("Provisioning default initial tenant 'Primary Operations Fleet'...");
+
+            var tenant = new Tenant(
+                "Primary Operations Fleet",
+                "PRIMARY-OPS",
+                superAdmin.Email);
+
+            dbContext.Tenants.Add(tenant);
+            await dbContext.SaveChangesAsync();
+
+            var roles = CreateDefaultRoles(tenant.Id);
+            dbContext.TenantRoles.AddRange(roles);
+            await dbContext.SaveChangesAsync();
+
+            var permissions = await dbContext.Permissions
+                .Where(x => x.IsActive)
+                .ToListAsync();
+
+            var ownerRole = roles.Single(x => x.Code == TenantRoleCodes.TenantOwner);
+
+            foreach (var permission in permissions)
+            {
+                dbContext.RolePermissions.Add(
+                    new RolePermission(ownerRole.Id, permission.Id));
+            }
+
+            var tenantUser = new TenantUser(
+                tenant.Id,
+                superAdmin.Id,
+                isDefaultTenant: true);
+
+            dbContext.TenantUsers.Add(tenantUser);
+            await dbContext.SaveChangesAsync();
+
+            var tenantUserRole = new TenantUserRole(
+                tenantUser.Id,
+                ownerRole.Id);
+
+            dbContext.TenantUserRoles.Add(tenantUserRole);
+
+            // Provision initial Organization Profile & Hierarchy
+            var profile = new OrganizationProfile(
+                tenant.Id,
+                "Primary Operations Fleet",
+                "PRIMARY-OPS",
+                null,
+                null,
+                null,
+                superAdmin.Email,
+                null,
+                "100 Enterprise Way",
+                null,
+                "Chicago",
+                "IL",
+                "60601",
+                "USA",
+                "USD",
+                "UTC");
+
+            dbContext.OrganizationProfiles.Add(profile);
+
+            var hqBranch = new Branch(
+                tenant.Id,
+                "Central Headquarters",
+                "HQ-01",
+                BranchType.HeadOffice,
+                isHeadOffice: true,
+                email: superAdmin.Email,
+                city: "Chicago",
+                stateOrProvince: "IL",
+                countryCode: "USA");
+
+            dbContext.Branches.Add(hqBranch);
+            await dbContext.SaveChangesAsync();
+
+            var mainLocation = new Location(
+                tenant.Id,
+                hqBranch.Id,
+                "Primary Fleet Depot & Yard",
+                "DEPOT-01",
+                LocationType.Yard,
+                addressLine1: "100 Enterprise Way",
+                city: "Chicago",
+                stateOrProvince: "IL",
+                countryCode: "USA");
+
+            dbContext.Locations.Add(mainLocation);
+
+            var opsDept = new Department(
+                tenant.Id,
+                "Fleet Operations",
+                "OPS",
+                hqBranch.Id,
+                description: "Core fleet logistics, vehicle management, and asset dispatch");
+
+            dbContext.Departments.Add(opsDept);
+            await dbContext.SaveChangesAsync();
+
+            var dispatchTeam = new Team(
+                tenant.Id,
+                opsDept.Id,
+                "Dispatch & Fleet Control",
+                "DISPATCH-01",
+                description: "Real-time dispatch, route planning, and operator communication");
+
+            dbContext.Teams.Add(dispatchTeam);
+
+            var orgSettings = new OrganizationSettings(tenant.Id);
+            dbContext.OrganizationSettings.Add(orgSettings);
+
+            await dbContext.SaveChangesAsync();
+
+            logger.LogInformation("Default initial tenant 'Primary Operations Fleet' (Code: PRIMARY-OPS) provisioned successfully.");
         }
-
-        var tenantUser = new TenantUser(
-            tenant.Id,
-            superAdmin.Id,
-            isDefaultTenant: true);
-
-        dbContext.TenantUsers.Add(tenantUser);
-        await dbContext.SaveChangesAsync();
-
-        var tenantUserRole = new TenantUserRole(
-            tenantUser.Id,
-            ownerRole.Id);
-
-        dbContext.TenantUserRoles.Add(tenantUserRole);
-
-        // Provision initial Organization Profile & Hierarchy
-        var profile = new OrganizationProfile(
-            tenant.Id,
-            "Primary Operations Fleet",
-            "PRIMARY-OPS",
-            null,
-            null,
-            null,
-            superAdmin.Email,
-            null,
-            "100 Enterprise Way",
-            null,
-            "Chicago",
-            "IL",
-            "60601",
-            "USA",
-            "USD",
-            "UTC");
-
-        dbContext.OrganizationProfiles.Add(profile);
-
-        var hqBranch = new Branch(
-            tenant.Id,
-            "Central Headquarters",
-            "HQ-01",
-            BranchType.HeadOffice,
-            isHeadOffice: true,
-            email: superAdmin.Email,
-            city: "Chicago",
-            stateOrProvince: "IL",
-            countryCode: "USA");
-
-        dbContext.Branches.Add(hqBranch);
-        await dbContext.SaveChangesAsync();
-
-        var mainLocation = new Location(
-            tenant.Id,
-            hqBranch.Id,
-            "Primary Fleet Depot & Yard",
-            "DEPOT-01",
-            LocationType.Yard,
-            addressLine1: "100 Enterprise Way",
-            city: "Chicago",
-            stateOrProvince: "IL",
-            countryCode: "USA");
-
-        dbContext.Locations.Add(mainLocation);
-
-        var opsDept = new Department(
-            tenant.Id,
-            "Fleet Operations",
-            "OPS",
-            hqBranch.Id,
-            description: "Core fleet logistics, vehicle management, and asset dispatch");
-
-        dbContext.Departments.Add(opsDept);
-        await dbContext.SaveChangesAsync();
-
-        var dispatchTeam = new Team(
-            tenant.Id,
-            opsDept.Id,
-            "Dispatch & Fleet Control",
-            "DISPATCH-01",
-            description: "Real-time dispatch, route planning, and operator communication");
-
-        dbContext.Teams.Add(dispatchTeam);
-
-        var orgSettings = new OrganizationSettings(tenant.Id);
-        dbContext.OrganizationSettings.Add(orgSettings);
-
-        await dbContext.SaveChangesAsync();
-
-        logger.LogInformation("Default initial tenant 'Primary Operations Fleet' (Code: PRIMARY-OPS) provisioned successfully.");
+        catch (DbUpdateException ex)
+        {
+            logger.LogInformation("Tenant provisioning handled concurrently by another process: {Message}", ex.Message);
+        }
     }
 
     private static async Task EnsureSuperAdminTenantMembershipAsync(
@@ -240,31 +257,71 @@ public static class PlatformBootstrapService
         ApplicationUser superAdmin,
         ILogger logger)
     {
-        var hasMembership = await dbContext.TenantUsers.AnyAsync(tu => tu.UserId == superAdmin.Id && tu.IsActive);
-        if (!hasMembership)
+        var defaultTenant = await dbContext.Tenants
+            .Where(t => t.Status == TenantStatus.Active)
+            .OrderBy(t => t.CreatedAtUtc)
+            .FirstOrDefaultAsync();
+
+        if (defaultTenant is null)
         {
-            var defaultTenant = await dbContext.Tenants
-                .Where(t => t.Status == TenantStatus.Active)
-                .OrderBy(t => t.CreatedAtUtc)
-                .FirstOrDefaultAsync();
+            return;
+        }
 
-            if (defaultTenant is not null)
+        var existingMembership = await dbContext.TenantUsers
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(tu => tu.TenantId == defaultTenant.Id && tu.UserId == superAdmin.Id);
+
+        var ownerRole = await dbContext.TenantRoles
+            .FirstOrDefaultAsync(r => r.TenantId == defaultTenant.Id && r.Code == TenantRoleCodes.TenantOwner);
+
+        if (existingMembership is not null)
+        {
+            if (!existingMembership.IsActive)
             {
-                var ownerRole = await dbContext.TenantRoles
-                    .FirstOrDefaultAsync(r => r.TenantId == defaultTenant.Id && r.Code == TenantRoleCodes.TenantOwner);
-
-                var tenantUser = new TenantUser(defaultTenant.Id, superAdmin.Id, isDefaultTenant: true);
-                dbContext.TenantUsers.Add(tenantUser);
+                existingMembership.Activate();
                 await dbContext.SaveChangesAsync();
-
-                if (ownerRole is not null)
-                {
-                    dbContext.TenantUserRoles.Add(new TenantUserRole(tenantUser.Id, ownerRole.Id));
-                    await dbContext.SaveChangesAsync();
-                }
-
-                logger.LogInformation("Linked SuperAdmin {Email} to existing tenant {TenantName} ({TenantCode}).", superAdmin.Email, defaultTenant.Name, defaultTenant.Code);
             }
+
+            if (ownerRole is not null)
+            {
+                var hasRole = await dbContext.TenantUserRoles
+                    .AnyAsync(tur => tur.TenantUserId == existingMembership.Id && tur.TenantRoleId == ownerRole.Id);
+
+                if (!hasRole)
+                {
+                    try
+                    {
+                        dbContext.TenantUserRoles.Add(new TenantUserRole(existingMembership.Id, ownerRole.Id));
+                        await dbContext.SaveChangesAsync();
+                    }
+                    catch (DbUpdateException)
+                    {
+                        // Concurrent role assignment handled
+                    }
+                }
+            }
+
+            logger.LogInformation("SuperAdmin {Email} already linked to tenant {TenantName} ({TenantCode}).", superAdmin.Email, defaultTenant.Name, defaultTenant.Code);
+            return;
+        }
+
+        try
+        {
+            var tenantUser = new TenantUser(defaultTenant.Id, superAdmin.Id, isDefaultTenant: true);
+            dbContext.TenantUsers.Add(tenantUser);
+            await dbContext.SaveChangesAsync();
+
+            if (ownerRole is not null)
+            {
+                dbContext.TenantUserRoles.Add(new TenantUserRole(tenantUser.Id, ownerRole.Id));
+                await dbContext.SaveChangesAsync();
+            }
+
+            logger.LogInformation("Linked SuperAdmin {Email} to existing tenant {TenantName} ({TenantCode}).", superAdmin.Email, defaultTenant.Name, defaultTenant.Code);
+        }
+        catch (DbUpdateException)
+        {
+            logger.LogInformation("SuperAdmin {Email} tenant membership created concurrently.", superAdmin.Email);
         }
     }
 
