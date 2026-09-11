@@ -154,4 +154,40 @@ public sealed class PlatformBootstrapServiceTests
 
         Assert.Null(user);
     }
+
+    [Fact]
+    public async Task BootstrapPlatformAsync_ProvisionsDefaultTenantAndLinksSuperAdmin_WhenNoTenantExists()
+    {
+        var options = new PlatformBootstrapOptions
+        {
+            Enabled = true,
+            Email = "superadmin@connectedops.com",
+            Password = "SuperAdminPassword123!",
+            FirstName = "Platform",
+            LastName = "Admin"
+        };
+
+        var (provider, context) = CreateServiceProvider(options);
+
+        await provider.BootstrapPlatformAsync();
+
+        var userManager = provider.GetRequiredService<UserManager<ApplicationUser>>();
+        var user = await userManager.FindByEmailAsync("superadmin@connectedops.com");
+
+        Assert.NotNull(user);
+
+        var tenant = await context.Tenants.FirstOrDefaultAsync(t => t.Code == "PRIMARY-OPS");
+        Assert.NotNull(tenant);
+        Assert.Equal("Primary Operations Fleet", tenant.Name);
+
+        var membership = await context.TenantUsers.FirstOrDefaultAsync(tu => tu.UserId == user.Id && tu.TenantId == tenant.Id);
+        Assert.NotNull(membership);
+        Assert.True(membership.IsActive);
+
+        var branch = await context.Branches.FirstOrDefaultAsync(b => b.TenantId == tenant.Id && b.Code == "HQ-01");
+        Assert.NotNull(branch);
+
+        var profile = await context.OrganizationProfiles.FirstOrDefaultAsync(p => p.TenantId == tenant.Id);
+        Assert.NotNull(profile);
+    }
 }

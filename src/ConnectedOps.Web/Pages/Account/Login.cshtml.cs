@@ -18,13 +18,16 @@ public sealed class LoginModel : PageModel
 {
     private readonly ConnectedOps.Application.Auth.IAuthenticationService _authService;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly ConnectedOps.Infrastructure.Persistence.ConnectedOpsDbContext _dbContext;
 
     public LoginModel(
         ConnectedOps.Application.Auth.IAuthenticationService authService,
-        UserManager<ApplicationUser> userManager)
+        UserManager<ApplicationUser> userManager,
+        ConnectedOps.Infrastructure.Persistence.ConnectedOpsDbContext dbContext)
     {
         _authService = authService;
         _userManager = userManager;
+        _dbContext = dbContext;
     }
 
     [BindProperty]
@@ -84,11 +87,60 @@ public sealed class LoginModel : PageModel
                 new(ClaimTypes.Role, user.PlatformRole.ToString())
             };
 
+            Guid? resolvedTenantId = null;
+            Guid? resolvedTenantUserId = null;
+
             if (loginResult.Tenants.Count > 0)
             {
                 var firstTenant = loginResult.Tenants.First();
-                claims.Add(new Claim(ConnectedOpsClaimTypes.TenantId, firstTenant.TenantId.ToString()));
-                claims.Add(new Claim(ConnectedOpsClaimTypes.TenantUserId, firstTenant.TenantUserId.ToString()));
+                resolvedTenantId = firstTenant.TenantId;
+                resolvedTenantUserId = firstTenant.TenantUserId;
+            }
+            else
+            {
+                // Fallback: Check user's tenant memberships in DB
+                var tenantUser = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+                    _dbContext.TenantUsers
+                        .Where(tu => tu.UserId == user.Id && tu.IsActive && tu.Tenant.Status == Domain.Tenancy.TenantStatus.Active)
+                        .OrderByDescending(tu => tu.IsDefaultTenant),
+                    HttpContext.RequestAborted);
+
+                if (tenantUser is not null)
+                {
+                    resolvedTenantId = tenantUser.TenantId;
+                    resolvedTenantUserId = tenantUser.Id;
+                }
+                else if (user.PlatformRole != PlatformRole.None)
+                {
+                    // For platform admins, select the first active tenant in the platform
+                    var defaultTenant = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+                        _dbContext.Tenants
+                            .Where(t => t.Status == Domain.Tenancy.TenantStatus.Active)
+                            .OrderBy(t => t.CreatedAtUtc),
+                        HttpContext.RequestAborted);
+
+                    if (defaultTenant is not null)
+                    {
+                        resolvedTenantId = defaultTenant.Id;
+                    }
+                }
+            }
+
+            if (resolvedTenantId.HasValue)
+            {
+                claims.Add(new Claim(ConnectedOpsClaimTypes.TenantId, resolvedTenantId.Value.ToString()));
+                Response.Cookies.Append("ConnectedOps.ActiveTenantId", resolvedTenantId.Value.ToString(), new CookieOptions
+                {
+                    HttpOnly = false,
+                    SameSite = SameSiteMode.Lax,
+                    Path = "/",
+                    Expires = RememberMe ? DateTimeOffset.UtcNow.AddDays(7) : DateTimeOffset.UtcNow.AddHours(8)
+                });
+            }
+
+            if (resolvedTenantUserId.HasValue)
+            {
+                claims.Add(new Claim(ConnectedOpsClaimTypes.TenantUserId, resolvedTenantUserId.Value.ToString()));
             }
 
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);

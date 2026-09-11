@@ -1,5 +1,7 @@
 @using System.Security.Claims
 @using ConnectedOps.Infrastructure.Auth
+@inject ConnectedOps.Application.Common.Interfaces.ICurrentUserContext CurrentUserContext
+@inject ConnectedOps.Infrastructure.Persistence.ConnectedOpsDbContext DbContext
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="light" dir="ltr">
 <head>
@@ -40,21 +42,33 @@
         }
 
         .brand-icon {
-            width: 34px;
-            height: 34px;
-            border-radius: 8px;
-            background: linear-gradient(135deg, #2563eb 0%, #06b6d4 100%);
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--co-primary), var(--co-accent));
             color: #fff;
-            margin-right: 0.75rem;
-            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+            margin-right: 0.6rem;
+            font-size: 1rem;
         }
 
         [dir="rtl"] .brand-icon {
             margin-right: 0;
             margin-left: 0.75rem;
+        }
+
+        /* Modern card refinements */
+        .card {
+            border: 1px solid var(--bs-border-color-translucent);
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.1);
         }
 
         .nav-header {
@@ -155,6 +169,62 @@
                             <span class="kbd-badge ms-2">Ctrl+K</span>
                         </button>
                     </li>
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        var activeTenantId = CurrentUserContext.TenantId;
+                        var allActiveTenants = DbContext.Tenants
+                            .Where(t => t.Status == ConnectedOps.Domain.Tenancy.TenantStatus.Active)
+                            .OrderBy(t => t.Name)
+                            .Take(20)
+                            .ToList();
+                        var activeTenant = allActiveTenants.FirstOrDefault(t => t.Id == activeTenantId);
+
+                        <li class="nav-item dropdown ms-2">
+                            <button class="btn btn-sm btn-outline-primary dropdown-toggle d-flex align-items-center gap-2 py-1 px-2" id="active-tenant-dropdown" data-bs-toggle="dropdown" aria-expanded="false" title="Active Organization">
+                                <i class="bi bi-building"></i>
+                                <span class="d-none d-sm-inline fw-semibold text-truncate" style="max-width: 180px;">
+                                    @(activeTenant?.Name ?? (activeTenantId.HasValue ? "Active Organization" : "Select Organization"))
+                                </span>
+                                @if (activeTenant != null)
+                                {
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size: 0.65rem;">@activeTenant.Code</span>
+                                }
+                            </button>
+                            <ul class="dropdown-menu shadow-sm" aria-labelledby="active-tenant-dropdown" style="min-width: 280px;">
+                                <li class="dropdown-header text-uppercase small fw-bold">Active Organization</li>
+                                @if (allActiveTenants.Count == 0)
+                                {
+                                    <li><span class="dropdown-item text-muted small">No active organizations</span></li>
+                                }
+                                else
+                                {
+                                    @foreach (var tenant in allActiveTenants)
+                                    {
+                                        var isCurrent = tenant.Id == activeTenantId;
+                                        <li>
+                                            <a class="dropdown-item d-flex align-items-center justify-content-between py-2 @(isCurrent ? "active" : "")"
+                                               href="/Platform/Tenants/Switch?id=@tenant.Id&returnUrl=@Context.Request.Path@Context.Request.QueryString">
+                                                <div>
+                                                    <div class="fw-semibold">@tenant.Name</div>
+                                                    <span class="small opacity-75">Code: @tenant.Code</span>
+                                                </div>
+                                                @if (isCurrent)
+                                                {
+                                                    <i class="bi bi-check-lg fs-5"></i>
+                                                }
+                                            </a>
+                                        </li>
+                                    }
+                                }
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item small text-primary d-flex align-items-center gap-2" href="/Platform/Tenants">
+                                        <i class="bi bi-gear"></i> Manage All Tenants
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    }
                 </ul>
 
                 <!-- Right Nav -->

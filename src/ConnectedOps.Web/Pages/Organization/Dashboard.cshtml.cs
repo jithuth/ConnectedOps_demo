@@ -13,9 +13,22 @@ public sealed class DashboardModel : PageModel
     }
 
     public OrganizationDashboardSummaryDto Summary { get; private set; } = null!;
+    public string? ErrorMessage { get; private set; }
 
     public async Task OnGetAsync()
     {
-        Summary = await _dashboardService.GetDashboardSummaryAsync(HttpContext.RequestAborted);
+        try
+        {
+            Summary = await _dashboardService.GetDashboardSummaryAsync(HttpContext.RequestAborted);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            ErrorMessage = ex.Message;
+            Summary = new OrganizationDashboardSummaryDto(
+                0, 0, 0, 0, 0, 0, 0, 0,
+                new Dictionary<string, int>(),
+                new Dictionary<string, int>(),
+                new Dictionary<string, int>());
+        }
     }
 }

@@ -53,8 +53,36 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Tenant resolution & active tenant cookie propagation middleware
+app.Use(async (context, next) =>
+{
+    if (context.User.Identity?.IsAuthenticated == true)
+    {
+        var userContext = context.RequestServices.GetService<ConnectedOps.Application.Common.Interfaces.ICurrentUserContext>();
+        if (userContext?.TenantId is Guid tenantId)
+        {
+            if (!context.Request.Cookies.TryGetValue("ConnectedOps.ActiveTenantId", out var cookieVal) ||
+                cookieVal != tenantId.ToString())
+            {
+                context.Response.Cookies.Append("ConnectedOps.ActiveTenantId", tenantId.ToString(), new CookieOptions
+                {
+                    HttpOnly = false,
+                    SameSite = SameSiteMode.Lax,
+                    Path = "/",
+                    Expires = DateTimeOffset.UtcNow.AddDays(30)
+                });
+            }
+        }
+    }
+
+    await next();
+});
+
 app.MapGet("/", () => Results.Redirect("/Platform/Dashboard"));
 
 app.MapRazorPages();
+
+// Ensure platform superadmin and default tenant are initialized
+await app.Services.BootstrapPlatformAsync();
 
 app.Run();
