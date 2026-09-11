@@ -1,0 +1,327 @@
+@page "/Billing/Accounting"
+@model ConnectedOps.Web.Pages.Billing.Accounting.IndexModel
+@using ConnectedOps.Domain.Accounting
+@{
+    ViewData["Title"] = "General Ledger & Accounting";
+    ViewData["Subtitle"] = "Double-entry general ledger, chart of accounts, and financial health statement";
+    var s = Model.Summary;
+}
+
+@if (TempData["SuccessMessage"] is not null)
+{
+    <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] is not null)
+{
+    <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- FINANCIAL HEALTH KPIS ROW -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-2">
+        <div class="card border-0 shadow-sm bg-body">
+            <div class="card-body p-3">
+                <div class="text-secondary small fw-bold text-uppercase">Operating Cash</div>
+                <div class="fs-4 fw-bold text-primary my-1">$@s.TotalCashAndBank.ToString("N2")</div>
+                <div class="small text-muted">Bank & liquid funds</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-2">
+        <div class="card border-0 shadow-sm bg-body">
+            <div class="card-body p-3">
+                <div class="text-secondary small fw-bold text-uppercase">Receivables (A/R)</div>
+                <div class="fs-4 fw-bold text-warning my-1">$@s.TotalAccountsReceivable.ToString("N2")</div>
+                <div class="small text-muted">Uncollected invoices</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-2">
+        <div class="card border-0 shadow-sm bg-body">
+            <div class="card-body p-3">
+                <div class="text-secondary small fw-bold text-uppercase">Total Assets</div>
+                <div class="fs-4 fw-bold text-info my-1">$@((s.TotalCashAndBank + s.TotalAccountsReceivable).ToString("N2"))</div>
+                <div class="small text-muted">Cash + Receivables</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-2">
+        <div class="card border-0 shadow-sm bg-body">
+            <div class="card-body p-3">
+                <div class="text-secondary small fw-bold text-uppercase">Revenue</div>
+                <div class="fs-4 fw-bold text-success my-1">$@s.TotalRevenue.ToString("N2")</div>
+                <div class="small text-muted">Subscriptions & fees</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-2">
+        <div class="card border-0 shadow-sm bg-body">
+            <div class="card-body p-3">
+                <div class="text-secondary small fw-bold text-uppercase">Expenses</div>
+                <div class="fs-4 fw-bold text-danger my-1">$@s.TotalExpenses.ToString("N2")</div>
+                <div class="small text-muted">Fleet operations</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-2">
+        <div class="card border-0 shadow-sm bg-body">
+            <div class="card-body p-3">
+                <div class="text-secondary small fw-bold text-uppercase">Net Margin</div>
+                <div class="fs-4 fw-bold @(s.NetIncome >= 0 ? "text-success" : "text-danger") my-1">
+                    $@s.NetIncome.ToString("N2")
+                </div>
+                <div class="small text-muted">Revenue - Expenses</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MAIN TABS CONTAINER -->
+<div class="card border-0 shadow-sm bg-body">
+    <div class="card-header border-0 bg-transparent pt-3 px-4 pb-0 d-flex justify-content-between align-items-center">
+        <!-- NAV TABS -->
+        <ul class="nav nav-tabs card-header-tabs" id="accountingTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active fw-semibold" id="accounts-tab" data-bs-toggle="tab" data-bs-target="#accountsTabPane" type="button" role="tab">
+                    <i class="bi bi-card-list me-1"></i> Chart of Accounts (@Model.Accounts.Count)
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-semibold" id="entries-tab" data-bs-toggle="tab" data-bs-target="#entriesTabPane" type="button" role="tab">
+                    <i class="bi bi-journal-text me-1"></i> General Ledger Entries (@Model.Entries.Count)
+                </button>
+            </li>
+        </ul>
+
+        <!-- ACTION BUTTONS -->
+        <div class="d-flex gap-2 pb-2">
+            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addAccountModal">
+                <i class="bi bi-plus-circle me-1"></i> Add Account
+            </button>
+            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#newJournalEntryModal">
+                <i class="bi bi-pencil-square me-1"></i> Post Journal Entry
+            </button>
+        </div>
+    </div>
+
+    <div class="card-body p-0">
+        <div class="tab-content" id="accountingTabContent">
+            <!-- TAB 1: CHART OF ACCOUNTS -->
+            <div class="tab-pane fade show active" id="accountsTabPane" role="tabpanel" tabindex="0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small text-secondary text-uppercase">
+                            <tr>
+                                <th class="ps-4" style="width: 120px;">Code</th>
+                                <th>Account Name</th>
+                                <th>Category</th>
+                                <th>Description</th>
+                                <th class="text-end">Balance</th>
+                                <th class="text-center" style="width: 120px;">Type</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!Model.Accounts.Any())
+                            {
+                                <tr>
+                                    <td colspan="6" class="text-center py-5 text-muted">
+                                        No chart of accounts initialized.
+                                    </td>
+                                </tr>
+                            }
+                            @foreach (var acc in Model.Accounts.OrderBy(a => a.AccountCode))
+                            {
+                                <tr>
+                                    <td class="ps-4 fw-bold font-monospace text-primary">@acc.AccountCode</td>
+                                    <td class="fw-semibold">@acc.AccountName</td>
+                                    <td>
+                                        @switch (acc.Category)
+                                        {
+                                            case AccountCategory.Asset:
+                                                <span class="badge bg-primary-subtle text-primary">Asset</span>
+                                                break;
+                                            case AccountCategory.Liability:
+                                                <span class="badge bg-warning-subtle text-warning">Liability</span>
+                                                break;
+                                            case AccountCategory.Equity:
+                                                <span class="badge bg-info-subtle text-info">Equity</span>
+                                                break;
+                                            case AccountCategory.Revenue:
+                                                <span class="badge bg-success-subtle text-success">Revenue</span>
+                                                break;
+                                            case AccountCategory.Expense:
+                                                <span class="badge bg-danger-subtle text-danger">Expense</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td class="small text-secondary">@(acc.Description ?? "-")</td>
+                                    <td class="text-end fw-bold font-monospace fs-6 @(acc.CurrentBalance >= 0 ? "text-body" : "text-danger")">
+                                        $@acc.CurrentBalance.ToString("N2")
+                                    </td>
+                                    <td class="text-center">
+                                        @if (acc.IsSystem)
+                                        {
+                                            <span class="badge bg-secondary-subtle text-secondary small">System</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-light text-muted small">Custom</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB 2: GENERAL LEDGER JOURNAL ENTRIES -->
+            <div class="tab-pane fade" id="entriesTabPane" role="tabpanel" tabindex="0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small text-secondary text-uppercase">
+                            <tr>
+                                <th class="ps-4">Entry #</th>
+                                <th>Date</th>
+                                <th>Account</th>
+                                <th>Description</th>
+                                <th>Reference</th>
+                                <th class="text-end">Debit ($)</th>
+                                <th class="text-end pe-4">Credit ($)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!Model.Entries.Any())
+                            {
+                                <tr>
+                                    <td colspan="7" class="text-center py-5 text-muted">
+                                        <i class="bi bi-book fs-2 d-block mb-2"></i>
+                                        No ledger journal entries posted yet.
+                                    </td>
+                                </tr>
+                            }
+                            @foreach (var entry in Model.Entries)
+                            {
+                                <tr>
+                                    <td class="ps-4 fw-bold font-monospace text-primary">@entry.EntryNumber</td>
+                                    <td class="small text-secondary">@entry.EntryDateUtc.ToString("MMM dd, yyyy HH:mm")</td>
+                                    <td>
+                                        <div class="fw-semibold small">@entry.AccountCode - @entry.AccountName</div>
+                                    </td>
+                                    <td class="small text-secondary">@entry.Description</td>
+                                    <td class="small font-monospace text-muted">@(entry.ReferenceType ?? "-")</td>
+                                    <td class="text-end font-monospace fw-semibold @(entry.DebitAmount > 0 ? "text-primary" : "text-muted")">
+                                        @(entry.DebitAmount > 0 ? $"${entry.DebitAmount:N2}" : "-")
+                                    </td>
+                                    <td class="text-end pe-4 font-monospace fw-semibold @(entry.CreditAmount > 0 ? "text-success" : "text-muted")">
+                                        @(entry.CreditAmount > 0 ? $"${entry.CreditAmount:N2}" : "-")
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: ADD ACCOUNT -->
+<div class="modal fade" id="addAccountModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form method="post" asp-page-handler="CreateAccount">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">Add General Ledger Account</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-2 mb-3">
+                        <div class="col-4">
+                            <label class="form-label small fw-semibold">Account Code <span class="text-danger">*</span></label>
+                            <input type="text" name="accountCode" class="form-control font-monospace" placeholder="e.g. 5300" required />
+                        </div>
+                        <div class="col-8">
+                            <label class="form-label small fw-semibold">Account Name <span class="text-danger">*</span></label>
+                            <input type="text" name="accountName" class="form-control" placeholder="e.g. Telematics Hardware Expense" required />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Category <span class="text-danger">*</span></label>
+                        <select name="category" class="form-select" required>
+                            <option value="Asset">Asset (1000s)</option>
+                            <option value="Liability">Liability (2000s)</option>
+                            <option value="Equity">Equity (3000s)</option>
+                            <option value="Revenue">Revenue (4000s)</option>
+                            <option value="Expense" selected>Expense (5000s)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Description</label>
+                        <textarea name="description" class="form-control" rows="2" placeholder="Account purpose and usage..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: POST JOURNAL ENTRY -->
+<div class="modal fade" id="newJournalEntryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form method="post" asp-page-handler="CreateJournalEntry">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">Post Double-Entry Journal</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Description / Memorandum <span class="text-danger">*</span></label>
+                        <input type="text" name="description" class="form-control" placeholder="e.g. Monthly cloud telematics hosting fee" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Amount ($) <span class="text-danger">*</span></label>
+                        <input type="number" name="amount" class="form-control font-monospace fs-5" step="0.01" min="0.01" placeholder="100.00" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-primary">Debit Account (Increase Assets/Expenses, Decrease Liab/Rev) <span class="text-danger">*</span></label>
+                        <select name="debitAccountId" class="form-select" required>
+                            @foreach (var acc in Model.Accounts)
+                            {
+                                <option value="@acc.Id">@acc.AccountCode - @acc.AccountName (@acc.Category)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-success">Credit Account (Increase Liab/Rev/Equity, Decrease Assets) <span class="text-danger">*</span></label>
+                        <select name="creditAccountId" class="form-select" required>
+                            @foreach (var acc in Model.Accounts)
+                            {
+                                <option value="@acc.Id">@acc.AccountCode - @acc.AccountName (@acc.Category)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small fw-semibold">Reference Document / ID</label>
+                        <input type="text" name="reference" class="form-control" placeholder="Optional external voucher / receipt #" />
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Post Balanced Entry</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

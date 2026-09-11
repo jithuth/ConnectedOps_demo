@@ -14,5 +14,9 @@ public enum AuditAction
     InvitationAccepted = 10,
     Linked = 11,
     Unlinked = 12,
-    Assigned = 13
+    Assigned = 13,
+    Issued = 14,
+    Paid = 15,
+    Voided = 16,
+    Refunded = 17
 }

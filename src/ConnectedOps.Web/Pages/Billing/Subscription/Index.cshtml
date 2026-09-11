@@ -1,0 +1,353 @@
+@page "/Billing/Subscription"
+@model ConnectedOps.Web.Pages.Billing.Subscription.IndexModel
+@using ConnectedOps.Domain.Billing
+@{
+    ViewData["Title"] = "Subscription & Quotas";
+    ViewData["Subtitle"] = "Manage your organization SaaS subscription plan, fleet quotas, and billing cycle";
+    var sub = Model.CurrentSubscription;
+}
+
+@if (TempData["SuccessMessage"] is not null)
+{
+    <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] is not null)
+{
+    <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (Model.ErrorMessage is not null)
+{
+    <div class="alert alert-warning alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-exclamation-circle me-2"></i> @Model.ErrorMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (sub is null)
+{
+    <div class="card border-0 shadow-sm text-center p-5">
+        <div class="py-5">
+            <i class="bi bi-credit-card text-muted" style="font-size: 3.5rem;"></i>
+            <h4 class="mt-3">No Active Subscription Found</h4>
+            <p class="text-muted">Your tenant does not have an active SaaS subscription. Choose a plan to activate fleet intelligence features.</p>
+            <button class="btn btn-primary px-4 py-2 mt-2" data-bs-toggle="modal" data-bs-target="#changePlanModal">
+                <i class="bi bi-lightning-charge me-1"></i> View Available Plans
+            </button>
+        </div>
+    </div>
+}
+else
+{
+    <!-- STATUS CALLOUT -->
+    @if (sub.Status == SubscriptionStatus.Cancelled)
+    {
+        <div class="alert alert-danger d-flex align-items-center justify-content-between p-3 mb-4 rounded-3 shadow-sm">
+            <div>
+                <h6 class="fw-bold mb-1"><i class="bi bi-slash-circle me-2"></i> Subscription Cancelled</h6>
+                <div class="small">Your subscription was cancelled on @(sub.CancelledAtUtc?.ToString("MMM dd, yyyy") ?? "recently"). Access will end at the end of the current billing cycle.</div>
+            </div>
+            <form method="post" asp-page-handler="Reactivate">
+                <button type="submit" class="btn btn-sm btn-outline-danger">
+                    <i class="bi bi-arrow-repeat me-1"></i> Reactivate Subscription
+                </button>
+            </form>
+        </div>
+    }
+
+    <!-- ROW 1: CURRENT PLAN HERO & QUOTA METERS -->
+    <div class="row g-4 mb-4">
+        <!-- PLAN SUMMARY CARD -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm h-100 bg-body">
+                <div class="card-header border-0 bg-transparent pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+                    <span class="badge bg-primary-subtle text-primary fw-semibold px-3 py-1 rounded-pill">
+                        CURRENT TIER
+                    </span>
+                    @switch (sub.Status)
+                    {
+                        case SubscriptionStatus.Active:
+                            <span class="badge bg-success-subtle text-success px-3 py-1 rounded-pill">
+                                <i class="bi bi-check-circle me-1"></i> Active
+                            </span>
+                            break;
+                        case SubscriptionStatus.Trialing:
+                            <span class="badge bg-info-subtle text-info px-3 py-1 rounded-pill">
+                                <i class="bi bi-clock-history me-1"></i> Trial
+                            </span>
+                            break;
+                        case SubscriptionStatus.PastDue:
+                            <span class="badge bg-warning-subtle text-warning px-3 py-1 rounded-pill">
+                                <i class="bi bi-exclamation-triangle me-1"></i> Past Due
+                            </span>
+                            break;
+                        case SubscriptionStatus.Cancelled:
+                            <span class="badge bg-danger-subtle text-danger px-3 py-1 rounded-pill">
+                                <i class="bi bi-x-circle me-1"></i> Cancelled
+                            </span>
+                            break;
+                    }
+                </div>
+                <div class="card-body p-4">
+                    <h2 class="fw-bold text-body mb-1">@sub.PlanName</h2>
+                    <p class="text-secondary small mb-3">Code: <strong>@sub.PlanCode</strong> — Enterprise fleet and asset intelligence</p>
+
+                    <div class="d-flex align-items-baseline mb-4">
+                        <span class="fs-1 fw-extrabold text-primary">$@sub.PlanPrice.ToString("N0")</span>
+                        <span class="text-secondary ms-2 small">/ @sub.BillingInterval.ToString().ToLower()</span>
+                    </div>
+
+                    <div class="bg-body-secondary p-3 rounded-3 mb-4">
+                        <div class="d-flex justify-content-between small text-secondary mb-2">
+                            <span>Billing Cycle:</span>
+                            <span class="fw-semibold text-body">@sub.CurrentPeriodStartUtc.ToString("MMM dd") - @sub.CurrentPeriodEndUtc.ToString("MMM dd, yyyy")</span>
+                        </div>
+                        <div class="d-flex justify-content-between small text-secondary mb-2">
+                            <span>Auto-Renewal:</span>
+                            <span class="fw-semibold @(sub.AutoRenew ? "text-success" : "text-muted")">
+                                <i class="bi @(sub.AutoRenew ? "bi-check-circle-fill" : "bi-dash-circle") me-1"></i>
+                                @(sub.AutoRenew ? "Enabled" : "Disabled")
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between small text-secondary">
+                            <span>Next Billing Date:</span>
+                            <span class="fw-semibold text-body">@sub.CurrentPeriodEndUtc.ToString("MMM dd, yyyy")</span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary flex-fill" data-bs-toggle="modal" data-bs-target="#changePlanModal">
+                            <i class="bi bi-arrow-up-circle me-1"></i> Change / Upgrade Plan
+                        </button>
+                        @if (sub.Status == SubscriptionStatus.Active)
+                        {
+                            <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                                <i class="bi bi-x-circle"></i>
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUOTAS & CAPACITY GAUGES -->
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm h-100 bg-body">
+                <div class="card-header border-0 bg-transparent pt-4 px-4 pb-2">
+                    <h5 class="fw-bold mb-0">Resource Quotas &amp; Allocations</h5>
+                    <div class="small text-secondary">Allocated tenant capacities based on current tier</div>
+                </div>
+                <div class="card-body p-4 pt-2">
+                    <!-- VEHICLE QUOTA -->
+                    @{
+                        var vehPercent = sub.EffectiveMaxVehicles > 0 ? (int)Math.Min(100, Math.Round((double)sub.CurrentVehicleCount / sub.EffectiveMaxVehicles * 100)) : 0;
+                        var userPercent = sub.EffectiveMaxUsers > 0 ? (int)Math.Min(100, Math.Round((double)sub.CurrentUserCount / sub.EffectiveMaxUsers * 100)) : 0;
+                        var assetPercent = sub.EffectiveMaxAssets > 0 ? (int)Math.Min(100, Math.Round((double)sub.CurrentAssetCount / sub.EffectiveMaxAssets * 100)) : 0;
+                    }
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <div class="fw-semibold small">
+                                <i class="bi bi-truck text-primary me-2"></i> Fleet Vehicles
+                            </div>
+                            <span class="small text-secondary fw-semibold">@sub.CurrentVehicleCount / @sub.EffectiveMaxVehicles vehicles (@vehPercent%)</span>
+                        </div>
+                        <div class="progress" style="height: 10px; border-radius: 6px;">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: @(vehPercent)%;" aria-valuenow="@vehPercent" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+
+                    <!-- USER QUOTA -->
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <div class="fw-semibold small">
+                                <i class="bi bi-people-fill text-success me-2"></i> Organization Users
+                            </div>
+                            <span class="small text-secondary fw-semibold">@sub.CurrentUserCount / @sub.EffectiveMaxUsers users (@userPercent%)</span>
+                        </div>
+                        <div class="progress" style="height: 10px; border-radius: 6px;">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: @(userPercent)%;" aria-valuenow="@userPercent" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+
+                    <!-- ASSET QUOTA -->
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <div class="fw-semibold small">
+                                <i class="bi bi-box-seam-fill text-warning me-2"></i> Tracked Assets &amp; Equipment
+                            </div>
+                            <span class="small text-secondary fw-semibold">@sub.CurrentAssetCount / @sub.EffectiveMaxAssets assets (@assetPercent%)</span>
+                        </div>
+                        <div class="progress" style="height: 10px; border-radius: 6px;">
+                            <div class="progress-bar bg-warning" role="progressbar" style="width: @(assetPercent)%;" aria-valuenow="@assetPercent" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+
+                    <!-- STORAGE QUOTA -->
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <div class="fw-semibold small">
+                                <i class="bi bi-hdd-network-fill text-info me-2"></i> Telematics &amp; Media Storage
+                            </div>
+                            <span class="small text-secondary fw-semibold">Allocated: 25 GB</span>
+                        </div>
+                        <div class="progress" style="height: 10px; border-radius: 6px;">
+                            <div class="progress-bar bg-info" role="progressbar" style="width: 12%;" aria-valuenow="12" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ROW 2: INCLUDED FEATURES CHECKLIST -->
+    <div class="card border-0 shadow-sm bg-body mb-4">
+        <div class="card-header border-0 bg-transparent pt-4 px-4 pb-2">
+            <h5 class="fw-bold mb-0">Feature Availability</h5>
+            <div class="small text-secondary">Intelligence capabilities enabled for your organization</div>
+        </div>
+        <div class="card-body p-4 pt-2">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <div class="d-flex align-items-center p-3 rounded-3 bg-body-secondary">
+                        <i class="bi bi-check-circle-fill text-success fs-4 me-3"></i>
+                        <div>
+                            <div class="fw-bold small">GPS Fleet Tracking</div>
+                            <div class="text-secondary" style="font-size: 0.75rem;">Real-time asset telemetry</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="d-flex align-items-center p-3 rounded-3 bg-body-secondary">
+                        <i class="bi bi-check-circle-fill text-success fs-4 me-3"></i>
+                        <div>
+                            <div class="fw-bold small">Advanced Analytics</div>
+                            <div class="text-secondary" style="font-size: 0.75rem;">Predictive health & fuel</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="d-flex align-items-center p-3 rounded-3 bg-body-secondary">
+                        <i class="bi bi-check-circle-fill text-success fs-4 me-3"></i>
+                        <div>
+                            <div class="fw-bold small">REST API &amp; Webhooks</div>
+                            <div class="text-secondary" style="font-size: 0.75rem;">Programmatic integration</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="d-flex align-items-center p-3 rounded-3 bg-body-secondary">
+                        <i class="bi bi-check-circle-fill text-success fs-4 me-3"></i>
+                        <div>
+                            <div class="fw-bold small">Audit Log Export</div>
+                            <div class="text-secondary" style="font-size: 0.75rem;">Compliance log archiving</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- MODAL: CHANGE / UPGRADE PLAN -->
+<div class="modal fade" id="changePlanModal" tabindex="-1" aria-labelledby="changePlanModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <div>
+                    <h5 class="modal-title fw-bold" id="changePlanModalLabel">Available Subscription Plans</h5>
+                    <div class="text-secondary small">Select a plan tier tailored for your fleet size and telemetry needs</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row g-4">
+                    @foreach (var availablePlan in Model.AvailablePlans)
+                    {
+                        var isCurrent = availablePlan.Id == sub?.PlanId;
+                        <div class="col-md-4">
+                            <div class="card h-100 border @(isCurrent ? "border-primary shadow" : "border-secondary-subtle") rounded-3">
+                                @if (isCurrent)
+                                {
+                                    <div class="card-header bg-primary text-white text-center py-1 small fw-bold">
+                                        CURRENT ACTIVE PLAN
+                                    </div>
+                                }
+                                <div class="card-body p-4 text-center">
+                                    <h4 class="fw-bold mb-1">@availablePlan.Name</h4>
+                                    <p class="text-secondary small mb-3">@availablePlan.Description</p>
+                                    <div class="my-3">
+                                        <span class="fs-2 fw-bold text-primary">$@availablePlan.Price.ToString("N0")</span>
+                                        <span class="text-secondary small">/ @availablePlan.BillingInterval.ToString().ToLower()</span>
+                                    </div>
+
+                                    <ul class="list-unstyled text-start small mt-4 mb-4">
+                                        <li class="mb-2"><i class="bi bi-check2 text-success me-2 fw-bold"></i> Up to <strong>@availablePlan.MaxVehicles</strong> vehicles</li>
+                                        <li class="mb-2"><i class="bi bi-check2 text-success me-2 fw-bold"></i> Up to <strong>@availablePlan.MaxUsers</strong> team users</li>
+                                        <li class="mb-2"><i class="bi bi-check2 text-success me-2 fw-bold"></i> Up to <strong>@availablePlan.MaxAssets</strong> asset tracking</li>
+                                        <li class="mb-2"><i class="bi bi-check2 text-success me-2 fw-bold"></i> <strong>@availablePlan.MaxStorageGb GB</strong> secure storage</li>
+                                        <li class="mb-2">
+                                            <i class="bi @(availablePlan.HasAdvancedAnalytics ? "bi-check2 text-success" : "bi-x text-muted") me-2 fw-bold"></i>
+                                            Advanced Telematics Analytics
+                                        </li>
+                                        <li class="mb-2">
+                                            <i class="bi @(availablePlan.HasApiAccess ? "bi-check2 text-success" : "bi-x text-muted") me-2 fw-bold"></i>
+                                            REST API &amp; Webhooks
+                                        </li>
+                                    </ul>
+
+                                    @if (isCurrent)
+                                    {
+                                        <button class="btn btn-outline-primary w-100" disabled>
+                                            <i class="bi bi-check-circle me-1"></i> Current Plan
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <form method="post" asp-page-handler="ChangePlan">
+                                            <input type="hidden" name="newPlanId" value="@availablePlan.Id" />
+                                            <button type="submit" class="btn btn-primary w-100">
+                                                Switch to @availablePlan.Name
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: CANCEL SUBSCRIPTION -->
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form method="post" asp-page-handler="Cancel">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold text-danger" id="cancelModalLabel">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i> Cancel Subscription
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body py-0">
+                    <p class="text-secondary small">Are you sure you want to cancel your subscription? Your access to advanced telematics will terminate at the conclusion of your current billing period.</p>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Reason for Cancellation (Optional)</label>
+                        <textarea name="reason" class="form-control" rows="3" placeholder="Please let us know why you are cancelling..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Keep Plan</button>
+                    <button type="submit" class="btn btn-danger">Confirm Cancellation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

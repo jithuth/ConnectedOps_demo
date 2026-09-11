@@ -362,6 +362,12 @@
                                 <p>Platform Users</p>
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a href="/Platform/Plans" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Platform/Plans") ? "active" : "")">
+                                <i class="nav-icon bi bi-tags-fill"></i>
+                                <p>Subscription Plans</p>
+                            </a>
+                        </li>
 
                         <li class="nav-header">ORGANIZATION</li>
                         <li class="nav-item">
@@ -422,6 +428,32 @@
                             <a href="/Organization/Settings" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Organization/Settings") ? "active" : "")">
                                 <i class="nav-icon bi bi-sliders"></i>
                                 <p>Org Settings</p>
+                            </a>
+                        </li>
+
+                        <li class="nav-header">BILLING &amp; FINANCE</li>
+                        <li class="nav-item">
+                            <a href="/Billing/Subscription" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Billing/Subscription") ? "active" : "")">
+                                <i class="nav-icon bi bi-credit-card-2-front"></i>
+                                <p>My Subscription</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Billing/Invoices" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Billing/Invoices") ? "active" : "")">
+                                <i class="nav-icon bi bi-receipt"></i>
+                                <p>Invoices</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Billing/Payments" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Billing/Payments") ? "active" : "")">
+                                <i class="nav-icon bi bi-cash-stack"></i>
+                                <p>Payments</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Billing/Accounting" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Billing/Accounting") ? "active" : "")">
+                                <i class="nav-icon bi bi-book-half"></i>
+                                <p>General Ledger</p>
                             </a>
                         </li>
 

@@ -1,4 +1,6 @@
 using ConnectedOps.Domain.Authorization;
+using ConnectedOps.Domain.Billing;
+using ConnectedOps.Domain.Accounting;
 using ConnectedOps.Domain.Organization;
 using ConnectedOps.Domain.Platform;
 using ConnectedOps.Domain.Tenancy;
@@ -103,6 +105,8 @@ public static class PlatformBootstrapService
         var dbContext = scope.ServiceProvider.GetService<ConnectedOpsDbContext>();
         if (dbContext is not null)
         {
+            await EnsureDefaultSubscriptionPlansAsync(dbContext, logger);
+
             var hasAnyTenant = await dbContext.Tenants.IgnoreQueryFilters().AnyAsync();
             if (!hasAnyTenant)
             {
@@ -111,6 +115,12 @@ public static class PlatformBootstrapService
             else
             {
                 await EnsureSuperAdminTenantMembershipAsync(dbContext, superAdmin, logger);
+            }
+
+            var defaultTenant = await dbContext.Tenants.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Code == "PRIMARY-OPS");
+            if (defaultTenant is not null)
+            {
+                await EnsureTenantBillingAndAccountingAsync(dbContext, defaultTenant.Id, logger);
             }
         }
     }
@@ -244,6 +254,8 @@ public static class PlatformBootstrapService
 
             await dbContext.SaveChangesAsync();
 
+            await EnsureTenantBillingAndAccountingAsync(dbContext, tenant.Id, logger);
+
             logger.LogInformation("Default initial tenant 'Primary Operations Fleet' (Code: PRIMARY-OPS) provisioned successfully.");
         }
         catch (DbUpdateException ex)
@@ -338,5 +350,147 @@ public static class PlatformBootstrapService
             new TenantRole(tenantId, "Asset Manager", TenantRoleCodes.AssetManager, "Manages company assets and equipment.", true),
             new TenantRole(tenantId, "Driver", TenantRoleCodes.Driver, "Fleet driver access.", true)
         ];
+    }
+
+    private static async Task EnsureDefaultSubscriptionPlansAsync(
+        ConnectedOpsDbContext dbContext,
+        ILogger logger)
+    {
+        var hasPlans = await dbContext.SubscriptionPlans.IgnoreQueryFilters().AnyAsync();
+        if (hasPlans)
+        {
+            return;
+        }
+
+        logger.LogInformation("Seeding default subscription plans (Starter, Professional, Enterprise)...");
+
+        var starter = new SubscriptionPlan(
+            "Starter Fleet",
+            "STARTER",
+            49.00m,
+            BillingInterval.Monthly,
+            "USD",
+            "Essential fleet and asset intelligence for small operations",
+            maxVehicles: 10,
+            maxAssets: 25,
+            maxUsers: 3,
+            maxStorageGb: 5,
+            hasAdvancedAnalytics: false,
+            hasApiAccess: false,
+            hasCustomBranding: false,
+            hasAuditExport: false,
+            isPublic: true,
+            sortOrder: 1);
+
+        var pro = new SubscriptionPlan(
+            "Professional Fleet",
+            "PRO",
+            149.00m,
+            BillingInterval.Monthly,
+            "USD",
+            "Complete fleet telematics, asset tracking, and team management",
+            maxVehicles: 50,
+            maxAssets: 150,
+            maxUsers: 15,
+            maxStorageGb: 25,
+            hasAdvancedAnalytics: true,
+            hasApiAccess: true,
+            hasCustomBranding: false,
+            hasAuditExport: true,
+            isPublic: true,
+            sortOrder: 2);
+
+        var enterprise = new SubscriptionPlan(
+            "Enterprise Scale",
+            "ENTERPRISE",
+            499.00m,
+            BillingInterval.Monthly,
+            "USD",
+            "Unlimited fleet intelligence, multi-branch hierarchy, and custom integrations",
+            maxVehicles: 500,
+            maxAssets: 2000,
+            maxUsers: 100,
+            maxStorageGb: 200,
+            hasAdvancedAnalytics: true,
+            hasApiAccess: true,
+            hasCustomBranding: true,
+            hasAuditExport: true,
+            isPublic: true,
+            sortOrder: 3);
+
+        dbContext.SubscriptionPlans.AddRange(starter, pro, enterprise);
+        try
+        {
+            await dbContext.SaveChangesAsync();
+            logger.LogInformation("Default subscription plans seeded successfully.");
+        }
+        catch (DbUpdateException)
+        {
+            // Handled concurrently
+        }
+    }
+
+    private static async Task EnsureTenantBillingAndAccountingAsync(
+        ConnectedOpsDbContext dbContext,
+        Guid tenantId,
+        ILogger logger)
+    {
+        // 1. Ensure Subscription
+        var hasSubscription = await dbContext.TenantSubscriptions
+            .IgnoreQueryFilters()
+            .AnyAsync(s => s.TenantId == tenantId);
+
+        if (!hasSubscription)
+        {
+            var proPlan = await dbContext.SubscriptionPlans
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(p => p.Code == "PRO")
+                ?? await dbContext.SubscriptionPlans.IgnoreQueryFilters().FirstOrDefaultAsync();
+
+            if (proPlan is not null)
+            {
+                var subscription = new TenantSubscription(
+                    tenantId,
+                    proPlan.Id,
+                    DateTime.UtcNow,
+                    DateTime.UtcNow.AddMonths(1),
+                    SubscriptionStatus.Active,
+                    autoRenew: true);
+
+                dbContext.TenantSubscriptions.Add(subscription);
+            }
+        }
+
+        // 2. Ensure Default Chart of Accounts
+        var hasAccounts = await dbContext.GeneralLedgerAccounts
+            .IgnoreQueryFilters()
+            .AnyAsync(a => a.TenantId == tenantId);
+
+        if (!hasAccounts)
+        {
+            var defaultAccounts = new List<GeneralLedgerAccount>
+            {
+                new(tenantId, "1000", "Operating Cash Account", AccountCategory.Asset, "Primary operational checking and cash account", isSystem: true),
+                new(tenantId, "1200", "Accounts Receivable", AccountCategory.Asset, "Outstanding customer and tenant invoices", isSystem: true),
+                new(tenantId, "2000", "Accounts Payable", AccountCategory.Liability, "Vendor and platform liabilities", isSystem: true),
+                new(tenantId, "3000", "Retained Earnings & Equity", AccountCategory.Equity, "Cumulative net surplus / equity", isSystem: true),
+                new(tenantId, "4000", "SaaS Subscription Revenue", AccountCategory.Revenue, "Core SaaS subscription recurring billing revenue", isSystem: true),
+                new(tenantId, "4100", "Telematics & Add-on Revenue", AccountCategory.Revenue, "Add-on device, sensor, and storage revenue", isSystem: true),
+                new(tenantId, "5000", "Fleet Operating Expense", AccountCategory.Expense, "Fleet maintenance and direct operational costs", isSystem: true),
+                new(tenantId, "5100", "IoT & Telematics Service Expense", AccountCategory.Expense, "Cellular connectivity and IoT cloud fees", isSystem: true),
+                new(tenantId, "5200", "General & Administrative Expense", AccountCategory.Expense, "Overhead, utilities, and general administration", isSystem: true)
+            };
+
+            dbContext.GeneralLedgerAccounts.AddRange(defaultAccounts);
+        }
+
+        try
+        {
+            await dbContext.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            // Handled concurrently
+        }
     }
 }

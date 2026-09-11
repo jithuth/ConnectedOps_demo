@@ -1,0 +1,231 @@
+@page "/Billing/Payments"
+@model ConnectedOps.Web.Pages.Billing.Payments.IndexModel
+@using ConnectedOps.Domain.Billing
+@{
+    ViewData["Title"] = "Payment History";
+    ViewData["Subtitle"] = "Settlement records, credit card processing, and payment receipts";
+}
+
+@if (TempData["SuccessMessage"] is not null)
+{
+    <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] is not null)
+{
+    <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- STATS ROW -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm bg-body">
+            <div class="card-body d-flex align-items-center justify-content-between p-3">
+                <div>
+                    <div class="text-secondary small fw-bold text-uppercase">Total Settled</div>
+                    <div class="fs-3 fw-bold my-1 text-success">$@Model.TotalCollected.ToString("N2")</div>
+                    <div class="small text-muted">Successful payments</div>
+                </div>
+                <div class="rounded-circle bg-success-subtle p-3 text-success">
+                    <i class="bi bi-wallet2 fs-3"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm bg-body">
+            <div class="card-body d-flex align-items-center justify-content-between p-3">
+                <div>
+                    <div class="text-secondary small fw-bold text-uppercase">ACH / Wire</div>
+                    <div class="fs-3 fw-bold my-1 text-primary">$@Model.BankTransferTotal.ToString("N2")</div>
+                    <div class="small text-muted">Bank transfers</div>
+                </div>
+                <div class="rounded-circle bg-primary-subtle p-3 text-primary">
+                    <i class="bi bi-bank fs-3"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm bg-body">
+            <div class="card-body d-flex align-items-center justify-content-between p-3">
+                <div>
+                    <div class="text-secondary small fw-bold text-uppercase">Card Volume</div>
+                    <div class="fs-3 fw-bold my-1 text-info">$@Model.CardTotal.ToString("N2")</div>
+                    <div class="small text-muted">Credit / debit processing</div>
+                </div>
+                <div class="rounded-circle bg-info-subtle p-3 text-info">
+                    <i class="bi bi-credit-card fs-3"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm bg-body">
+            <div class="card-body d-flex align-items-center justify-content-between p-3">
+                <div>
+                    <div class="text-secondary small fw-bold text-uppercase">Refunded</div>
+                    <div class="fs-3 fw-bold my-1 text-danger">$@Model.RefundedTotal.ToString("N2")</div>
+                    <div class="small text-muted">Reversed transactions</div>
+                </div>
+                <div class="rounded-circle bg-danger-subtle p-3 text-danger">
+                    <i class="bi bi-arrow-counterclockwise fs-3"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PAYMENTS TABLE CARD -->
+<div class="card border-0 shadow-sm bg-body">
+    <div class="card-header border-0 bg-transparent py-3 px-4">
+        <h5 class="fw-bold mb-0">Transactions</h5>
+        <div class="small text-secondary">Historical transaction logs and payment methods</div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light text-secondary small text-uppercase">
+                    <tr>
+                        <th class="ps-4">Reference</th>
+                        <th>Processed Date</th>
+                        <th>Method</th>
+                        <th>Card / Brand</th>
+                        <th>Payer / Notes</th>
+                        <th class="text-end">Amount</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Payments.Any())
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted">
+                                <i class="bi bi-cash-stack fs-2 d-block mb-2"></i>
+                                No payment transactions recorded yet.
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var p in Model.Payments)
+                    {
+                        <tr>
+                            <td class="ps-4 fw-bold font-monospace text-primary">
+                                @p.TransactionReference
+                            </td>
+                            <td class="small text-secondary">@p.ProcessedAtUtc.ToString("MMM dd, yyyy HH:mm")</td>
+                            <td>
+                                @switch (p.PaymentMethod)
+                                {
+                                    case PaymentMethod.CreditCard:
+                                    case PaymentMethod.DebitCard:
+                                        <span class="badge bg-primary-subtle text-primary"><i class="bi bi-credit-card me-1"></i> Card</span>
+                                        break;
+                                    case PaymentMethod.BankTransfer:
+                                    case PaymentMethod.ACH:
+                                        <span class="badge bg-info-subtle text-info"><i class="bi bi-bank me-1"></i> Bank / ACH</span>
+                                        break;
+                                    case PaymentMethod.ManualEntry:
+                                        <span class="badge bg-warning-subtle text-warning"><i class="bi bi-pencil me-1"></i> Manual</span>
+                                        break;
+                                    default:
+                                        <span class="badge bg-secondary-subtle text-secondary">@p.PaymentMethod.ToString()</span>
+                                        break;
+                                }
+                            </td>
+                            <td class="small">
+                                @if (!string.IsNullOrWhiteSpace(p.CardBrand) || !string.IsNullOrWhiteSpace(p.LastFourDigits))
+                                {
+                                    <span>@(p.CardBrand ?? "Card") @(string.IsNullOrWhiteSpace(p.LastFourDigits) ? "" : $"•••• {p.LastFourDigits}")</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="small fw-semibold">@(p.PayerEmail ?? "-")</div>
+                                <div class="small text-secondary text-truncate" style="max-width: 200px;">@(p.Notes ?? "")</div>
+                            </td>
+                            <td class="text-end fw-bold fs-6 @(p.Status == PaymentStatus.Refunded ? "text-danger" : "text-success")">
+                                @(p.Status == PaymentStatus.Refunded ? "-" : "")$@p.Amount.ToString("N2")
+                            </td>
+                            <td class="text-center">
+                                @switch (p.Status)
+                                {
+                                    case PaymentStatus.Succeeded:
+                                        <span class="badge bg-success-subtle text-success px-2 py-1 rounded-pill">Succeeded</span>
+                                        break;
+                                    case PaymentStatus.Pending:
+                                        <span class="badge bg-warning-subtle text-warning px-2 py-1 rounded-pill">Pending</span>
+                                        break;
+                                    case PaymentStatus.Failed:
+                                        <span class="badge bg-danger-subtle text-danger px-2 py-1 rounded-pill">Failed</span>
+                                        break;
+                                    case PaymentStatus.Refunded:
+                                        <span class="badge bg-dark-subtle text-dark px-2 py-1 rounded-pill">Refunded</span>
+                                        break;
+                                }
+                            </td>
+                            <td class="text-end pe-4">
+                                @if (p.Status == PaymentStatus.Succeeded)
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-danger"
+                                            onclick="openRefundModal('@p.Id', '@p.TransactionReference', '@p.Amount.ToString("N2")')">
+                                        <i class="bi bi-arrow-counterclockwise me-1"></i> Refund
+                                    </button>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">-</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: REFUND -->
+<div class="modal fade" id="refundModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form method="post" asp-page-handler="Refund">
+                <input type="hidden" id="refundPaymentId" name="paymentId" />
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold text-danger">Refund Payment <span id="refundRef"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body py-0">
+                    <p class="text-secondary small">You are about to issue a full refund for <strong>$<span id="refundAmt"></span></strong>. This action will reverse cash entries in the General Ledger.</p>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Reason for Refund</label>
+                        <textarea name="reason" class="form-control" rows="3" placeholder="Customer request, billing adjustment, etc."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Confirm Refund</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openRefundModal(id, ref, amt) {
+            document.getElementById('refundPaymentId').value = id;
+            document.getElementById('refundRef').innerText = ref;
+            document.getElementById('refundAmt').innerText = amt;
+            new bootstrap.Modal(document.getElementById('refundModal')).show();
+        }
+    </script>
+}

@@ -1,0 +1,338 @@
+@page "/Billing/Invoices/Details"
+@model ConnectedOps.Web.Pages.Billing.Invoices.DetailsModel
+@using ConnectedOps.Domain.Billing
+@{
+    ViewData["Title"] = $"Invoice {Model.Invoice?.InvoiceNumber}";
+    ViewData["Subtitle"] = "Detailed invoice breakdown, taxes, and payment history";
+    var inv = Model.Invoice;
+}
+
+@if (TempData["SuccessMessage"] is not null)
+{
+    <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] is not null)
+{
+    <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (inv is not null)
+{
+    <!-- ACTION BAR -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <a href="/Billing/Invoices" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to Invoices
+        </a>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-secondary" onclick="window.print()">
+                <i class="bi bi-printer me-1"></i> Print / PDF
+            </button>
+            @if (inv.Status == InvoiceStatus.Draft)
+            {
+                <form method="post" asp-page-handler="Issue" class="d-inline">
+                    <input type="hidden" name="invoiceId" value="@inv.Id" />
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-send me-1"></i> Issue &amp; Post to Ledger
+                    </button>
+                </form>
+            }
+            @if (inv.BalanceDue > 0 && inv.Status != InvoiceStatus.Draft && inv.Status != InvoiceStatus.Void)
+            {
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#recordPaymentModal">
+                    <i class="bi bi-cash-coin me-1"></i> Record Payment
+                </button>
+            }
+            @if (inv.Status != InvoiceStatus.Paid && inv.Status != InvoiceStatus.Void)
+            {
+                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#voidModal">
+                    <i class="bi bi-x-circle me-1"></i> Void
+                </button>
+            }
+        </div>
+    </div>
+
+    <!-- INVOICE CARD -->
+    <div class="card border-0 shadow-sm bg-body mb-4 p-4 p-md-5">
+        <div class="card-body p-0">
+            <!-- INVOICE TOP BAR -->
+            <div class="d-flex justify-content-between align-items-start border-bottom pb-4 mb-4">
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="fs-2 fw-bold text-primary">ConnectedOps</span>
+                        <span class="badge bg-secondary-subtle text-secondary small">Fleet SaaS</span>
+                    </div>
+                    <div class="text-secondary small">ConnectedOps Operations SaaS Platform</div>
+                    <div class="text-secondary small">100 Enterprise Way, Chicago, IL 60601</div>
+                    <div class="text-secondary small">support@connectedops.com</div>
+                </div>
+                <div class="text-end">
+                    <h3 class="fw-extrabold text-body mb-1">INVOICE</h3>
+                    <div class="fs-5 fw-bold text-primary mb-2">@inv.InvoiceNumber</div>
+                    <div>
+                        @switch (inv.Status)
+                        {
+                            case InvoiceStatus.Draft:
+                                <span class="badge bg-secondary-subtle text-secondary px-3 py-1 rounded-pill">Draft</span>
+                                break;
+                            case InvoiceStatus.Issued:
+                                <span class="badge bg-primary-subtle text-primary px-3 py-1 rounded-pill">Issued</span>
+                                break;
+                            case InvoiceStatus.Paid:
+                                <span class="badge bg-success-subtle text-success px-3 py-1 rounded-pill">Paid in Full</span>
+                                break;
+                            case InvoiceStatus.PartiallyPaid:
+                                <span class="badge bg-info-subtle text-info px-3 py-1 rounded-pill">Partially Paid</span>
+                                break;
+                            case InvoiceStatus.Overdue:
+                                <span class="badge bg-danger-subtle text-danger px-3 py-1 rounded-pill">Overdue</span>
+                                break;
+                            case InvoiceStatus.Void:
+                                <span class="badge bg-dark-subtle text-dark px-3 py-1 rounded-pill">Voided</span>
+                                break;
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- INVOICE METADATA & BILL TO -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-6">
+                    <div class="text-secondary small fw-bold text-uppercase mb-1">Billed To</div>
+                    <h5 class="fw-bold mb-1">@(string.IsNullOrWhiteSpace(inv.BillingContactName) ? "Customer" : inv.BillingContactName)</h5>
+                    <div class="text-secondary small">@(inv.BillingEmail ?? "No email provided")</div>
+                    <div class="text-secondary small">@(inv.BillingAddress ?? "No address on file")</div>
+                </div>
+                <div class="col-md-6">
+                    <div class="row g-2">
+                        <div class="col-6 text-end">
+                            <div class="text-secondary small fw-bold text-uppercase">Issue Date</div>
+                            <div class="fw-semibold">@inv.IssueDateUtc.ToString("MMM dd, yyyy")</div>
+                        </div>
+                        <div class="col-6 text-end">
+                            <div class="text-secondary small fw-bold text-uppercase">Due Date</div>
+                            <div class="fw-semibold @(inv.DueDateUtc < DateTime.UtcNow && inv.BalanceDue > 0 ? "text-danger" : "")">
+                                @inv.DueDateUtc.ToString("MMM dd, yyyy")
+                            </div>
+                        </div>
+                        <div class="col-6 text-end mt-2">
+                            <div class="text-secondary small fw-bold text-uppercase">Total Due</div>
+                            <div class="fs-5 fw-bold text-primary">$@inv.TotalAmount.ToString("N2")</div>
+                        </div>
+                        <div class="col-6 text-end mt-2">
+                            <div class="text-secondary small fw-bold text-uppercase">Balance Due</div>
+                            <div class="fs-5 fw-bold @(inv.BalanceDue > 0 ? "text-danger" : "text-success")">
+                                $@inv.BalanceDue.ToString("N2")
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LINE ITEMS TABLE -->
+            <div class="table-responsive mb-4">
+                <table class="table table-bordered align-middle mb-0">
+                    <thead class="table-light small text-secondary text-uppercase">
+                        <tr>
+                            <th>Description</th>
+                            <th class="text-end" style="width: 100px;">Qty</th>
+                            <th class="text-end" style="width: 140px;">Unit Price</th>
+                            <th class="text-end" style="width: 100px;">Tax %</th>
+                            <th class="text-end" style="width: 140px;">Tax Amount</th>
+                            <th class="text-end" style="width: 140px;">Line Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in inv.Items)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@item.Description</td>
+                                <td class="text-end">@item.Quantity.ToString("N0")</td>
+                                <td class="text-end">$@item.UnitPrice.ToString("N2")</td>
+                                <td class="text-end">@item.TaxRatePercentage.ToString("N1")%</td>
+                                <td class="text-end text-secondary">$@item.TaxAmount.ToString("N2")</td>
+                                <td class="text-end fw-bold">$@item.LineTotal.ToString("N2")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- TOTALS SUMMARY -->
+            <div class="row justify-content-end mb-4">
+                <div class="col-md-5">
+                    <div class="card bg-body-secondary border-0 p-3">
+                        <div class="d-flex justify-content-between small text-secondary mb-2">
+                            <span>Subtotal:</span>
+                            <span class="fw-semibold text-body">$@inv.SubTotal.ToString("N2")</span>
+                        </div>
+                        <div class="d-flex justify-content-between small text-secondary mb-2">
+                            <span>Tax Total:</span>
+                            <span class="fw-semibold text-body">$@inv.TaxAmount.ToString("N2")</span>
+                        </div>
+                        <div class="d-flex justify-content-between fs-5 fw-bold text-body border-top pt-2 mb-2">
+                            <span>Total Amount:</span>
+                            <span class="text-primary">$@inv.TotalAmount.ToString("N2")</span>
+                        </div>
+                        <div class="d-flex justify-content-between small text-success mb-1">
+                            <span>Amount Paid:</span>
+                            <span class="fw-semibold">-$@inv.AmountPaid.ToString("N2")</span>
+                        </div>
+                        <div class="d-flex justify-content-between fs-5 fw-bold text-danger border-top pt-2">
+                            <span>Balance Due:</span>
+                            <span>$@inv.BalanceDue.ToString("N2")</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NOTES & TERMS -->
+            @if (!string.IsNullOrWhiteSpace(inv.Notes) || !string.IsNullOrWhiteSpace(inv.TermsAndConditions))
+            {
+                <div class="border-top pt-3 text-secondary small">
+                    @if (!string.IsNullOrWhiteSpace(inv.Notes))
+                    {
+                        <div class="mb-2"><strong>Notes:</strong> @inv.Notes</div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(inv.TermsAndConditions))
+                    {
+                        <div><strong>Terms &amp; Conditions:</strong> @inv.TermsAndConditions</div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- PAYMENT TRANSACTIONS CARD -->
+    <div class="card border-0 shadow-sm bg-body">
+        <div class="card-header border-0 bg-transparent py-3 px-4">
+            <h5 class="fw-bold mb-0">Payment Transactions</h5>
+            <div class="small text-secondary">Payments recorded against this invoice</div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light small text-secondary text-uppercase">
+                        <tr>
+                            <th class="ps-4">Reference</th>
+                            <th>Date</th>
+                            <th>Method</th>
+                            <th class="text-end">Amount</th>
+                            <th class="text-center">Status</th>
+                            <th class="pe-4">Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!inv.Payments.Any())
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">
+                                    No payments recorded yet.
+                                </td>
+                            </tr>
+                        }
+                        @foreach (var p in inv.Payments)
+                        {
+                            <tr>
+                                <td class="ps-4 fw-bold font-monospace small">@p.TransactionReference</td>
+                                <td class="small text-secondary">@p.ProcessedAtUtc.ToString("MMM dd, yyyy HH:mm")</td>
+                                <td>
+                                    <span class="badge bg-secondary-subtle text-secondary">
+                                        @p.PaymentMethod.ToString()
+                                    </span>
+                                </td>
+                                <td class="text-end fw-bold text-success">$@p.Amount.ToString("N2")</td>
+                                <td class="text-center">
+                                    <span class="badge bg-success-subtle text-success">@p.Status.ToString()</span>
+                                </td>
+                                <td class="small text-secondary pe-4">@(p.Notes ?? "-")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- MODAL: RECORD PAYMENT -->
+<div class="modal fade" id="recordPaymentModal" tabindex="-1" aria-labelledby="recordPaymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form method="post" asp-page-handler="RecordPayment">
+                <input type="hidden" name="invoiceId" value="@inv?.Id" />
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold" id="recordPaymentModalLabel">Record Payment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Payment Amount ($) <span class="text-danger">*</span></label>
+                        <input type="number" name="amount" class="form-control" value="@(inv?.BalanceDue ?? 0)" max="@(inv?.BalanceDue ?? 0)" min="0.01" step="0.01" required />
+                        <div class="form-text small">Maximum balance due: $@(inv?.BalanceDue.ToString("N2") ?? "0.00")</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Payment Method <span class="text-danger">*</span></label>
+                        <select name="paymentMethod" class="form-select" required>
+                            <option value="CreditCard">Credit Card</option>
+                            <option value="DebitCard">Debit Card</option>
+                            <option value="BankTransfer" selected>Bank Transfer (Wire)</option>
+                            <option value="ACH">ACH Direct Debit</option>
+                            <option value="ManualEntry">Manual Entry</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Card / Bank Brand</label>
+                            <input type="text" name="cardBrand" class="form-control" placeholder="Visa / Chase" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Last 4 Digits</label>
+                            <input type="text" name="lastFourDigits" class="form-control" maxlength="4" placeholder="4242" />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Notes / Reference (Optional)</label>
+                        <textarea name="notes" class="form-control" rows="2" placeholder="Wire confirmation number or notes..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Record Payment &amp; Post to Ledger</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: VOID INVOICE -->
+<div class="modal fade" id="voidModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form method="post" asp-page-handler="Void">
+                <input type="hidden" name="invoiceId" value="@inv?.Id" />
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold text-danger">Void Invoice</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body py-0">
+                    <p class="text-secondary small">Are you sure you want to void this invoice? This will cancel the receivable balance.</p>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Reason for Voiding</label>
+                        <textarea name="reason" class="form-control" rows="3" placeholder="Reason..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-danger">Confirm Void</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -7,6 +7,8 @@ using ConnectedOps.Domain.Authorization;
 using ConnectedOps.Domain.Auth;
 using TenantSettingsEntity = ConnectedOps.Domain.Tenancy.TenantSettings;
 using ConnectedOps.Domain.Auditing;
+using ConnectedOps.Domain.Accounting;
+using ConnectedOps.Domain.Billing;
 using ConnectedOps.Domain.Organization;
 using ConnectedOps.Domain.Platform;
 using ConnectedOps.Domain.Security;
@@ -80,6 +82,27 @@ public sealed class ConnectedOpsDbContext
 
     public DbSet<OrganizationSettings> OrganizationSettings =>
         Set<OrganizationSettings>();
+
+    public DbSet<SubscriptionPlan> SubscriptionPlans =>
+        Set<SubscriptionPlan>();
+
+    public DbSet<TenantSubscription> TenantSubscriptions =>
+        Set<TenantSubscription>();
+
+    public DbSet<Invoice> Invoices =>
+        Set<Invoice>();
+
+    public DbSet<InvoiceItem> InvoiceItems =>
+        Set<InvoiceItem>();
+
+    public DbSet<PaymentTransaction> PaymentTransactions =>
+        Set<PaymentTransaction>();
+
+    public DbSet<GeneralLedgerAccount> GeneralLedgerAccounts =>
+        Set<GeneralLedgerAccount>();
+
+    public DbSet<LedgerEntry> LedgerEntries =>
+        Set<LedgerEntry>();
 
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)

@@ -44,6 +44,13 @@ using ConnectedOps.Infrastructure.Platform;
 using ConnectedOps.Application.Organization;
 using ConnectedOps.Infrastructure.Organization;
 
+using ConnectedOps.Application.Billing;
+using ConnectedOps.Infrastructure.Billing;
+using ConnectedOps.Application.Accounting;
+using ConnectedOps.Infrastructure.Accounting;
+using ConnectedOps.Application.Notifications;
+using ConnectedOps.Infrastructure.Notifications;
+
 
 
 public static class DependencyInjection
@@ -113,6 +120,10 @@ public static class DependencyInjection
         AddPlatformServices(services, configuration);
 
         AddOrganizationServices(services);
+
+        AddBillingAndAccountingServices(services);
+
+        AddNotificationServices(services);
             
         AddValidation(
             services);
@@ -543,5 +554,47 @@ public static class DependencyInjection
         services.AddScoped<
             ITenantUserAdministrationService,
             TenantUserAdministrationService>();
+    }
+
+    // ================================================================
+    // PHASE 3 - BILLING, SUBSCRIPTIONS & ACCOUNTING
+    // ================================================================
+    private static void AddBillingAndAccountingServices(
+        IServiceCollection services)
+    {
+        services.AddScoped<
+            ISubscriptionPlanService,
+            SubscriptionPlanService>();
+
+        services.AddScoped<
+            ITenantSubscriptionService,
+            TenantSubscriptionService>();
+
+        services.AddScoped<
+            IInvoiceService,
+            InvoiceService>();
+
+        services.AddScoped<
+            IPaymentService,
+            PaymentService>();
+
+        services.AddScoped<
+            IBillingDashboardService,
+            BillingDashboardService>();
+
+        services.AddScoped<
+            IAccountingLedgerService,
+            AccountingLedgerService>();
+    }
+
+    // ================================================================
+    // PHASE 3 - NOTIFICATIONS
+    // ================================================================
+    private static void AddNotificationServices(
+        IServiceCollection services)
+    {
+        services.AddScoped<
+            IEmailNotificationService,
+            EmailNotificationService>();
     }
 }

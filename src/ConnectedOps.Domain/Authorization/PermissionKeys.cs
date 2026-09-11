@@ -103,4 +103,30 @@ public static class PermissionKeys
         public const string View = "Reports.View";
         public const string Export = "Reports.Export";
     }
+
+    public static class Subscriptions
+    {
+        public const string View = "Subscriptions.View";
+        public const string Manage = "Subscriptions.Manage";
+    }
+
+    public static class Invoices
+    {
+        public const string View = "Invoices.View";
+        public const string Create = "Invoices.Create";
+        public const string Manage = "Invoices.Manage";
+    }
+
+    public static class Payments
+    {
+        public const string View = "Payments.View";
+        public const string Create = "Payments.Create";
+        public const string Manage = "Payments.Manage";
+    }
+
+    public static class Accounting
+    {
+        public const string View = "Accounting.View";
+        public const string Manage = "Accounting.Manage";
+    }
 }
