@@ -1,0 +1,216 @@
+@page
+@model ConnectedOps.Web.Pages.Fuel.Analytics.IndexModel
+@{
+    ViewData["Title"] = "Fuel Analytics";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row align-items-center mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0 fw-bold"><i class="bi bi-graph-up text-primary me-2"></i>Fleet Fuel Analytics</h1>
+                <p class="text-muted small mb-0">Aggregate fuel consumption metrics, cost-per-kilometer trends, branch expenditure &amp; efficiency breakdowns.</p>
+            </div>
+            <div class="col-sm-6 text-sm-end mt-2 mt-sm-0">
+                <a href="/Fuel/Dashboard" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-speedometer2 me-1"></i> Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        <!-- FILTER BAR -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-body p-3">
+                <form method="get" class="row g-2 align-items-end">
+                    <div class="col-6 col-md-3">
+                        <label class="form-label small fw-semibold">Branch</label>
+                        <select class="form-select form-select-sm" name="BranchId">
+                            <option value="">All Branches</option>
+                            @foreach (var b in Model.Branches)
+                            {
+                                <option value="@b.Id" selected="@(Model.BranchId == b.Id)">@b.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label class="form-label small fw-semibold">Vehicle</label>
+                        <select class="form-select form-select-sm" name="VehicleId">
+                            <option value="">All Vehicles</option>
+                            @foreach (var v in Model.Vehicles)
+                            {
+                                <option value="@v.Id" selected="@(Model.VehicleId == v.Id)">@v.VehicleNumber - @v.DisplayName</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <label class="form-label small fw-semibold">From Date</label>
+                        <input type="date" class="form-control form-control-sm" name="FromUtc" value="@(Model.FromUtc?.ToString("yyyy-MM-dd"))">
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <label class="form-label small fw-semibold">To Date</label>
+                        <input type="date" class="form-control form-control-sm" name="ToUtc" value="@(Model.ToUtc?.ToString("yyyy-MM-dd"))">
+                    </div>
+                    <div class="col-12 col-md-2 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-sm flex-fill">
+                            <i class="bi bi-filter me-1"></i> Filter
+                        </button>
+                        <a href="/Fuel/Analytics" class="btn btn-outline-secondary btn-sm">Reset</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- KPI TILES -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-lg-3">
+                <div class="card border-0 shadow-sm rounded-3 h-100 p-3 bg-light-subtle">
+                    <span class="text-muted small fw-semibold text-uppercase">Total Fuel Volume</span>
+                    <h3 class="fw-bold text-dark mt-1 mb-0">@Model.Statistics.TotalQuantityLiters.ToString("N1") <span class="fs-6 text-muted">L</span></h3>
+                    <small class="text-muted">@Model.Statistics.TransactionCount refuelings (@Model.Statistics.FullTankCount full)</small>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="card border-0 shadow-sm rounded-3 h-100 p-3 bg-light-subtle">
+                    <span class="text-muted small fw-semibold text-uppercase">Total Cost</span>
+                    <h3 class="fw-bold text-primary mt-1 mb-0">@Model.Statistics.TotalCost.ToString("C2")</h3>
+                    <small class="text-muted">Avg Unit Price: @Model.Statistics.AverageUnitPrice.ToString("F2") / L</small>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="card border-0 shadow-sm rounded-3 h-100 p-3 bg-light-subtle">
+                    <span class="text-muted small fw-semibold text-uppercase">Fleet Economy</span>
+                    <h3 class="fw-bold text-success mt-1 mb-0">
+                        @(Model.Statistics.AverageFleetEfficiencyKmPerLiter.HasValue ? $"{Model.Statistics.AverageFleetEfficiencyKmPerLiter.Value:F2} km/L" : "N/A")
+                    </h3>
+                    <small class="text-muted">
+                        @(Model.Statistics.AverageFleetEfficiencyLitersPer100Km.HasValue ? $"{Model.Statistics.AverageFleetEfficiencyLitersPer100Km.Value:F1} L/100km" : "Needs 2+ full tanks")
+                    </small>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="card border-0 shadow-sm rounded-3 h-100 p-3 bg-light-subtle">
+                    <span class="text-muted small fw-semibold text-uppercase">Cost Per Kilometer</span>
+                    <h3 class="fw-bold text-info mt-1 mb-0">
+                        @(Model.Statistics.AverageCostPerKilometer.HasValue ? Model.Statistics.AverageCostPerKilometer.Value.ToString("C3") : "N/A")
+                    </h3>
+                    <small class="text-muted">Over @Model.Statistics.TotalDistanceTravelledKm.ToString("N0") km measured</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- BREAKDOWN GRIDS -->
+        <div class="row g-4 mb-4">
+            <!-- Monthly / Trend Breakdown -->
+            <div class="col-12 col-lg-7">
+                <div class="card border-0 shadow-sm rounded-3 h-100">
+                    <div class="card-header bg-transparent border-0 pt-3 px-3">
+                        <h6 class="fw-bold mb-0"><i class="bi bi-calendar3 text-primary me-2"></i>Consumption &amp; Cost Trend by Period</h6>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (Model.Statistics.Trends.Count == 0)
+                        {
+                            <div class="p-4 text-center text-muted small">No trend data available for selected criteria.</div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light small">
+                                        <tr>
+                                            <th>Period</th>
+                                            <th class="text-end">Transactions</th>
+                                            <th class="text-end">Volume (L)</th>
+                                            <th class="text-end">Total Cost</th>
+                                            <th>Share of Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var t in Model.Statistics.Trends)
+                                        {
+                                            var pct = Model.Statistics.TotalCost > 0 ? (t.TotalCost / Model.Statistics.TotalCost * 100m) : 0;
+                                            <tr>
+                                                <td class="fw-semibold small">@t.PeriodLabel</td>
+                                                <td class="text-end small">@t.TransactionCount</td>
+                                                <td class="text-end fw-bold small">@t.QuantityLiters.ToString("N1")</td>
+                                                <td class="text-end fw-bold text-primary small">@t.TotalCost.ToString("C2")</td>
+                                                <td style="width: 140px;">
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <div class="progress flex-fill" style="height: 6px;">
+                                                            <div class="progress-bar bg-primary" role="progressbar" style="width: @pct.ToString("F0")%"></div>
+                                                        </div>
+                                                        <span class="small text-muted" style="font-size: 0.75rem;">@pct.ToString("F0")%</span>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Breakdown by Type & Branch -->
+            <div class="col-12 col-lg-5">
+                <div class="card border-0 shadow-sm rounded-3 mb-4">
+                    <div class="card-header bg-transparent border-0 pt-3 px-3">
+                        <h6 class="fw-bold mb-0"><i class="bi bi-fuel-pump-fill text-info me-2"></i>Breakdown by Fuel Type</h6>
+                    </div>
+                    <div class="card-body p-3">
+                        @if (Model.Statistics.ByFuelType.Count == 0)
+                        {
+                            <p class="text-muted small mb-0">No data.</p>
+                        }
+                        else
+                        {
+                            @foreach (var ft in Model.Statistics.ByFuelType)
+                            {
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between small mb-1">
+                                        <span class="fw-semibold">@ft.FuelTypeName</span>
+                                        <span class="text-muted">@ft.TotalQuantityLiters.ToString("N1") L &bull; <strong class="text-dark">@ft.TotalCost.ToString("C2")</strong></span>
+                                    </div>
+                                    <div class="progress" style="height: 8px;">
+                                        <div class="progress-bar bg-info" role="progressbar" style="width: @(Model.Statistics.TotalCost > 0 ? (ft.TotalCost / Model.Statistics.TotalCost * 100m).ToString("F0") : "0")%"></div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-header bg-transparent border-0 pt-3 px-3">
+                        <h6 class="fw-bold mb-0"><i class="bi bi-building text-success me-2"></i>Breakdown by Branch</h6>
+                    </div>
+                    <div class="card-body p-3">
+                        @if (Model.Statistics.ByBranch.Count == 0)
+                        {
+                            <p class="text-muted small mb-0">No data.</p>
+                        }
+                        else
+                        {
+                            @foreach (var br in Model.Statistics.ByBranch)
+                            {
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between small mb-1">
+                                        <span class="fw-semibold">@br.BranchName</span>
+                                        <span class="text-muted">@br.TotalQuantityLiters.ToString("N1") L &bull; <strong class="text-dark">@br.TotalCost.ToString("C2")</strong></span>
+                                    </div>
+                                    <div class="progress" style="height: 8px;">
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: @(Model.Statistics.TotalCost > 0 ? (br.TotalCost / Model.Statistics.TotalCost * 100m).ToString("F0") : "0")%"></div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -287,6 +287,7 @@ public static class PermissionSeeder
             "View Driver Dashboard",
             "Drivers"),
 
+        // PHASE 10 - ASSET & EQUIPMENT MANAGEMENT
         new(
             PermissionKeys.Assets.View,
             "View Assets",
@@ -305,6 +306,121 @@ public static class PermissionSeeder
         new(
             PermissionKeys.Assets.Delete,
             "Delete Assets",
+            "Assets"),
+
+        new(
+            PermissionKeys.Assets.ChangeStatus,
+            "Change Asset Status",
+            "Assets"),
+
+        new(
+            PermissionKeys.Assets.ManageLocation,
+            "Manage Asset Location",
+            "Assets"),
+
+        new(
+            PermissionKeys.AssetCategories.View,
+            "View Asset Categories",
+            "Assets"),
+
+        new(
+            PermissionKeys.AssetCategories.Manage,
+            "Manage Asset Categories",
+            "Assets"),
+
+        new(
+            PermissionKeys.AssetTypes.View,
+            "View Asset Types",
+            "Assets"),
+
+        new(
+            PermissionKeys.AssetTypes.Manage,
+            "Manage Asset Types",
+            "Assets"),
+
+        new(
+            PermissionKeys.AssetCustody.View,
+            "View Asset Custody",
+            "Assets"),
+
+        new(
+            PermissionKeys.AssetCustody.Manage,
+            "Manage Asset Custody",
+            "Assets"),
+
+        new(
+            PermissionKeys.AssetCustody.CheckOut,
+            "Check Out Asset",
+            "Assets"),
+
+        new(
+            PermissionKeys.AssetCustody.CheckIn,
+            "Check In Asset",
+            "Assets"),
+
+        new(
+            PermissionKeys.AssetTransfers.View,
+            "View Asset Transfers",
+            "Assets"),
+
+        new(
+            PermissionKeys.AssetTransfers.Create,
+            "Create Asset Transfer",
+            "Assets"),
+
+        new(
+            PermissionKeys.AssetTransfers.Complete,
+            "Complete Asset Transfer",
+            "Assets"),
+
+        new(
+            PermissionKeys.AssetTransfers.Cancel,
+            "Cancel Asset Transfer",
+            "Assets"),
+
+        new(
+            PermissionKeys.AssetInspections.View,
+            "View Asset Inspections",
+            "Assets"),
+
+        new(
+            PermissionKeys.AssetInspections.Manage,
+            "Manage Asset Inspections",
+            "Assets"),
+
+        new(
+            PermissionKeys.AssetConditions.View,
+            "View Asset Conditions",
+            "Assets"),
+
+        new(
+            PermissionKeys.AssetConditions.Manage,
+            "Manage Asset Conditions",
+            "Assets"),
+
+        new(
+            PermissionKeys.AssetDocuments.View,
+            "View Asset Documents",
+            "Assets"),
+
+        new(
+            PermissionKeys.AssetDocuments.Manage,
+            "Manage Asset Documents",
+            "Assets"),
+
+        new(
+            PermissionKeys.AssetIdentifiers.View,
+            "View Asset Identifiers & QR Codes",
+            "Assets"),
+
+        new(
+            PermissionKeys.AssetIdentifiers.Manage,
+            "Manage Asset Identifiers & QR Codes",
+            "Assets"),
+
+        new(
+            PermissionKeys.AssetDashboard.View,
+            "View Asset Dashboard",
             "Assets"),
 
         new(
@@ -590,7 +706,88 @@ public static class PermissionSeeder
         new(
             PermissionKeys.MaintenanceServiceTypes.Manage,
             "Manage Maintenance Service Types",
-            "Maintenance")
+            "Maintenance"),
+
+        // PHASE 9 - FUEL MANAGEMENT
+        new(
+            PermissionKeys.Fuel.View,
+            "View Fuel Subsystem",
+            "Fuel"),
+
+        new(
+            PermissionKeys.FuelTransactions.View,
+            "View Fuel Transactions",
+            "Fuel"),
+
+        new(
+            PermissionKeys.FuelTransactions.Create,
+            "Create Fuel Transactions",
+            "Fuel"),
+
+        new(
+            PermissionKeys.FuelTransactions.Edit,
+            "Edit Fuel Transactions",
+            "Fuel"),
+
+        new(
+            PermissionKeys.FuelTransactions.Cancel,
+            "Cancel Fuel Transactions",
+            "Fuel"),
+
+        new(
+            PermissionKeys.FuelTransactions.Import,
+            "Import Fuel Transactions",
+            "Fuel"),
+
+        new(
+            PermissionKeys.FuelStations.View,
+            "View Fuel Stations",
+            "Fuel"),
+
+        new(
+            PermissionKeys.FuelStations.Manage,
+            "Manage Fuel Stations",
+            "Fuel"),
+
+        new(
+            PermissionKeys.FuelCards.View,
+            "View Fuel Cards",
+            "Fuel"),
+
+        new(
+            PermissionKeys.FuelCards.Manage,
+            "Manage Fuel Cards",
+            "Fuel"),
+
+        new(
+            PermissionKeys.FuelAnomalies.View,
+            "View Fuel Anomalies",
+            "Fuel"),
+
+        new(
+            PermissionKeys.FuelAnomalies.Resolve,
+            "Resolve Fuel Anomalies",
+            "Fuel"),
+
+        new(
+            PermissionKeys.FuelAnalytics.View,
+            "View Fuel Analytics",
+            "Fuel"),
+
+        new(
+            PermissionKeys.FuelDashboard.View,
+            "View Fuel Dashboard",
+            "Fuel"),
+
+        new(
+            PermissionKeys.FuelDocuments.View,
+            "View Fuel Documents",
+            "Fuel"),
+
+        new(
+            PermissionKeys.FuelDocuments.Manage,
+            "Manage Fuel Documents",
+            "Fuel")
     ];
 
     public static async Task SeedAsync(
@@ -636,6 +833,21 @@ public static class PermissionSeeder
                 new ConnectedOps.Domain.Telematics.TrackingDeviceType("CAN Tracker", "CAN_TRACKER", "Advanced CAN-bus integrated heavy vehicle telemetry tracker", supportsGps: true, supportsIgnition: true, supportsCanBus: true, supportsFuel: true, supportsBattery: true),
                 new ConnectedOps.Domain.Telematics.TrackingDeviceType("Asset Tracker", "ASSET_TRACKER", "Autonomous battery-powered asset and trailer tracker", supportsGps: true, supportsIgnition: false, supportsBattery: true),
                 new ConnectedOps.Domain.Telematics.TrackingDeviceType("BLE Gateway", "BLE_GATEWAY", "Bluetooth Low Energy sensor and beacon gateway", supportsGps: true, supportsIgnition: true, supportsBle: true, supportsTemperature: true));
+        }
+
+        // Seed default global fuel type definitions if not present
+        if (!await dbContext.FuelTypeDefinitions.IgnoreQueryFilters().AnyAsync(cancellationToken))
+        {
+            dbContext.FuelTypeDefinitions.AddRange(
+                new ConnectedOps.Domain.Fuel.FuelTypeDefinition(null, "DIESEL", "Diesel", ConnectedOps.Domain.Vehicles.FuelType.Diesel, "Liquid", ConnectedOps.Domain.Fuel.FuelUnit.Liter, 0.832m),
+                new ConnectedOps.Domain.Fuel.FuelTypeDefinition(null, "GAS_REG", "Gasoline Regular (87/91)", ConnectedOps.Domain.Vehicles.FuelType.Gasoline, "Liquid", ConnectedOps.Domain.Fuel.FuelUnit.Liter, 0.745m),
+                new ConnectedOps.Domain.Fuel.FuelTypeDefinition(null, "GAS_PREM", "Gasoline Premium (93/98)", ConnectedOps.Domain.Vehicles.FuelType.Gasoline, "Liquid", ConnectedOps.Domain.Fuel.FuelUnit.Liter, 0.755m),
+                new ConnectedOps.Domain.Fuel.FuelTypeDefinition(null, "BIODIESEL", "Biodiesel (B20)", ConnectedOps.Domain.Vehicles.FuelType.Biodiesel, "Liquid", ConnectedOps.Domain.Fuel.FuelUnit.Liter, 0.880m),
+                new ConnectedOps.Domain.Fuel.FuelTypeDefinition(null, "ETHANOL_E85", "Ethanol E85", ConnectedOps.Domain.Vehicles.FuelType.Ethanol, "Liquid", ConnectedOps.Domain.Fuel.FuelUnit.Liter, 0.789m),
+                new ConnectedOps.Domain.Fuel.FuelTypeDefinition(null, "CNG", "Compressed Natural Gas", ConnectedOps.Domain.Vehicles.FuelType.Cng, "Gas", ConnectedOps.Domain.Fuel.FuelUnit.CubicMeter, 0.128m),
+                new ConnectedOps.Domain.Fuel.FuelTypeDefinition(null, "LPG", "Liquefied Petroleum Gas", ConnectedOps.Domain.Vehicles.FuelType.Lpg, "Gas", ConnectedOps.Domain.Fuel.FuelUnit.Liter, 0.540m),
+                new ConnectedOps.Domain.Fuel.FuelTypeDefinition(null, "ELECTRIC", "Electricity (EV)", ConnectedOps.Domain.Vehicles.FuelType.Electric, "Electric", ConnectedOps.Domain.Fuel.FuelUnit.KilowattHour, null),
+                new ConnectedOps.Domain.Fuel.FuelTypeDefinition(null, "HYDROGEN", "Hydrogen (H2 Fuel Cell)", ConnectedOps.Domain.Vehicles.FuelType.Hydrogen, "Gas", ConnectedOps.Domain.Fuel.FuelUnit.Kilogram, 0.089m));
         }
 
         await dbContext.SaveChangesAsync(

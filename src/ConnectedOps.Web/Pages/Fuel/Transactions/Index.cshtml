@@ -1,0 +1,219 @@
+@page
+@model ConnectedOps.Web.Pages.Fuel.Transactions.IndexModel
+@{
+    ViewData["Title"] = "Fuel Transactions";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row align-items-center mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0 fw-bold"><i class="bi bi-fuel-pump text-primary me-2"></i>Fuel Transactions</h1>
+                <p class="text-muted small mb-0">Complete audit trail of fleet refueling logs, fuel card debits, unit prices &amp; calculated economy.</p>
+            </div>
+            <div class="col-sm-6 text-sm-end mt-2 mt-sm-0">
+                <a href="/Fuel/Transactions/Create" class="btn btn-primary btn-sm">
+                    <i class="bi bi-plus-circle me-1"></i> Log Refueling
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        <!-- FILTER CARD -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-body p-3">
+                <form method="get" class="row g-2 align-items-end">
+                    <div class="col-12 col-md-3">
+                        <label class="form-label small fw-semibold">Search</label>
+                        <input type="text" class="form-control form-control-sm" name="SearchTerm" value="@Model.Query.SearchTerm" placeholder="Vehicle, receipt, station...">
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <label class="form-label small fw-semibold">Fuel Type</label>
+                        <select class="form-select form-select-sm" name="FuelType">
+                            <option value="">All Types</option>
+                            <option value="Diesel" selected="@(Model.Query.FuelType?.ToString() == "Diesel")">Diesel</option>
+                            <option value="Petrol" selected="@(Model.Query.FuelType?.ToString() == "Petrol" || Model.Query.FuelType?.ToString() == "Gasoline")">Petrol / Gasoline</option>
+                            <option value="Electric" selected="@(Model.Query.FuelType?.ToString() == "Electric")">Electric</option>
+                            <option value="CNG" selected="@(Model.Query.FuelType?.ToString() == "CNG")">CNG</option>
+                            <option value="LPG" selected="@(Model.Query.FuelType?.ToString() == "LPG")">LPG</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <label class="form-label small fw-semibold">Station / Vendor</label>
+                        <select class="form-select form-select-sm" name="FuelStationId">
+                            <option value="">All Stations</option>
+                            @foreach (var s in Model.Stations)
+                            {
+                                <option value="@s.Id" selected="@(Model.Query.FuelStationId == s.Id)">@s.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <label class="form-label small fw-semibold">Status</label>
+                        <select class="form-select form-select-sm" name="Status">
+                            <option value="">All Statuses</option>
+                            <option value="Confirmed" selected="@(Model.Query.Status == ConnectedOps.Domain.Fuel.FuelTransactionStatus.Confirmed)">Confirmed</option>
+                            <option value="Draft" selected="@(Model.Query.Status == ConnectedOps.Domain.Fuel.FuelTransactionStatus.Draft)">Draft</option>
+                            <option value="Cancelled" selected="@(Model.Query.Status == ConnectedOps.Domain.Fuel.FuelTransactionStatus.Cancelled)">Cancelled</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-sm flex-fill">
+                            <i class="bi bi-filter me-1"></i> Filter
+                        </button>
+                        <a href="/Fuel/Transactions" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-arrow-counterclockwise"></i> Reset
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- TRANSACTIONS LIST TABLE -->
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-body p-0">
+                @if (Model.Result.Items.Count == 0)
+                {
+                    <div class="p-5 text-center text-muted">
+                        <i class="bi bi-fuel-pump fs-1 d-block mb-2 text-secondary"></i>
+                        <h5>No Fuel Transactions Found</h5>
+                        <p class="small text-muted">No transactions matched your current search filters.</p>
+                        <a href="/Fuel/Transactions/Create" class="btn btn-primary btn-sm mt-2">
+                            <i class="bi bi-plus-circle me-1"></i> Record First Transaction
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light small">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Vehicle</th>
+                                    <th>Driver</th>
+                                    <th>Fuel Type</th>
+                                    <th class="text-end">Odometer</th>
+                                    <th class="text-end">Quantity</th>
+                                    <th class="text-end">Unit Price</th>
+                                    <th class="text-end">Total Cost</th>
+                                    <th class="text-center">Economy</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.Result.Items)
+                                {
+                                    var isCancelled = item.Status == ConnectedOps.Domain.Fuel.FuelTransactionStatus.Cancelled;
+                                    <tr class="@(isCancelled ? "opacity-50" : "")">
+                                        <td class="small">
+                                            <div class="fw-semibold">@item.TransactionDateUtc.ToLocalTime().ToString("yyyy-MM-dd")</div>
+                                            <div class="text-muted" style="font-size: 0.75rem;">@item.TransactionDateUtc.ToLocalTime().ToString("HH:mm")</div>
+                                        </td>
+                                        <td>
+                                            <a href="/Vehicles/Details?id=@item.VehicleId" class="fw-semibold text-decoration-none">
+                                                @item.VehicleNumber
+                                            </a>
+                                            @if (!string.IsNullOrWhiteSpace(item.RegistrationNumber))
+                                            {
+                                                <div class="text-muted small">@item.RegistrationNumber</div>
+                                            }
+                                        </td>
+                                        <td class="small">@(item.DriverName ?? "Unassigned")</td>
+                                        <td>
+                                            <span class="badge bg-secondary-subtle text-secondary">@item.FuelTypeName</span>
+                                            @if (item.IsFullTank)
+                                            {
+                                                <span class="badge bg-primary-subtle text-primary ms-1">Full</span>
+                                            }
+                                        </td>
+                                        <td class="text-end small">
+                                            @(item.OdometerReading.HasValue ? $"{item.OdometerReading.Value:N0} {item.OdometerUnit}" : "—")
+                                        </td>
+                                        <td class="text-end fw-bold">@item.Quantity.ToString("N1") @item.QuantityUnit</td>
+                                        <td class="text-end small">@item.UnitPrice.ToString("F2")</td>
+                                        <td class="text-end fw-bold text-primary">@item.TotalCost.ToString("C2")</td>
+                                        <td class="text-center">
+                                            @if (item.KilometersPerLiter.HasValue)
+                                            {
+                                                <span class="badge bg-success-subtle text-success">@item.KilometersPerLiter.Value.ToString("F1") km/L</span>
+                                            }
+                                            else if (item.IsPartialFill)
+                                            {
+                                                <span class="badge bg-light text-muted">Partial</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted small">—</span>
+                                            }
+                                            @if (item.AnomalyCount > 0)
+                                            {
+                                                <span class="badge bg-danger ms-1" title="Anomaly Detected">
+                                                    <i class="bi bi-exclamation-triangle-fill"></i>
+                                                </span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (item.Status == ConnectedOps.Domain.Fuel.FuelTransactionStatus.Confirmed)
+                                            {
+                                                <span class="badge bg-success-subtle text-success">Confirmed</span>
+                                            }
+                                            else if (item.Status == ConnectedOps.Domain.Fuel.FuelTransactionStatus.Cancelled)
+                                            {
+                                                <span class="badge bg-danger-subtle text-danger">Cancelled</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning-subtle text-warning">@item.StatusName</span>
+                                            }
+                                        </td>
+                                        <td class="text-end">
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="/Fuel/Transactions/Details?id=@item.Id" class="btn btn-outline-secondary" title="View Details">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                @if (!isCancelled)
+                                                {
+                                                    <a href="/Fuel/Transactions/Edit?id=@item.Id" class="btn btn-outline-secondary" title="Edit">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </a>
+                                                }
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- PAGINATION -->
+                    @if (Model.Result.TotalPages > 1)
+                    {
+                        <div class="d-flex justify-content-between align-items-center p-3 border-top">
+                            <span class="text-muted small">
+                                Showing page @Model.Result.PageNumber of @Model.Result.TotalPages (@Model.Result.TotalCount total entries)
+                            </span>
+                            <nav>
+                                <ul class="pagination pagination-sm mb-0">
+                                    <li class="page-item @(Model.Result.HasPreviousPage ? "" : "disabled")">
+                                        <a class="page-link" href="/Fuel/Transactions?PageNumber=@(Model.Result.PageNumber - 1)&SearchTerm=@Model.Query.SearchTerm&FuelType=@Model.Query.FuelType&FuelStationId=@Model.Query.FuelStationId&Status=@Model.Query.Status">Previous</a>
+                                    </li>
+                                    <li class="page-item active">
+                                        <span class="page-link">@Model.Result.PageNumber</span>
+                                    </li>
+                                    <li class="page-item @(Model.Result.HasNextPage ? "" : "disabled")">
+                                        <a class="page-link" href="/Fuel/Transactions?PageNumber=@(Model.Result.PageNumber + 1)&SearchTerm=@Model.Query.SearchTerm&FuelType=@Model.Query.FuelType&FuelStationId=@Model.Query.FuelStationId&Status=@Model.Query.Status">Next</a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>

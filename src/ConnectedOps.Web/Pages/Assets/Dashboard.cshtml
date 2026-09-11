@@ -1,0 +1,287 @@
+@page
+@model ConnectedOps.Web.Pages.Assets.DashboardModel
+@{
+    ViewData["Title"] = "Asset Intelligence Dashboard";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row align-items-center mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0 fw-bold"><i class="bi bi-tools text-primary me-2"></i>Asset &amp; Equipment Intelligence</h1>
+                <p class="text-muted small mb-0">Non-vehicle operational equipment lifecycle, custody tracking, utilization metrics &amp; compliance assurance.</p>
+            </div>
+            <div class="col-sm-6 text-sm-end mt-2 mt-sm-0">
+                <a href="/Assets/Qr" class="btn btn-outline-secondary btn-sm me-1">
+                    <i class="bi bi-qr-code-scan me-1"></i> Scan / Print Tags
+                </a>
+                <a href="/Assets/Custody" class="btn btn-outline-info btn-sm me-1">
+                    <i class="bi bi-person-badge me-1"></i> Custody
+                </a>
+                <a href="/Assets/Transfers" class="btn btn-outline-warning btn-sm me-1">
+                    <i class="bi bi-arrow-left-right me-1"></i> Transfers
+                </a>
+                <a href="/Assets/Create" class="btn btn-primary btn-sm">
+                    <i class="bi bi-plus-circle me-1"></i> Register Asset
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        <!-- TOP KPI ROW -->
+        <div class="row g-3 mb-4">
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-3 bg-gradient h-100 border-start border-4 border-primary">
+                    <div class="card-body p-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <span class="text-muted small text-uppercase fw-semibold">Total Assets</span>
+                                <h3 class="fw-bold mb-0 mt-1 text-primary">@Model.Summary.TotalAssets.ToString("N0")</h3>
+                                <small class="text-muted">Value: @Model.Summary.TotalAssetValue.ToString("C0")</small>
+                            </div>
+                            <div class="rounded-circle bg-primary-subtle text-primary p-3">
+                                <i class="bi bi-boxes fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-3 bg-gradient h-100 border-start border-4 border-success">
+                    <div class="card-body p-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <span class="text-muted small text-uppercase fw-semibold">Active In Use</span>
+                                <h3 class="fw-bold mb-0 mt-1 text-success">@Model.Summary.InUseAssets.ToString("N0")</h3>
+                                <small class="text-muted">@Model.Summary.ActiveAssets Active / @Model.Summary.AvailableAssets Available</small>
+                            </div>
+                            <div class="rounded-circle bg-success-subtle text-success p-3">
+                                <i class="bi bi-play-circle-fill fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-3 bg-gradient h-100 border-start border-4 border-warning">
+                    <div class="card-body p-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <span class="text-muted small text-uppercase fw-semibold">Under Maintenance</span>
+                                <h3 class="fw-bold mb-0 mt-1 text-warning">@Model.Summary.InMaintenanceAssets.ToString("N0")</h3>
+                                <small class="text-muted">Overdue QA: @Model.Summary.OverdueInspectionsCount</small>
+                            </div>
+                            <div class="rounded-circle bg-warning-subtle text-warning p-3">
+                                <i class="bi bi-wrench-adjustable fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-3 bg-gradient h-100 border-start border-4 border-info">
+                    <div class="card-body p-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <span class="text-muted small text-uppercase fw-semibold">Avg Fleet Utilization</span>
+                                <h3 class="fw-bold mb-0 mt-1 text-info">@Model.Utilization.OverallUtilizationRatePercentage.ToString("F1")%</h3>
+                                <small class="text-muted">Idle (>30d): @Model.Summary.IdleAssetsCount</small>
+                            </div>
+                            <div class="rounded-circle bg-info-subtle text-info p-3">
+                                <i class="bi bi-speedometer fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CHARTS & SUMMARY ROW -->
+        <div class="row g-3 mb-4">
+            <!-- Asset Category Breakdown -->
+            <div class="col-12 col-lg-4">
+                <div class="card border-0 shadow-sm rounded-3 h-100">
+                    <div class="card-header bg-transparent border-0 pt-3 px-3">
+                        <h6 class="fw-bold mb-0"><i class="bi bi-pie-chart-fill text-primary me-2"></i>Assets by Category</h6>
+                    </div>
+                    <div class="card-body p-3">
+                        @if (Model.Summary.CategoryBreakdown.Count == 0)
+                        {
+                            <div class="text-center py-4 text-muted">
+                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                <span>No assets registered yet.</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Category</th>
+                                            <th class="text-center">Count</th>
+                                            <th class="text-end">Value</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var cat in Model.Summary.CategoryBreakdown)
+                                        {
+                                            <tr>
+                                                <td class="fw-semibold small">@cat.CategoryName</td>
+                                                <td class="text-center"><span class="badge bg-secondary-subtle text-secondary">@cat.AssetCount</span></td>
+                                                <td class="text-end small">@cat.TotalValue.ToString("C0")</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Custody & Assignment Status -->
+            <div class="col-12 col-lg-4">
+                <div class="card border-0 shadow-sm rounded-3 h-100">
+                    <div class="card-header bg-transparent border-0 pt-3 px-3">
+                        <h6 class="fw-bold mb-0"><i class="bi bi-person-check-fill text-success me-2"></i>Status Breakdown</h6>
+                    </div>
+                    <div class="card-body p-3 d-flex flex-column justify-content-around">
+                        <div class="d-flex justify-content-between align-items-center p-2 rounded bg-light mb-2">
+                            <span class="small fw-semibold"><i class="bi bi-play-circle text-success me-2"></i>In Use</span>
+                            <span class="badge bg-success fs-6">@Model.Summary.InUseAssets</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center p-2 rounded bg-light mb-2">
+                            <span class="small fw-semibold"><i class="bi bi-check-circle text-primary me-2"></i>Available In Inventory</span>
+                            <span class="badge bg-primary fs-6">@Model.Summary.AvailableAssets</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center p-2 rounded bg-light mb-2">
+                            <span class="small fw-semibold"><i class="bi bi-wrench text-warning me-2"></i>Under Maintenance</span>
+                            <span class="badge bg-warning fs-6 text-dark">@Model.Summary.InMaintenanceAssets</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center p-2 rounded bg-light">
+                            <span class="small fw-semibold"><i class="bi bi-trash text-dark me-2"></i>Disposed / Retired</span>
+                            <span class="badge bg-dark fs-6">@Model.Summary.DisposedAssets</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Overdue & Upcoming QA/Inspections -->
+            <div class="col-12 col-lg-4">
+                <div class="card border-0 shadow-sm rounded-3 h-100">
+                    <div class="card-header bg-transparent border-0 pt-3 px-3 d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold mb-0"><i class="bi bi-clipboard-check text-warning me-2"></i>Inspections &amp; QA Due</h6>
+                        <a href="/Assets/Inspections" class="btn btn-sm btn-link text-decoration-none">View All</a>
+                    </div>
+                    <div class="card-body p-3">
+                        @if (Model.Summary.UpcomingInspections.Count == 0)
+                        {
+                            <div class="text-center py-4 text-muted">
+                                <i class="bi bi-check-circle text-success fs-1 d-block mb-2"></i>
+                                <span class="fw-semibold">All inspections up to date</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="d-flex flex-column gap-2">
+                                @foreach (var insp in Model.Summary.UpcomingInspections)
+                                {
+                                    <div class="p-2 border rounded-2 @(insp.IsOverdue ? "border-danger bg-danger-subtle" : "bg-light-subtle")">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <div class="fw-semibold small">@insp.AssetName <span class="text-muted">(@insp.AssetNumber)</span></div>
+                                                <small class="text-muted">Type: @insp.InspectionType</small>
+                                            </div>
+                                            <span class="badge @(insp.IsOverdue ? "bg-danger" : "bg-warning text-dark")">
+                                                @(insp.IsOverdue ? "OVERDUE" : "DUE SOON")
+                                            </span>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RECENT TIMELINE ACTIVITY & IDLE ASSETS -->
+        <div class="row g-3">
+            <div class="col-12 col-lg-8">
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-header bg-transparent border-0 pt-3 px-3 d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold mb-0"><i class="bi bi-activity text-info me-2"></i>Recent Asset Events &amp; Movements</h6>
+                        <a href="/Assets" class="btn btn-sm btn-link text-decoration-none">Browse Assets</a>
+                    </div>
+                    <div class="card-body p-3">
+                        @if (Model.Summary.RecentActivities.Count == 0)
+                        {
+                            <div class="text-center py-4 text-muted">
+                                <p class="small mb-0">No recent activity logged.</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="timeline timeline-inverse">
+                                @foreach (var ev in Model.Summary.RecentActivities)
+                                {
+                                    <div class="d-flex gap-3 mb-3 border-bottom pb-2">
+                                        <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; min-width: 36px;">
+                                            <i class="bi bi-arrow-right-circle"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div class="fw-semibold small">@ev.Title</div>
+                                                <small class="text-muted">@ev.TimestampUtc.ToLocalTime().ToString("g")</small>
+                                            </div>
+                                            <p class="small text-muted mb-0">@ev.Description</p>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-4">
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-header bg-transparent border-0 pt-3 px-3">
+                        <h6 class="fw-bold mb-0"><i class="bi bi-hourglass-split text-secondary me-2"></i>Idle Assets (>30 Days)</h6>
+                    </div>
+                    <div class="card-body p-3">
+                        @if (Model.IdleAssets.Count == 0)
+                        {
+                            <div class="text-center py-4 text-muted">
+                                <i class="bi bi-check-all text-success fs-1 d-block mb-2"></i>
+                                <span class="fw-semibold">No stagnant assets</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="d-flex flex-column gap-2">
+                                @foreach (var idle in Model.IdleAssets.Take(5))
+                                {
+                                    <div class="p-2 border rounded-2 bg-light-subtle">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div class="fw-semibold small text-truncate" style="max-width: 180px;">@idle.Name</div>
+                                            <span class="badge bg-secondary-subtle text-secondary">@idle.IdleDays Days Idle</span>
+                                        </div>
+                                        <small class="text-muted">Loc: @(idle.CurrentLocationName ?? idle.CurrentBranchName ?? "Depot")</small>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

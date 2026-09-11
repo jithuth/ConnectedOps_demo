@@ -1,0 +1,192 @@
+@page
+@model ConnectedOps.Web.Pages.Assets.CreateModel
+@{
+    ViewData["Title"] = "Register Operational Asset";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row align-items-center mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0 fw-bold"><i class="bi bi-plus-circle text-primary me-2"></i>Register New Asset</h1>
+                <p class="text-muted small mb-0">Add operational tools, equipment, test devices, or attachments into inventory.</p>
+            </div>
+            <div class="col-sm-6 text-sm-end mt-2 mt-sm-0">
+                <a href="/Assets" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Asset Directory
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-octagon-fill me-2"></i>@Model.ErrorMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <form method="post">
+            <div class="row g-3">
+                <!-- LEFT COLUMN: PRIMARY IDENTITY & SPECIFICATIONS -->
+                <div class="col-12 col-lg-8">
+                    <!-- SECTION 1: IDENTITY -->
+                    <div class="card border-0 shadow-sm rounded-3 mb-3">
+                        <div class="card-header bg-transparent border-0 pt-3 px-3">
+                            <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-info-circle me-2"></i>Basic Asset Information</h6>
+                        </div>
+                        <div class="card-body p-3">
+                            <div class="row g-3">
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label small fw-semibold">Asset Number <span class="text-danger">*</span></label>
+                                    <input type="text" name="Form.AssetNumber" class="form-control form-control-sm" placeholder="e.g. AST-GEN-001" value="@Model.Form.AssetNumber" required>
+                                </div>
+                                <div class="col-12 col-md-8">
+                                    <label class="form-label small fw-semibold">Asset / Equipment Name <span class="text-danger">*</span></label>
+                                    <input type="text" name="Form.Name" class="form-control form-control-sm" placeholder="e.g. Honda EB2800i Inverter Generator" value="@Model.Form.Name" required>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label small fw-semibold">Description / Purpose</label>
+                                    <textarea name="Form.Description" class="form-control form-control-sm" rows="2" placeholder="Field operational notes, specifications, or usage guidelines...">@Model.Form.Description</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 2: HARDWARE & SERIALS -->
+                    <div class="card border-0 shadow-sm rounded-3 mb-3">
+                        <div class="card-header bg-transparent border-0 pt-3 px-3">
+                            <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-upc-scan me-2"></i>Hardware &amp; Tag Identifiers</h6>
+                        </div>
+                        <div class="card-body p-3">
+                            <div class="row g-3">
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label small fw-semibold">Manufacturer / Make</label>
+                                    <input type="text" name="Form.Make" class="form-control form-control-sm" placeholder="e.g. Honda / DeWalt" value="@Model.Form.Make">
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label small fw-semibold">Model</label>
+                                    <input type="text" name="Form.Model" class="form-control form-control-sm" placeholder="e.g. EB2800i" value="@Model.Form.Model">
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label small fw-semibold">Year / Generation</label>
+                                    <input type="text" name="Form.Year" class="form-control form-control-sm" placeholder="e.g. 2024" value="@Model.Form.Year">
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label small fw-semibold">Serial Number</label>
+                                    <input type="text" name="Form.SerialNumber" class="form-control form-control-sm" placeholder="Manufacturer Serial Number" value="@Model.Form.SerialNumber">
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label small fw-semibold">Internal Asset Tag / Barcode</label>
+                                    <input type="text" name="Form.Barcode" class="form-control form-control-sm" placeholder="Barcode or QR tag data" value="@Model.Form.Barcode">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 3: PROCUREMENT & WARRANTY -->
+                    <div class="card border-0 shadow-sm rounded-3 mb-3">
+                        <div class="card-header bg-transparent border-0 pt-3 px-3">
+                            <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-cash-stack me-2"></i>Procurement &amp; Warranty</h6>
+                        </div>
+                        <div class="card-body p-3">
+                            <div class="row g-3">
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label small fw-semibold">Purchase Date</label>
+                                    <input type="date" name="Form.PurchaseDate" class="form-control form-control-sm" value="@(Model.Form.PurchaseDate?.ToString("yyyy-MM-dd"))">
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label small fw-semibold">Purchase Cost ($)</label>
+                                    <input type="number" step="0.01" name="Form.PurchaseCost" class="form-control form-control-sm" placeholder="0.00" value="@Model.Form.PurchaseCost">
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label small fw-semibold">Vendor / Supplier</label>
+                                    <input type="text" name="Form.VendorName" class="form-control form-control-sm" placeholder="e.g. Industrial Equipment Supply Co." value="@Model.Form.VendorName">
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label small fw-semibold">Warranty Expiration Date</label>
+                                    <input type="date" name="Form.WarrantyExpiryDate" class="form-control form-control-sm" value="@(Model.Form.WarrantyExpiryDate?.ToString("yyyy-MM-dd"))">
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label small fw-semibold">Expected Lifespan (Months)</label>
+                                    <input type="number" name="Form.ExpectedLifespanMonths" class="form-control form-control-sm" placeholder="e.g. 60" value="@Model.Form.ExpectedLifespanMonths">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT COLUMN: CLASSIFICATION & SETTINGS -->
+                <div class="col-12 col-lg-4">
+                    <div class="card border-0 shadow-sm rounded-3 mb-3">
+                        <div class="card-header bg-transparent border-0 pt-3 px-3">
+                            <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-tags me-2"></i>Classification &amp; Status</h6>
+                        </div>
+                        <div class="card-body p-3">
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold">Category <span class="text-danger">*</span></label>
+                                <select name="Form.CategoryId" class="form-select form-select-sm" required>
+                                    <option value="">Select Category...</option>
+                                    @foreach (var cat in Model.Categories)
+                                    {
+                                        <option value="@cat.Value" selected="@cat.Selected">@cat.Text</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold">Asset Type <span class="text-danger">*</span></label>
+                                <select name="Form.AssetTypeId" class="form-select form-select-sm" required>
+                                    <option value="">Select Asset Type...</option>
+                                    @foreach (var type in Model.AssetTypes)
+                                    {
+                                        <option value="@type.Value" selected="@type.Selected">@type.Text</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold">Ownership Model</label>
+                                <select name="Form.OwnershipType" class="form-select form-select-sm">
+                                    <option value="CompanyOwned">Company Owned</option>
+                                    <option value="Leased">Leased / Financed</option>
+                                    <option value="ClientProvided">Client Provided</option>
+                                    <option value="SubcontractorOwned">Subcontractor Owned</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold">Initial Physical Condition</label>
+                                <select name="Form.Condition" class="form-select form-select-sm">
+                                    <option value="Excellent">Excellent (Brand New / Pristine)</option>
+                                    <option value="Good" selected>Good (Fully Operable)</option>
+                                    <option value="Fair">Fair (Minor Wear)</option>
+                                    <option value="Poor">Poor (Degraded)</option>
+                                </select>
+                            </div>
+
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" name="Form.IsCritical" value="true" id="isCriticalCheck">
+                                <label class="form-check-label small fw-semibold" for="isCriticalCheck">Mission-Critical Equipment</label>
+                                <div class="form-text small">Flags this asset for strict inspection intervals and priority tracking.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card border-0 shadow-sm rounded-3">
+                        <div class="card-body p-3">
+                            <button type="submit" class="btn btn-primary w-100 mb-2">
+                                <i class="bi bi-check-circle me-1"></i> Register Asset
+                            </button>
+                            <a href="/Assets" class="btn btn-outline-secondary w-100">Cancel</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

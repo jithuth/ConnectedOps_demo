@@ -1,0 +1,733 @@
+@page
+@model ConnectedOps.Web.Pages.Assets.DetailsModel
+@{
+    ViewData["Title"] = $"{Model.Asset.Name} ({Model.Asset.AssetNumber})";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row align-items-center mb-2">
+            <div class="col-sm-7">
+                <div class="d-flex align-items-center gap-2">
+                    <h1 class="m-0 fw-bold">@Model.Asset.Name</h1>
+                    <span class="badge bg-primary fs-6">@Model.Asset.AssetNumber</span>
+                    @if (Model.Asset.IsCritical)
+                    {
+                        <span class="badge bg-danger"><i class="bi bi-shield-fill-exclamation me-1"></i>Critical</span>
+                    }
+                </div>
+                <p class="text-muted small mb-0">@(Model.Asset.CategoryName ?? "General") &bull; @(Model.Asset.AssetTypeName ?? "Standard Equipment") &bull; Make: @(Model.Asset.Make ?? "N/A") Model: @(Model.Asset.Model ?? "N/A")</p>
+            </div>
+            <div class="col-sm-5 text-sm-end mt-2 mt-sm-0">
+                <div class="btn-group btn-group-sm">
+                    @if (Model.ActiveUsageSession != null)
+                    {
+                        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#checkInModal">
+                            <i class="bi bi-box-arrow-in-down me-1"></i> Check-In Asset
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#checkOutModal">
+                            <i class="bi bi-box-arrow-up-right me-1"></i> Check-Out Asset
+                        </button>
+                    }
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#transferModal">
+                        <i class="bi bi-arrow-left-right me-1"></i> Transfer
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#statusModal">
+                        <i class="bi bi-sliders me-1"></i> Status
+                    </button>
+                    <a href="/Assets/Edit?id=@Model.Asset.Id" class="btn btn-outline-secondary">
+                        <i class="bi bi-pencil me-1"></i> Edit
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-octagon-fill me-2"></i>@Model.ErrorMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <!-- EXECUTIVE KPI BANNER -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+                <div class="card border-0 shadow-sm rounded-3 p-3">
+                    <span class="text-muted small text-uppercase fw-semibold">Current Status</span>
+                    <h5 class="fw-bold mb-0 mt-1">
+                        @{
+                            var badgeClass = Model.Asset.Status switch
+                            {
+                                ConnectedOps.Domain.Assets.AssetStatus.Available => "text-success",
+                                ConnectedOps.Domain.Assets.AssetStatus.InUse => "text-primary",
+                                ConnectedOps.Domain.Assets.AssetStatus.UnderMaintenance => "text-warning",
+                                _ => "text-secondary"
+                            };
+                        }
+                        <i class="bi bi-circle-fill fs-6 @badgeClass me-1"></i> @Model.Asset.Status
+                    </h5>
+                    <small class="text-muted">Condition: <strong class="text-body">@Model.Asset.Condition</strong></small>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-3">
+                <div class="card border-0 shadow-sm rounded-3 p-3">
+                    <span class="text-muted small text-uppercase fw-semibold">Current Custody</span>
+                    <h5 class="fw-bold mb-0 mt-1 text-truncate">
+                        @if (Model.Asset.CurrentCustodianEmployeeName != null)
+                        {
+                            <span class="text-primary"><i class="bi bi-person-fill me-1"></i>@Model.Asset.CurrentCustodianEmployeeName</span>
+                        }
+                        else if (Model.Asset.CurrentAssignedVehiclePlate != null)
+                        {
+                            <span class="text-info"><i class="bi bi-truck me-1"></i>@Model.Asset.CurrentAssignedVehiclePlate</span>
+                        }
+                        else
+                        {
+                            <span class="text-secondary"><i class="bi bi-building me-1"></i>Depot (Unassigned)</span>
+                        }
+                    </h5>
+                    <small class="text-muted">@(Model.Asset.CurrentLocationName ?? Model.Asset.CurrentBranchName ?? "Main Depot")</small>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-3">
+                <div class="card border-0 shadow-sm rounded-3 p-3">
+                    <span class="text-muted small text-uppercase fw-semibold">Total Usage</span>
+                    <h5 class="fw-bold mb-0 mt-1 text-info">@Model.Asset.TotalUsageHours.ToString("N1") hrs</h5>
+                    <small class="text-muted">Expected Lifespan: @(Model.Asset.ExpectedLifespanMonths?.ToString() ?? "—") mos</small>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-3">
+                <div class="card border-0 shadow-sm rounded-3 p-3">
+                    <span class="text-muted small text-uppercase fw-semibold">Procurement Value</span>
+                    <h5 class="fw-bold mb-0 mt-1 text-success">@(Model.Asset.PurchaseCost?.ToString("C0") ?? "$0.00")</h5>
+                    <small class="text-muted">Purchased: @(Model.Asset.PurchaseDate?.ToString("yyyy-MM-dd") ?? "N/A")</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- 8-TAB NAVIGATION -->
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white border-bottom p-2">
+                <ul class="nav nav-pills card-header-pills" id="assetTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active py-1 px-3 small" id="overview-tab" data-bs-toggle="pill" data-bs-target="#overview" type="button" role="tab">
+                            <i class="bi bi-info-circle me-1"></i> Specifications
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link py-1 px-3 small" id="custody-tab" data-bs-toggle="pill" data-bs-target="#custody" type="button" role="tab">
+                            <i class="bi bi-person-badge me-1"></i> Custody (@(Model.EmployeeAssignments.Count + Model.VehicleAssignments.Count))
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link py-1 px-3 small" id="sessions-tab" data-bs-toggle="pill" data-bs-target="#sessions" type="button" role="tab">
+                            <i class="bi bi-stopwatch me-1"></i> Check-Outs (@(Model.ActiveUsageSession != null ? "Active" : "History"))
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link py-1 px-3 small" id="transfers-tab" data-bs-toggle="pill" data-bs-target="#transfers" type="button" role="tab">
+                            <i class="bi bi-arrow-left-right me-1"></i> Transfers (@Model.Transfers.Count)
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link py-1 px-3 small" id="inspections-tab" data-bs-toggle="pill" data-bs-target="#inspections" type="button" role="tab">
+                            <i class="bi bi-clipboard-check me-1"></i> QA &amp; Calibrations (@(Model.Inspections.Count + Model.Calibrations.Count))
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link py-1 px-3 small" id="documents-tab" data-bs-toggle="pill" data-bs-target="#documents" type="button" role="tab">
+                            <i class="bi bi-file-earmark-text me-1"></i> Documents (@Model.Documents.Count)
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link py-1 px-3 small" id="qr-tab" data-bs-toggle="pill" data-bs-target="#qr" type="button" role="tab">
+                            <i class="bi bi-qr-code me-1"></i> QR &amp; Tag
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link py-1 px-3 small" id="timeline-tab" data-bs-toggle="pill" data-bs-target="#timeline" type="button" role="tab">
+                            <i class="bi bi-clock-history me-1"></i> History Log
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="card-body p-4">
+                <div class="tab-content" id="assetTabsContent">
+                    <!-- TAB 1: OVERVIEW & SPECS -->
+                    <div class="tab-pane fade show active" id="overview" role="tabpanel">
+                        <div class="row g-4">
+                            <div class="col-12 col-md-6">
+                                <h6 class="fw-bold border-bottom pb-2 text-primary">Technical Specifications</h6>
+                                <table class="table table-sm table-borderless">
+                                    <tbody>
+                                        <tr>
+                                            <td class="text-muted small" style="width: 160px;">Manufacturer / Make:</td>
+                                            <td class="fw-semibold small">@(Model.Asset.Make ?? "—")</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted small">Model Number:</td>
+                                            <td class="fw-semibold small">@(Model.Asset.Model ?? "—")</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted small">Year:</td>
+                                            <td class="fw-semibold small">@(Model.Asset.Year ?? "—")</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted small">Serial Number:</td>
+                                            <td class="fw-semibold small text-primary font-monospace">@(Model.Asset.SerialNumber ?? "—")</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted small">Internal Tag Code:</td>
+                                            <td class="fw-semibold small font-monospace">@(Model.Asset.InternalCode ?? "—")</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted small">Barcode:</td>
+                                            <td class="fw-semibold small font-monospace">@(Model.Asset.Barcode ?? "—")</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <h6 class="fw-bold border-bottom pb-2 text-primary">Procurement &amp; Lifecycle</h6>
+                                <table class="table table-sm table-borderless">
+                                    <tbody>
+                                        <tr>
+                                            <td class="text-muted small" style="width: 160px;">Ownership:</td>
+                                            <td class="fw-semibold small">@Model.Asset.OwnershipType</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted small">Vendor:</td>
+                                            <td class="fw-semibold small">@(Model.Asset.VendorName ?? "—")</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted small">Purchase Cost:</td>
+                                            <td class="fw-semibold small">@(Model.Asset.PurchaseCost?.ToString("C2") ?? "—")</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted small">Warranty Expiration:</td>
+                                            <td class="fw-semibold small">@(Model.Asset.WarrantyExpiryDate?.ToString("yyyy-MM-dd") ?? "—")</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted small">Next Inspection Due:</td>
+                                            <td class="fw-semibold small text-warning">@(Model.Asset.NextInspectionDueUtc?.ToString("yyyy-MM-dd") ?? "None scheduled")</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted small">Next Calibration Due:</td>
+                                            <td class="fw-semibold small text-info">@(Model.Asset.NextCalibrationDueUtc?.ToString("yyyy-MM-dd") ?? "None scheduled")</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(Model.Asset.Description))
+                            {
+                                <div class="col-12">
+                                    <h6 class="fw-bold border-bottom pb-2 text-primary">Operational Description</h6>
+                                    <p class="small text-muted mb-0">@Model.Asset.Description</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: CUSTODY -->
+                    <div class="tab-pane fade" id="custody" role="tabpanel">
+                        <h6 class="fw-bold mb-3 text-primary"><i class="bi bi-person-badge me-2"></i>Employee Custody History</h6>
+                        @if (Model.EmployeeAssignments.Count == 0)
+                        {
+                            <p class="text-muted small">No employee custody assignments recorded.</p>
+                        }
+                        else
+                        {
+                            <div class="table-responsive mb-4">
+                                <table class="table table-sm table-hover align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Employee</th>
+                                            <th>Assigned Date</th>
+                                            <th>Condition</th>
+                                            <th>Status</th>
+                                            <th>Returned Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var ea in Model.EmployeeAssignments)
+                                        {
+                                            <tr>
+                                                <td class="fw-semibold small">@ea.EmployeeName</td>
+                                                <td class="small">@ea.AssignedAtUtc.ToLocalTime().ToString("g")</td>
+                                                <td><span class="badge bg-secondary">@ea.ConditionAtAssignment</span></td>
+                                                <td>
+                                                    <span class="badge @(ea.IsActive ? "bg-success" : "bg-light text-muted border")">
+                                                        @(ea.IsActive ? "ACTIVE CUSTODIAN" : "RETURNED")
+                                                    </span>
+                                                </td>
+                                                <td class="small text-muted">@(ea.ReturnedAtUtc?.ToLocalTime().ToString("g") ?? "—")</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+
+                        <h6 class="fw-bold mb-3 text-primary"><i class="bi bi-truck me-2"></i>Vehicle Mount History</h6>
+                        @if (Model.VehicleAssignments.Count == 0)
+                        {
+                            <p class="text-muted small">No vehicle mounting history recorded.</p>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Vehicle Plate</th>
+                                            <th>Mounted Date</th>
+                                            <th>Status</th>
+                                            <th>Removed Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var va in Model.VehicleAssignments)
+                                        {
+                                            <tr>
+                                                <td class="fw-semibold small">@va.VehiclePlate</td>
+                                                <td class="small">@va.AssignedAtUtc.ToLocalTime().ToString("g")</td>
+                                                <td>
+                                                    <span class="badge @(va.IsActive ? "bg-info" : "bg-light text-muted border")">
+                                                        @(va.IsActive ? "MOUNTED" : "REMOVED")
+                                                    </span>
+                                                </td>
+                                                <td class="small text-muted">@(va.RemovedAtUtc?.ToLocalTime().ToString("g") ?? "—")</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- TAB 3: CHECKOUT SESSIONS -->
+                    <div class="tab-pane fade" id="sessions" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-stopwatch me-2"></i>Usage &amp; Checkout Sessions</h6>
+                            @if (Model.ActiveUsageSession != null)
+                            {
+                                <span class="badge bg-warning text-dark px-3 py-2 fs-6">
+                                    <i class="bi bi-broadcast me-1"></i> Checked out by @Model.ActiveUsageSession.EmployeeName since @Model.ActiveUsageSession.CheckedOutAtUtc.ToLocalTime().ToString("MMM dd HH:mm")
+                                </span>
+                            }
+                        </div>
+
+                        @if (Model.ActiveUsageSession == null)
+                        {
+                            <div class="alert alert-light border p-3 rounded-2">
+                                <i class="bi bi-check-circle text-success me-2"></i> Asset is currently in inventory and available for checkout.
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="card border-warning mb-4">
+                                <div class="card-header bg-warning-subtle fw-semibold small">Active Field Checkout</div>
+                                <div class="card-body p-3">
+                                    <div class="row g-2">
+                                        <div class="col-md-4">
+                                            <span class="text-muted small">Checked Out To:</span>
+                                            <div class="fw-bold">@Model.ActiveUsageSession.EmployeeName</div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <span class="text-muted small">Purpose:</span>
+                                            <div>@(Model.ActiveUsageSession.Purpose ?? "Operational use")</div>
+                                        </div>
+                                        <div class="col-md-4 text-end">
+                                            <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#checkInModal">
+                                                <i class="bi bi-box-arrow-in-down me-1"></i> Return / Check-In Now
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- TAB 4: TRANSFERS -->
+                    <div class="tab-pane fade" id="transfers" role="tabpanel">
+                        <h6 class="fw-bold mb-3 text-primary"><i class="bi bi-arrow-left-right me-2"></i>Transfer Log</h6>
+                        @if (Model.Transfers.Count == 0)
+                        {
+                            <p class="text-muted small">No transfers on record for this asset.</p>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Type</th>
+                                            <th>From</th>
+                                            <th>Destination</th>
+                                            <th>Status</th>
+                                            <th>Initiated</th>
+                                            <th>Completed</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var tr in Model.Transfers)
+                                        {
+                                            <tr>
+                                                <td class="fw-semibold small">@tr.TransferType</td>
+                                                <td class="small">@(tr.FromBranchName ?? tr.FromLocationName ?? tr.FromEmployeeName ?? "—")</td>
+                                                <td class="small fw-semibold text-primary">@(tr.ToBranchName ?? tr.ToLocationName ?? tr.ToEmployeeName ?? "—")</td>
+                                                <td><span class="badge bg-info-subtle text-info">@tr.Status</span></td>
+                                                <td class="small text-muted">@tr.InitiatedAtUtc.ToLocalTime().ToString("g")</td>
+                                                <td class="small text-muted">@(tr.CompletedAtUtc?.ToLocalTime().ToString("g") ?? "—")</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- TAB 5: INSPECTIONS & QA -->
+                    <div class="tab-pane fade" id="inspections" role="tabpanel">
+                        <h6 class="fw-bold mb-3 text-primary"><i class="bi bi-clipboard-check me-2"></i>Safety Inspections &amp; QA</h6>
+                        @if (Model.Inspections.Count == 0)
+                        {
+                            <p class="text-muted small">No safety inspections recorded yet.</p>
+                        }
+                        else
+                        {
+                            <div class="table-responsive mb-4">
+                                <table class="table table-sm table-hover align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Inspection Date</th>
+                                            <th>Type</th>
+                                            <th>Result</th>
+                                            <th>Inspector</th>
+                                            <th>Next Due</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var insp in Model.Inspections)
+                                        {
+                                            <tr>
+                                                <td class="fw-semibold small">@insp.InspectionDateUtc.ToLocalTime().ToString("g")</td>
+                                                <td class="small">@insp.InspectionType</td>
+                                                <td>
+                                                    <span class="badge @(insp.Result == ConnectedOps.Domain.Assets.AssetInspectionResult.Passed ? "bg-success" : "bg-danger")">
+                                                        @insp.Result
+                                                    </span>
+                                                </td>
+                                                <td class="small">@(insp.InspectorEmployeeName ?? insp.InspectorUserName ?? "Staff")</td>
+                                                <td class="small text-muted">@(insp.NextInspectionDueUtc?.ToLocalTime().ToString("yyyy-MM-dd") ?? "—")</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+
+                        <h6 class="fw-bold mb-3 text-primary"><i class="bi bi-rulers me-2"></i>Calibration Records</h6>
+                        @if (Model.Calibrations.Count == 0)
+                        {
+                            <p class="text-muted small">No calibration certificates or records uploaded.</p>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Calibration Date</th>
+                                            <th>Provider</th>
+                                            <th>Certificate #</th>
+                                            <th>Result</th>
+                                            <th>Expires / Next Due</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var cal in Model.Calibrations)
+                                        {
+                                            <tr>
+                                                <td class="fw-semibold small">@cal.CalibrationDateUtc.ToLocalTime().ToString("yyyy-MM-dd")</td>
+                                                <td class="small">@cal.PerformedBy</td>
+                                                <td class="small font-monospace">@(cal.CertificateNumber ?? "—")</td>
+                                                <td><span class="badge @(cal.IsPassed ? "bg-success" : "bg-danger")">@(cal.IsPassed ? "PASSED" : "FAILED")</span></td>
+                                                <td class="small text-muted">@cal.NextCalibrationDueUtc.ToLocalTime().ToString("yyyy-MM-dd")</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- TAB 6: DOCUMENTS -->
+                    <div class="tab-pane fade" id="documents" role="tabpanel">
+                        <h6 class="fw-bold mb-3 text-primary"><i class="bi bi-file-earmark-text me-2"></i>Manuals, Certs &amp; Attachments</h6>
+                        @if (Model.Documents.Count == 0)
+                        {
+                            <p class="text-muted small">No attached documents.</p>
+                        }
+                        else
+                        {
+                            <div class="list-group">
+                                @foreach (var doc in Model.Documents)
+                                {
+                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="fw-semibold small"><i class="bi bi-file-earmark-pdf text-danger me-2"></i>@doc.DocumentName</div>
+                                            <small class="text-muted">Type: @doc.DocumentType &bull; Uploaded: @doc.UploadedAtUtc.ToLocalTime().ToString("g")</small>
+                                        </div>
+                                        <span class="badge bg-light text-muted border">@doc.StorageKey</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    <!-- TAB 7: QR CODE -->
+                    <div class="tab-pane fade" id="qr" role="tabpanel">
+                        <div class="row align-items-center">
+                            <div class="col-12 col-md-4 text-center">
+                                <div class="p-3 border rounded bg-white shadow-sm d-inline-block">
+                                    @Html.Raw(Model.QrCodeSvg)
+                                    <div class="fw-bold font-monospace mt-2">@Model.Asset.AssetNumber</div>
+                                    <div class="small text-muted">@Model.Asset.Name</div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-8">
+                                <h6 class="fw-bold text-primary">Cryptographic Tag Identifier</h6>
+                                <p class="small text-muted">This QR code encodes a secure public token for swift field scanning with any smartphone camera or industrial Bluetooth 2D scanner without exposing private database keys.</p>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-semibold text-muted">Public Verification URL</label>
+                                    <input type="text" class="form-control form-control-sm font-monospace bg-light" value="https://app.connectedops.io/assets/scan/@Model.Asset.Id" readonly>
+                                </div>
+                                <a href="/api/assets/@Model.Asset.Id/qr-code" target="_blank" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-download me-1"></i> Download Printable High-Res PNG
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 8: TIMELINE & NOTES -->
+                    <div class="tab-pane fade" id="timeline" role="tabpanel">
+                        <div class="row g-4">
+                            <div class="col-12 col-lg-8">
+                                <h6 class="fw-bold mb-3 text-primary"><i class="bi bi-clock-history me-2"></i>Audit Trail &amp; Life Events</h6>
+                                <div class="timeline">
+                                    @foreach (var ev in Model.Timeline.Events)
+                                    {
+                                        <div class="d-flex gap-3 mb-3 border-bottom pb-2">
+                                            <div class="rounded-circle bg-light border d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; min-width: 36px;">
+                                                <i class="@ev.Icon text-primary"></i>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <div class="d-flex justify-content-between align-items-start">
+                                                    <span class="fw-semibold small">@ev.Title</span>
+                                                    <small class="text-muted">@ev.TimestampUtc.ToLocalTime().ToString("g")</small>
+                                                </div>
+                                                <p class="small text-muted mb-0">@ev.Description</p>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-lg-4">
+                                <h6 class="fw-bold mb-3 text-primary"><i class="bi bi-sticky me-2"></i>Add Operational Note</h6>
+                                <form method="post" asp-page-handler="AddNote">
+                                    <input type="hidden" name="id" value="@Model.Asset.Id" />
+                                    <div class="mb-2">
+                                        <textarea name="note" class="form-control form-control-sm" rows="3" placeholder="Enter log entry or inspection observation..." required></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-sm btn-primary w-100">
+                                        <i class="bi bi-plus-circle me-1"></i> Post Note
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODALS -->
+<!-- 1. CHECK-OUT MODAL -->
+<div class="modal fade" id="checkOutModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="CheckOut">
+                <input type="hidden" name="id" value="@Model.Asset.Id" />
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-box-arrow-up-right text-success me-2"></i>Check-Out Asset</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Assignee Employee ID (Guid) <span class="text-danger">*</span></label>
+                        <input type="text" name="employeeId" class="form-control form-control-sm" placeholder="Enter Employee UUID" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Assigned Vehicle ID (Optional)</label>
+                        <input type="text" name="vehicleId" class="form-control form-control-sm" placeholder="Optional Vehicle UUID">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Current Meter / Usage Hours</label>
+                        <input type="number" step="0.1" name="meterHours" class="form-control form-control-sm" value="@Model.Asset.TotalUsageHours">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Checkout Condition</label>
+                        <select name="condition" class="form-select form-select-sm">
+                            <option value="Excellent">Excellent</option>
+                            <option value="Good" selected>Good</option>
+                            <option value="Fair">Fair</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Expected Return Date</label>
+                        <input type="datetime-local" name="expectedReturnUtc" class="form-control form-control-sm">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Operational Purpose</label>
+                        <input type="text" name="purpose" class="form-control form-control-sm" placeholder="e.g. Job Site Electrical Diagnostic">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success btn-sm"><i class="bi bi-check-circle me-1"></i> Confirm Check-Out</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 2. CHECK-IN MODAL -->
+@if (Model.ActiveUsageSession != null)
+{
+    <div class="modal fade" id="checkInModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" asp-page-handler="CheckIn">
+                    <input type="hidden" name="id" value="@Model.Asset.Id" />
+                    <input type="hidden" name="sessionId" value="@Model.ActiveUsageSession.Id" />
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold"><i class="bi bi-box-arrow-in-down text-warning me-2"></i>Check-In Asset</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Check-In Meter Hours</label>
+                            <input type="number" step="0.1" name="meterHours" class="form-control form-control-sm" value="@Model.Asset.TotalUsageHours">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Return Physical Condition</label>
+                            <select name="condition" class="form-select form-select-sm">
+                                <option value="Excellent">Excellent</option>
+                                <option value="Good" selected>Good</option>
+                                <option value="Fair">Fair</option>
+                                <option value="NeedsAttention">Needs Attention</option>
+                                <option value="Damaged">Damaged</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Check-In Notes / Observations</label>
+                            <textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="Wear observations, cleaning status, or issues..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-warning btn-sm"><i class="bi bi-check-circle me-1"></i> Complete Return</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- 3. TRANSFER MODAL -->
+<div class="modal fade" id="transferModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="Transfer">
+                <input type="hidden" name="id" value="@Model.Asset.Id" />
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-arrow-left-right text-primary me-2"></i>Initiate Transfer</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Transfer Type</label>
+                        <select name="transferType" class="form-select form-select-sm">
+                            <option value="Location">Branch / Location Transfer</option>
+                            <option value="Employee">Employee Handover</option>
+                            <option value="Vehicle">Vehicle Reassignment</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Transfer Reason</label>
+                        <input type="text" name="reason" class="form-control form-control-sm" placeholder="e.g. Relocated for Regional Job" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Notes</label>
+                        <textarea name="notes" class="form-control form-control-sm" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Initiate Transfer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 4. STATUS MODAL -->
+<div class="modal fade" id="statusModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="ChangeStatus">
+                <input type="hidden" name="id" value="@Model.Asset.Id" />
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-sliders text-secondary me-2"></i>Change Asset Status</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">New Status</label>
+                        <select name="newStatus" class="form-select form-select-sm">
+                            <option value="Available">Available</option>
+                            <option value="InUse">In Use</option>
+                            <option value="UnderMaintenance">Under Maintenance</option>
+                            <option value="Disposed">Disposed / Retired</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Reason for Status Change</label>
+                        <textarea name="reason" class="form-control form-control-sm" rows="2" placeholder="e.g. Scheduled for biennial calibration" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Update Status</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

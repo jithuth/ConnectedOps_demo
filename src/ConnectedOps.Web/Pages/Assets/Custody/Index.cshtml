@@ -1,0 +1,102 @@
+@page
+@model ConnectedOps.Web.Pages.Assets.Custody.IndexModel
+@{
+    ViewData["Title"] = "Asset Custody & Check-Outs";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row align-items-center mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0 fw-bold"><i class="bi bi-person-badge text-primary me-2"></i>Custody &amp; Check-Out Management</h1>
+                <p class="text-muted small mb-0">Track field checkouts, active custodians, vehicle mounts, and return conditions.</p>
+            </div>
+            <div class="col-sm-6 text-sm-end mt-2 mt-sm-0">
+                <a href="/Assets" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-tools me-1"></i> Asset Directory
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white border-bottom p-3 d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0"><i class="bi bi-stopwatch text-primary me-2"></i>Usage &amp; Checkout Sessions</h6>
+                <div class="btn-group btn-group-sm">
+                    <a href="?ActiveOnly=true" class="btn @(Model.ActiveOnly == true ? "btn-primary" : "btn-outline-secondary")">Active Only</a>
+                    <a href="?ActiveOnly=false" class="btn @(Model.ActiveOnly == false ? "btn-primary" : "btn-outline-secondary")">All Sessions</a>
+                </div>
+            </div>
+
+            <div class="card-body p-0">
+                @if (Model.Sessions.Items.Count == 0)
+                {
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-person-check fs-1 d-block mb-2"></i>
+                        <h5>No Checkout Sessions Found</h5>
+                        <p class="small">There are currently no active check-outs in the field.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">Asset</th>
+                                    <th>Custodian / Assignee</th>
+                                    <th>Vehicle</th>
+                                    <th>Checked Out</th>
+                                    <th>Expected Return</th>
+                                    <th>Status</th>
+                                    <th>Duration</th>
+                                    <th class="text-end pe-3">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var session in Model.Sessions.Items)
+                                {
+                                    <tr>
+                                        <td class="ps-3">
+                                            <a href="/Assets/Details?id=@session.AssetId" class="fw-bold text-decoration-none">@session.AssetName</a>
+                                            <div class="small text-muted font-monospace">@session.AssetNumber</div>
+                                        </td>
+                                        <td>
+                                            <span class="fw-semibold small text-primary"><i class="bi bi-person me-1"></i>@session.EmployeeName</span>
+                                        </td>
+                                        <td>
+                                            @if (session.VehiclePlate != null)
+                                            {
+                                                <span class="small fw-semibold"><i class="bi bi-truck me-1"></i>@session.VehiclePlate</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted small">&mdash;</span>
+                                            }
+                                        </td>
+                                        <td class="small">@session.CheckedOutAtUtc.ToLocalTime().ToString("g")</td>
+                                        <td class="small text-muted">@(session.ExpectedReturnUtc?.ToLocalTime().ToString("g") ?? "—")</td>
+                                        <td>
+                                            <span class="badge @(session.Status == ConnectedOps.Domain.Assets.AssetUsageSessionStatus.Open ? "bg-warning text-dark" : "bg-success")">
+                                                @session.Status
+                                            </span>
+                                        </td>
+                                        <td class="small fw-semibold">@(session.DurationHours?.ToString("N1") ?? "Active") hrs</td>
+                                        <td class="text-end pe-3">
+                                            <a href="/Assets/Details?id=@session.AssetId" class="btn btn-sm btn-outline-primary py-0 px-2">
+                                                Manage &rarr;
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

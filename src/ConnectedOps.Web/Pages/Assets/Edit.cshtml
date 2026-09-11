@@ -1,0 +1,189 @@
+@page
+@model ConnectedOps.Web.Pages.Assets.EditModel
+@{
+    ViewData["Title"] = $"Edit Asset - {Model.AssetNumber}";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row align-items-center mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0 fw-bold"><i class="bi bi-pencil text-primary me-2"></i>Edit Asset: @Model.AssetNumber</h1>
+                <p class="text-muted small mb-0">Update specifications, warranty parameters, and status configurations.</p>
+            </div>
+            <div class="col-sm-6 text-sm-end mt-2 mt-sm-0">
+                <a href="/Assets/Details?id=@Model.Id" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Asset Details
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-octagon-fill me-2"></i>@Model.ErrorMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <form method="post">
+            <input type="hidden" name="Id" value="@Model.Id" />
+            <input type="hidden" name="AssetNumber" value="@Model.AssetNumber" />
+
+            <div class="row g-3">
+                <!-- LEFT COLUMN: PRIMARY IDENTITY & SPECS -->
+                <div class="col-12 col-lg-8">
+                    <!-- BASIC INFO -->
+                    <div class="card border-0 shadow-sm rounded-3 mb-3">
+                        <div class="card-header bg-transparent border-0 pt-3 px-3">
+                            <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-info-circle me-2"></i>Basic Asset Information</h6>
+                        </div>
+                        <div class="card-body p-3">
+                            <div class="row g-3">
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label small fw-semibold">Asset Number</label>
+                                    <input type="text" class="form-control form-control-sm bg-light" value="@Model.AssetNumber" readonly>
+                                </div>
+                                <div class="col-12 col-md-8">
+                                    <label class="form-label small fw-semibold">Asset / Equipment Name <span class="text-danger">*</span></label>
+                                    <input type="text" name="Form.Name" class="form-control form-control-sm" value="@Model.Form.Name" required>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label small fw-semibold">Description / Purpose</label>
+                                    <textarea name="Form.Description" class="form-control form-control-sm" rows="2">@Model.Form.Description</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- HARDWARE & SERIALS -->
+                    <div class="card border-0 shadow-sm rounded-3 mb-3">
+                        <div class="card-header bg-transparent border-0 pt-3 px-3">
+                            <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-upc-scan me-2"></i>Hardware &amp; Tag Identifiers</h6>
+                        </div>
+                        <div class="card-body p-3">
+                            <div class="row g-3">
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label small fw-semibold">Manufacturer / Make</label>
+                                    <input type="text" name="Form.Make" class="form-control form-control-sm" value="@Model.Form.Make">
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label small fw-semibold">Model</label>
+                                    <input type="text" name="Form.Model" class="form-control form-control-sm" value="@Model.Form.Model">
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label small fw-semibold">Year</label>
+                                    <input type="text" name="Form.Year" class="form-control form-control-sm" value="@Model.Form.Year">
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label small fw-semibold">Serial Number</label>
+                                    <input type="text" name="Form.SerialNumber" class="form-control form-control-sm" value="@Model.Form.SerialNumber">
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label small fw-semibold">Internal Barcode / Tag</label>
+                                    <input type="text" name="Form.Barcode" class="form-control form-control-sm" value="@Model.Form.Barcode">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PROCUREMENT & WARRANTY -->
+                    <div class="card border-0 shadow-sm rounded-3 mb-3">
+                        <div class="card-header bg-transparent border-0 pt-3 px-3">
+                            <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-cash-stack me-2"></i>Procurement &amp; Financials</h6>
+                        </div>
+                        <div class="card-body p-3">
+                            <div class="row g-3">
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label small fw-semibold">Purchase Date</label>
+                                    <input type="date" name="Form.PurchaseDate" class="form-control form-control-sm" value="@(Model.Form.PurchaseDate?.ToString("yyyy-MM-dd"))">
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label small fw-semibold">Purchase Cost ($)</label>
+                                    <input type="number" step="0.01" name="Form.PurchaseCost" class="form-control form-control-sm" value="@Model.Form.PurchaseCost">
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label small fw-semibold">Vendor</label>
+                                    <input type="text" name="Form.VendorName" class="form-control form-control-sm" value="@Model.Form.VendorName">
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label small fw-semibold">Warranty Expiration Date</label>
+                                    <input type="date" name="Form.WarrantyExpiryDate" class="form-control form-control-sm" value="@(Model.Form.WarrantyExpiryDate?.ToString("yyyy-MM-dd"))">
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label small fw-semibold">Expected Lifespan (Months)</label>
+                                    <input type="number" name="Form.ExpectedLifespanMonths" class="form-control form-control-sm" value="@Model.Form.ExpectedLifespanMonths">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT COLUMN: CLASSIFICATION & ACTIONS -->
+                <div class="col-12 col-lg-4">
+                    <div class="card border-0 shadow-sm rounded-3 mb-3">
+                        <div class="card-header bg-transparent border-0 pt-3 px-3">
+                            <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-tags me-2"></i>Classification &amp; Status</h6>
+                        </div>
+                        <div class="card-body p-3">
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold">Category <span class="text-danger">*</span></label>
+                                <select name="Form.CategoryId" class="form-select form-select-sm" required>
+                                    @foreach (var cat in Model.Categories)
+                                    {
+                                        <option value="@cat.Value" selected="@cat.Selected">@cat.Text</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold">Asset Type <span class="text-danger">*</span></label>
+                                <select name="Form.AssetTypeId" class="form-select form-select-sm" required>
+                                    @foreach (var type in Model.AssetTypes)
+                                    {
+                                        <option value="@type.Value" selected="@type.Selected">@type.Text</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold">Ownership Model</label>
+                                <select name="Form.OwnershipType" class="form-select form-select-sm">
+                                    <option value="CompanyOwned" selected="@(Model.Form.OwnershipType == ConnectedOps.Domain.Assets.AssetOwnershipType.CompanyOwned)">Company Owned</option>
+                                    <option value="Leased" selected="@(Model.Form.OwnershipType == ConnectedOps.Domain.Assets.AssetOwnershipType.Leased)">Leased</option>
+                                    <option value="Rented" selected="@(Model.Form.OwnershipType == ConnectedOps.Domain.Assets.AssetOwnershipType.Rented)">Rented</option>
+                                    <option value="CustomerOwned" selected="@(Model.Form.OwnershipType == ConnectedOps.Domain.Assets.AssetOwnershipType.CustomerOwned)">Customer Owned</option>
+                                    <option value="ThirdParty" selected="@(Model.Form.OwnershipType == ConnectedOps.Domain.Assets.AssetOwnershipType.ThirdParty)">Third Party</option>
+                                    <option value="EmployeeOwned" selected="@(Model.Form.OwnershipType == ConnectedOps.Domain.Assets.AssetOwnershipType.EmployeeOwned)">Employee Owned</option>
+                                </select>
+                            </div>
+
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" name="Form.IsCritical" value="true" id="isCriticalCheck" @(Model.Form.IsCritical ? "checked" : "")>
+                                <label class="form-check-label small fw-semibold" for="isCriticalCheck">Mission-Critical Equipment</label>
+                            </div>
+
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" name="Form.IsActive" value="true" id="isActiveCheck" @(Model.Form.IsActive ? "checked" : "")>
+                                <label class="form-check-label small fw-semibold" for="isActiveCheck">Active in Fleet Record</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card border-0 shadow-sm rounded-3">
+                        <div class="card-body p-3">
+                            <button type="submit" class="btn btn-primary w-100 mb-2">
+                                <i class="bi bi-save me-1"></i> Save Changes
+                            </button>
+                            <a href="/Assets/Details?id=@Model.Id" class="btn btn-outline-secondary w-100">Cancel</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

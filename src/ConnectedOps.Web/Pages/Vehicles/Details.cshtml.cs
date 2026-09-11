@@ -1,3 +1,4 @@
+using ConnectedOps.Application.Fuel;
 using ConnectedOps.Application.Maintenance;
 using ConnectedOps.Application.Vehicles;
 using ConnectedOps.Domain.Vehicles;
@@ -15,6 +16,8 @@ public sealed class DetailsModel : PageModel
     private readonly IMaintenanceRecordService _maintenanceRecordService;
     private readonly IMaintenanceScheduleService _maintenanceScheduleService;
     private readonly IMaintenancePlanService _maintenancePlanService;
+    private readonly IFuelTransactionService _fuelTransactionService;
+    private readonly IFuelAnalyticsService _fuelAnalyticsService;
 
     public DetailsModel(
         IVehicleService vehicleService,
@@ -22,7 +25,9 @@ public sealed class DetailsModel : PageModel
         IVehicleDocumentService documentService,
         IMaintenanceRecordService maintenanceRecordService,
         IMaintenanceScheduleService maintenanceScheduleService,
-        IMaintenancePlanService maintenancePlanService)
+        IMaintenancePlanService maintenancePlanService,
+        IFuelTransactionService fuelTransactionService,
+        IFuelAnalyticsService fuelAnalyticsService)
     {
         _vehicleService = vehicleService;
         _odometerService = odometerService;
@@ -30,6 +35,8 @@ public sealed class DetailsModel : PageModel
         _maintenanceRecordService = maintenanceRecordService;
         _maintenanceScheduleService = maintenanceScheduleService;
         _maintenancePlanService = maintenancePlanService;
+        _fuelTransactionService = fuelTransactionService;
+        _fuelAnalyticsService = fuelAnalyticsService;
     }
 
     public Guid VehicleId { get; private set; }
@@ -37,6 +44,8 @@ public sealed class DetailsModel : PageModel
     public IReadOnlyCollection<VehicleMaintenanceRecordListItemDto> MaintenanceRecords { get; private set; } = [];
     public IReadOnlyCollection<VehicleMaintenanceDueDto> DueMaintenance { get; private set; } = [];
     public IReadOnlyCollection<VehicleMaintenancePlanAssignmentDto> AssignedPlans { get; private set; } = [];
+    public PagedResult<FuelTransactionListItemDto>? FuelTransactions { get; private set; }
+    public VehicleFuelSummaryDto? FuelSummary { get; private set; }
 
     [BindProperty]
     public UpsertVehicleSpecificationRequest SpecInput { get; set; } = new(
@@ -62,6 +71,9 @@ public sealed class DetailsModel : PageModel
             MaintenanceRecords = await _maintenanceRecordService.GetVehicleMaintenanceHistoryAsync(id, cancellationToken: HttpContext.RequestAborted);
             DueMaintenance = await _maintenanceScheduleService.CalculateVehicleMaintenanceAsync(id, HttpContext.RequestAborted);
             AssignedPlans = await _maintenancePlanService.GetVehicleAssignmentsAsync(vehicleId: id, cancellationToken: HttpContext.RequestAborted);
+            FuelTransactions = await _fuelTransactionService.GetTransactionsPagedAsync(
+                new FuelTransactionQueryParameters { VehicleId = id, PageSize = 20 }, HttpContext.RequestAborted);
+            FuelSummary = await _fuelAnalyticsService.GetVehicleFuelSummaryAsync(id, HttpContext.RequestAborted);
             if (Vehicle.Specification != null)
             {
                 SpecInput = new UpsertVehicleSpecificationRequest(

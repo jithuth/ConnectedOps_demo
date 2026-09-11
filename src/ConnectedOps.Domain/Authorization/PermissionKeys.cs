@@ -170,13 +170,6 @@ public static class PermissionKeys
         public const string ViewTimeline = "FleetOperations.ViewTimeline";
     }
 
-    public static class Assets
-    {
-        public const string View = "Assets.View";
-        public const string Create = "Assets.Create";
-        public const string Edit = "Assets.Edit";
-        public const string Delete = "Assets.Delete";
-    }
 
     public static class Reports
     {
@@ -320,5 +313,126 @@ public static class PermissionKeys
     {
         public const string View = "MaintenanceServiceTypes.View";
         public const string Manage = "MaintenanceServiceTypes.Manage";
+    }
+
+    public static class Fuel
+    {
+        public const string View = "Fuel.View";
+    }
+
+    public static class FuelTransactions
+    {
+        public const string View = "FuelTransactions.View";
+        public const string Create = "FuelTransactions.Create";
+        public const string Edit = "FuelTransactions.Edit";
+        public const string Cancel = "FuelTransactions.Cancel";
+        public const string Import = "FuelTransactions.Import";
+    }
+
+    public static class FuelStations
+    {
+        public const string View = "FuelStations.View";
+        public const string Manage = "FuelStations.Manage";
+    }
+
+    public static class FuelCards
+    {
+        public const string View = "FuelCards.View";
+        public const string Manage = "FuelCards.Manage";
+    }
+
+    public static class FuelImports
+    {
+        public const string View = "FuelImports.View";
+        public const string Manage = "FuelImports.Manage";
+    }
+
+    public static class FuelAnalytics
+    {
+        public const string View = "FuelAnalytics.View";
+    }
+
+    public static class FuelAnomalies
+    {
+        public const string View = "FuelAnomalies.View";
+        public const string Resolve = "FuelAnomalies.Resolve";
+    }
+
+    public static class FuelDashboard
+    {
+        public const string View = "FuelDashboard.View";
+    }
+
+    public static class FuelDocuments
+    {
+        public const string View = "FuelDocuments.View";
+        public const string Manage = "FuelDocuments.Manage";
+    }
+
+    public static class Assets
+    {
+        public const string View = "Assets.View";
+        public const string Create = "Assets.Create";
+        public const string Edit = "Assets.Edit";
+        public const string Delete = "Assets.Delete";
+        public const string ChangeStatus = "Assets.ChangeStatus";
+        public const string ManageLocation = "Assets.ManageLocation";
+    }
+
+    public static class AssetCategories
+    {
+        public const string View = "AssetCategories.View";
+        public const string Manage = "AssetCategories.Manage";
+    }
+
+    public static class AssetTypes
+    {
+        public const string View = "AssetTypes.View";
+        public const string Manage = "AssetTypes.Manage";
+    }
+
+    public static class AssetCustody
+    {
+        public const string View = "AssetCustody.View";
+        public const string Manage = "AssetCustody.Manage";
+        public const string CheckOut = "AssetCustody.CheckOut";
+        public const string CheckIn = "AssetCustody.CheckIn";
+    }
+
+    public static class AssetTransfers
+    {
+        public const string View = "AssetTransfers.View";
+        public const string Create = "AssetTransfers.Create";
+        public const string Complete = "AssetTransfers.Complete";
+        public const string Cancel = "AssetTransfers.Cancel";
+    }
+
+    public static class AssetInspections
+    {
+        public const string View = "AssetInspections.View";
+        public const string Manage = "AssetInspections.Manage";
+    }
+
+    public static class AssetConditions
+    {
+        public const string View = "AssetConditions.View";
+        public const string Manage = "AssetConditions.Manage";
+    }
+
+    public static class AssetDocuments
+    {
+        public const string View = "AssetDocuments.View";
+        public const string Manage = "AssetDocuments.Manage";
+    }
+
+    public static class AssetIdentifiers
+    {
+        public const string View = "AssetIdentifiers.View";
+        public const string Manage = "AssetIdentifiers.Manage";
+    }
+
+    public static class AssetDashboard
+    {
+        public const string View = "AssetDashboard.View";
     }
 }

@@ -19,6 +19,8 @@ using ConnectedOps.Domain.Telematics;
 using ConnectedOps.Domain.Geofences;
 using ConnectedOps.Domain.Demo;
 using ConnectedOps.Domain.Maintenance;
+using ConnectedOps.Domain.Fuel;
+using ConnectedOps.Domain.Assets;
 
 namespace ConnectedOps.Infrastructure.Persistence;
 
@@ -266,6 +268,75 @@ public sealed class ConnectedOpsDbContext
 
     public DbSet<VehicleMaintenanceDocument> VehicleMaintenanceDocuments =>
         Set<VehicleMaintenanceDocument>();
+
+    public DbSet<FuelTypeDefinition> FuelTypeDefinitions =>
+        Set<FuelTypeDefinition>();
+
+    public DbSet<FuelStation> FuelStations =>
+        Set<FuelStation>();
+
+    public DbSet<FuelCard> FuelCards =>
+        Set<FuelCard>();
+
+    public DbSet<FuelTransaction> FuelTransactions =>
+        Set<FuelTransaction>();
+
+    public DbSet<FuelTransactionDocument> FuelTransactionDocuments =>
+        Set<FuelTransactionDocument>();
+
+    public DbSet<FuelImportBatch> FuelImportBatches =>
+        Set<FuelImportBatch>();
+
+    public DbSet<FuelImportError> FuelImportErrors =>
+        Set<FuelImportError>();
+
+    public DbSet<FuelAnomaly> FuelAnomalies =>
+        Set<FuelAnomaly>();
+
+    public DbSet<AssetCategory> AssetCategories =>
+        Set<AssetCategory>();
+
+    public DbSet<AssetType> AssetTypes =>
+        Set<AssetType>();
+
+    public DbSet<Asset> Assets =>
+        Set<Asset>();
+
+    public DbSet<AssetLocationHistory> AssetLocationHistories =>
+        Set<AssetLocationHistory>();
+
+    public DbSet<AssetEmployeeAssignment> AssetEmployeeAssignments =>
+        Set<AssetEmployeeAssignment>();
+
+    public DbSet<AssetVehicleAssignment> AssetVehicleAssignments =>
+        Set<AssetVehicleAssignment>();
+
+    public DbSet<AssetTransfer> AssetTransfers =>
+        Set<AssetTransfer>();
+
+    public DbSet<AssetUsageSession> AssetUsageSessions =>
+        Set<AssetUsageSession>();
+
+    public DbSet<AssetConditionRecord> AssetConditionRecords =>
+        Set<AssetConditionRecord>();
+
+    public DbSet<AssetInspection> AssetInspections =>
+        Set<AssetInspection>();
+
+    public DbSet<AssetInspectionItem> AssetInspectionItems =>
+        Set<AssetInspectionItem>();
+
+    public DbSet<AssetCalibrationRecord> AssetCalibrationRecords =>
+        Set<AssetCalibrationRecord>();
+
+    public DbSet<AssetDocument> AssetDocuments =>
+        Set<AssetDocument>();
+
+    public DbSet<AssetIdentifier> AssetIdentifiers =>
+        Set<AssetIdentifier>();
+
+    public DbSet<AssetNote> AssetNotes =>
+        Set<AssetNote>();
 
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)

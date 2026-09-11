@@ -67,6 +67,10 @@ using ConnectedOps.Application.Demo;
 using ConnectedOps.Infrastructure.Demo;
 using ConnectedOps.Application.Maintenance;
 using ConnectedOps.Infrastructure.Maintenance;
+using ConnectedOps.Application.Fuel;
+using ConnectedOps.Infrastructure.Fuel;
+using ConnectedOps.Application.Assets;
+using ConnectedOps.Infrastructure.Assets;
 
 
 
@@ -153,6 +157,10 @@ public static class DependencyInjection
         AddMapsAndGeofencingServices(services, configuration);
 
         AddMaintenanceServices(services);
+
+        AddFuelServices(services);
+
+        AddAssetServices(services);
 
         AddValidation(
             services);
@@ -786,5 +794,44 @@ public static class DependencyInjection
         services.AddScoped<IMaintenanceDueEvaluationService, MaintenanceDueEvaluationService>();
         services.AddScoped<IMaintenanceRecordService, MaintenanceRecordService>();
         services.AddScoped<IMaintenanceDashboardService, MaintenanceDashboardService>();
+    }
+
+    // ================================================================
+    // PHASE 9 - FUEL MANAGEMENT
+    // ================================================================
+    private static void AddFuelServices(
+        IServiceCollection services)
+    {
+        services.AddScoped<IFuelTypeService, FuelTypeService>();
+        services.AddScoped<IFuelStationService, FuelStationService>();
+        services.AddScoped<IFuelCardService, FuelCardService>();
+        services.AddScoped<IFuelEfficiencyService, FuelEfficiencyService>();
+        services.AddScoped<IFuelAnomalyService, FuelAnomalyService>();
+        services.AddScoped<IFuelTransactionService, FuelTransactionService>();
+        services.AddScoped<IFuelAnalyticsService, FuelAnalyticsService>();
+        services.AddScoped<IFuelDashboardService, FuelDashboardService>();
+        services.AddScoped<ITelematicsFuelProvider, TelematicsFuelProvider>();
+        services.AddScoped<IFuelImportService, FuelImportService>();
+    }
+
+    // ================================================================
+    // PHASE 10 - ASSET & EQUIPMENT MANAGEMENT
+    // ================================================================
+    private static void AddAssetServices(
+        IServiceCollection services)
+    {
+        services.AddScoped<IAssetQrCodeService, AssetQrCodeService>();
+        services.AddScoped<IAssetCategoryService, AssetCategoryService>();
+        services.AddScoped<IAssetTypeService, AssetTypeService>();
+        services.AddScoped<IAssetService, AssetService>();
+        services.AddScoped<IAssetCustodyService, AssetCustodyService>();
+        services.AddScoped<IAssetTransferService, AssetTransferService>();
+        services.AddScoped<IAssetInspectionService, AssetInspectionService>();
+        services.AddScoped<IAssetConditionService, AssetConditionService>();
+        services.AddScoped<IAssetDocumentService, AssetDocumentService>();
+        services.AddScoped<IAssetIdentifierService, AssetIdentifierService>();
+        services.AddScoped<IAssetUtilizationService, AssetUtilizationService>();
+        services.AddScoped<IAssetActivityTimelineService, AssetActivityTimelineService>();
+        services.AddScoped<IAssetDashboardService, AssetDashboardService>();
     }
 }

@@ -1,0 +1,85 @@
+@page
+@model ConnectedOps.Web.Pages.Assets.Inspections.IndexModel
+@{
+    ViewData["Title"] = "Asset Inspections & QA";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row align-items-center mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0 fw-bold"><i class="bi bi-clipboard-check text-primary me-2"></i>Inspections &amp; QA Compliance</h1>
+                <p class="text-muted small mb-0">Safety checklists, calibration verification, and operational health audits.</p>
+            </div>
+            <div class="col-sm-6 text-sm-end mt-2 mt-sm-0">
+                <a href="/Assets" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-tools me-1"></i> Asset Directory
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white border-bottom p-3 d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0"><i class="bi bi-journal-check text-primary me-2"></i>Inspection Log</h6>
+            </div>
+
+            <div class="card-body p-0">
+                @if (Model.Inspections.Items.Count == 0)
+                {
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-clipboard-x fs-1 d-block mb-2"></i>
+                        <h5>No Inspections Recorded</h5>
+                        <p class="small">Completed inspections will be recorded here for compliance reporting.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">Asset</th>
+                                    <th>Date</th>
+                                    <th>Inspection Type</th>
+                                    <th>Inspector</th>
+                                    <th>Result</th>
+                                    <th>Next Due</th>
+                                    <th class="text-end pe-3">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var insp in Model.Inspections.Items)
+                                {
+                                    <tr>
+                                        <td class="ps-3">
+                                            <a href="/Assets/Details?id=@insp.AssetId" class="fw-bold text-decoration-none">@insp.AssetName</a>
+                                            <div class="small text-muted font-monospace">@insp.AssetNumber</div>
+                                        </td>
+                                        <td class="small">@insp.InspectionDateUtc.ToLocalTime().ToString("g")</td>
+                                        <td><span class="badge bg-light text-dark border">@insp.InspectionType</span></td>
+                                        <td class="small">@(insp.InspectorEmployeeName ?? insp.InspectorUserName ?? "Staff")</td>
+                                        <td>
+                                            <span class="badge @(insp.Result == ConnectedOps.Domain.Assets.AssetInspectionResult.Passed ? "bg-success" : "bg-danger")">
+                                                @insp.Result
+                                            </span>
+                                        </td>
+                                        <td class="small text-muted">@(insp.NextInspectionDueUtc?.ToLocalTime().ToString("yyyy-MM-dd") ?? "—")</td>
+                                        <td class="text-end pe-3">
+                                            <a href="/Assets/Details?id=@insp.AssetId" class="btn btn-sm btn-outline-primary py-0 px-2">
+                                                View Asset &rarr;
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
