@@ -435,4 +435,123 @@ public static class PermissionKeys
     {
         public const string View = "AssetDashboard.View";
     }
+
+    public static class Compliance
+    {
+        public const string View = "Compliance.View";
+    }
+
+    public static class ComplianceRequirements
+    {
+        public const string View = "ComplianceRequirements.View";
+        public const string Manage = "ComplianceRequirements.Manage";
+    }
+
+    public static class ComplianceRecords
+    {
+        public const string View = "ComplianceRecords.View";
+        public const string Create = "ComplianceRecords.Create";
+        public const string Edit = "ComplianceRecords.Edit";
+        public const string Verify = "ComplianceRecords.Verify";
+        public const string Delete = "ComplianceRecords.Delete";
+    }
+
+    public static class ComplianceExceptions
+    {
+        public const string View = "ComplianceExceptions.View";
+        public const string Manage = "ComplianceExceptions.Manage";
+    }
+
+    public static class ComplianceDashboard
+    {
+        public const string View = "ComplianceDashboard.View";
+    }
+
+    public static class Safety
+    {
+        public const string View = "Safety.View";
+    }
+
+    public static class SafetyIncidents
+    {
+        public const string View = "SafetyIncidents.View";
+        public const string Create = "SafetyIncidents.Create";
+        public const string Edit = "SafetyIncidents.Edit";
+        public const string Close = "SafetyIncidents.Close";
+        public const string Cancel = "SafetyIncidents.Cancel";
+    }
+
+    public static class SafetyInvestigations
+    {
+        public const string View = "SafetyInvestigations.View";
+        public const string Manage = "SafetyInvestigations.Manage";
+    }
+
+    public static class SafetyViolations
+    {
+        public const string View = "SafetyViolations.View";
+        public const string Create = "SafetyViolations.Create";
+        public const string Edit = "SafetyViolations.Edit";
+        public const string Resolve = "SafetyViolations.Resolve";
+    }
+
+    public static class CorrectiveActions
+    {
+        public const string View = "CorrectiveActions.View";
+        public const string Manage = "CorrectiveActions.Manage";
+        public const string Verify = "CorrectiveActions.Verify";
+    }
+
+    public static class SafetyDashboard
+    {
+        public const string View = "SafetyDashboard.View";
+    }
+
+    public static class Alerts
+    {
+        public const string View = "Alerts.View";
+        public const string Acknowledge = "Alerts.Acknowledge";
+        public const string Assign = "Alerts.Assign";
+        public const string Resolve = "Alerts.Resolve";
+        public const string Dismiss = "Alerts.Dismiss";
+    }
+
+    public static class AlertRules
+    {
+        public const string View = "AlertRules.View";
+        public const string Create = "AlertRules.Create";
+        public const string Edit = "AlertRules.Edit";
+        public const string EnableDisable = "AlertRules.EnableDisable";
+    }
+
+    public static class AlertSuppressions
+    {
+        public const string View = "AlertSuppressions.View";
+        public const string Manage = "AlertSuppressions.Manage";
+    }
+
+    public static class AlertEscalations
+    {
+        public const string View = "AlertEscalations.View";
+        public const string Manage = "AlertEscalations.Manage";
+    }
+
+    public static class AlertDashboard
+    {
+        public const string View = "AlertDashboard.View";
+    }
+
+    public static class Notifications
+    {
+        public const string ViewOwn = "Notifications.ViewOwn";
+        public const string ViewTenantHistory = "Notifications.ViewTenantHistory";
+        public const string ManageTemplates = "Notifications.ManageTemplates";
+        public const string ManageProviders = "Notifications.ManageProviders";
+        public const string ViewDashboard = "Notifications.ViewDashboard";
+    }
+
+    public static class NotificationPreferences
+    {
+        public const string ManageOwn = "NotificationPreferences.ManageOwn";
+    }
 }

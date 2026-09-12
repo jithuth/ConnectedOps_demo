@@ -1,0 +1,159 @@
+@page
+@model ConnectedOps.Web.Pages.Safety.Incidents.CreateModel
+@{
+    ViewData["Title"] = "Report Safety Incident / Accident";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row align-items-center mb-3">
+            <div class="col-sm-6">
+                <div class="d-flex align-items-center gap-2">
+                    <a href="/Safety/Incidents" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
+                    <h1 class="m-0 fw-bold">Report Safety Incident / Accident</h1>
+                </div>
+                <p class="text-muted small mb-0 ms-4 ps-2">Capture operational incident intake, vehicle/driver involvement, and immediate response.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.ErrorMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <form method="post">
+            <div class="row g-4">
+                <!-- PRIMARY DETAILS -->
+                <div class="col-12 col-lg-8">
+                    <div class="card border-0 shadow-sm rounded-3 mb-4">
+                        <div class="card-header bg-transparent border-0 pt-3 px-3">
+                            <h6 class="fw-bold mb-0 text-danger"><i class="bi bi-exclamation-octagon-fill me-2"></i>Incident Information</h6>
+                        </div>
+                        <div class="card-body p-3">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label small fw-semibold">Incident Title *</label>
+                                    <input type="text" asp-for="Form.Title" class="form-control" placeholder="e.g. Minor rear-end collision at Highway 101 exit" required />
+                                </div>
+
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label small fw-semibold">Incident Classification *</label>
+                                    <select asp-for="Form.IncidentType" class="form-select">
+                                        <option value="VehicleAccident">Vehicle Accident / Collision</option>
+                                        <option value="NearMiss">Near Miss / Close Call</option>
+                                        <option value="UnsafeAct">Unsafe Act</option>
+                                        <option value="UnsafeCondition">Unsafe Condition</option>
+                                        <option value="EquipmentIncident">Equipment Incident</option>
+                                        <option value="PropertyDamage">Property Damage</option>
+                                        <option value="TrafficViolation">Traffic Violation / Citation</option>
+                                        <option value="DriverBehavior">Driver Behavior</option>
+                                        <option value="Environmental">Environmental Incident</option>
+                                        <option value="Other">Other Operational Incident</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label small fw-semibold">Initial Severity *</label>
+                                    <select asp-for="Form.Severity" class="form-select">
+                                        <option value="Low">Low - Minor scrape, no injury</option>
+                                        <option value="Moderate" selected>Moderate - Moderate damage, minor injury</option>
+                                        <option value="High">High - Significant damage, medical required</option>
+                                        <option value="Critical">Critical - Major collision or total loss</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label small fw-semibold">Date &amp; Time Occurred (UTC) *</label>
+                                    <input type="datetime-local" asp-for="Form.OccurredAtUtc" class="form-control" required />
+                                </div>
+
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label small fw-semibold">Assigned Operating Branch</label>
+                                    <select asp-for="Form.BranchId" class="form-select">
+                                        <option value="">Select Branch...</option>
+                                        @foreach (var b in Model.Branches)
+                                        {
+                                            <option value="@b.Value">@b.Text</option>
+                                        }
+                                    </select>
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label small fw-semibold">Detailed Incident Narrative *</label>
+                                    <textarea asp-for="Form.Description" class="form-control" rows="4" placeholder="Describe the sequence of events, environmental conditions, and operational context..." required></textarea>
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label small fw-semibold">Immediate Actions Taken On Scene</label>
+                                    <textarea asp-for="Form.ImmediateActionTaken" class="form-control" rows="2" placeholder="e.g. First aid administered, police contacted, vehicle towed to depot, scene photographed..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECONDARY / INVOLVED ENTITIES -->
+                <div class="col-12 col-lg-4">
+                    <div class="card border-0 shadow-sm rounded-3 mb-4">
+                        <div class="card-header bg-transparent border-0 pt-3 px-3">
+                            <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-truck me-2"></i>Involved Fleet Assets</h6>
+                        </div>
+                        <div class="card-body p-3">
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold">Primary Fleet Vehicle</label>
+                                <select asp-for="Form.PrimaryVehicleId" class="form-select form-select-sm">
+                                    <option value="">None / Non-vehicular incident</option>
+                                    @foreach (var v in Model.Vehicles)
+                                    {
+                                        <option value="@v.Value">@v.Text</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold">Primary Driver / Operator</label>
+                                <select asp-for="Form.PrimaryDriverId" class="form-select form-select-sm">
+                                    <option value="">None / Unassigned</option>
+                                    @foreach (var d in Model.Drivers)
+                                    {
+                                        <option value="@d.Value">@d.Text</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold">GPS Latitude</label>
+                                    <input type="number" step="any" asp-for="Form.Latitude" class="form-control form-control-sm" placeholder="e.g. 37.7749" />
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold">GPS Longitude</label>
+                                    <input type="number" step="any" asp-for="Form.Longitude" class="form-control form-control-sm" placeholder="e.g. -122.4194" />
+                                </div>
+                            </div>
+
+                            <div class="form-check form-switch mt-3 pt-3 border-top">
+                                <input class="form-check-input" type="checkbox" asp-for="Form.InvestigationRequired" id="chkInvestigation">
+                                <label class="form-check-label small fw-semibold" for="chkInvestigation">Formal Safety Investigation Required</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger btn-lg shadow-sm">
+                            <i class="bi bi-check-circle me-1"></i> Submit Incident Report
+                        </button>
+                        <a href="/Safety/Incidents" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

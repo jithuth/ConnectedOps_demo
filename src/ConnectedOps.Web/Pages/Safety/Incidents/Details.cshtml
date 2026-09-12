@@ -1,0 +1,1114 @@
+@page
+@model ConnectedOps.Web.Pages.Safety.Incidents.DetailsModel
+@{
+    ViewData["Title"] = $"Incident {Model.Incident.IncidentNumber} - 360 Hub";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row align-items-center mb-3">
+            <div class="col-sm-6">
+                <div class="d-flex align-items-center gap-2">
+                    <a href="/Safety/Incidents" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
+                    <h1 class="m-0 fw-bold">Incident Control Center</h1>
+                </div>
+                <p class="text-muted small mb-0 ms-4 ps-2">Full lifecycle incident record, multi-party investigation, evidence, and corrective action workflows.</p>
+            </div>
+            <div class="col-sm-6 text-sm-end mt-2 mt-sm-0">
+                @if (Model.Incident.Status != ConnectedOps.Domain.Safety.SafetyIncidentStatus.Closed)
+                {
+                    <button type="button" class="btn btn-outline-success btn-sm me-1" data-bs-toggle="modal" data-bs-target="#closeIncidentModal">
+                        <i class="bi bi-check-circle me-1"></i> Close Incident
+                    </button>
+                }
+                <button type="button" class="btn btn-outline-primary btn-sm me-1" data-bs-toggle="modal" data-bs-target="#addParticipantModal">
+                    <i class="bi bi-person-plus me-1"></i> Add Participant
+                </button>
+                <button type="button" class="btn btn-outline-danger btn-sm me-1" data-bs-toggle="modal" data-bs-target="#addVehicleModal">
+                    <i class="bi bi-truck me-1"></i> Add Vehicle
+                </button>
+                <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#addEvidenceModal">
+                    <i class="bi bi-paperclip me-1"></i> Add Evidence
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.ErrorMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i>@Model.SuccessMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <!-- HERO INCIDENT BANNER -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-body p-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle bg-danger-subtle text-danger d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; font-size: 1.8rem;">
+                            <i class="bi bi-exclamation-octagon-fill"></i>
+                        </div>
+                        <div>
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <h3 class="fw-bold mb-0 font-monospace">@Model.Incident.IncidentNumber</h3>
+                                @{
+                                    var sevBadge = Model.Incident.Severity switch
+                                    {
+                                        ConnectedOps.Domain.Safety.SafetyIncidentSeverity.Critical => "bg-danger",
+                                        ConnectedOps.Domain.Safety.SafetyIncidentSeverity.High => "bg-warning text-dark",
+                                        ConnectedOps.Domain.Safety.SafetyIncidentSeverity.Moderate => "bg-info text-dark",
+                                        _ => "bg-secondary"
+                                    };
+
+                                    var statusBadge = Model.Incident.Status switch
+                                    {
+                                        ConnectedOps.Domain.Safety.SafetyIncidentStatus.Closed => "bg-success",
+                                        ConnectedOps.Domain.Safety.SafetyIncidentStatus.UnderInvestigation => "bg-warning text-dark",
+                                        _ => "bg-secondary"
+                                    };
+                                }
+                                <span class="badge @sevBadge px-3 py-2 fs-6">@Model.Incident.Severity Severity</span>
+                                <span class="badge @statusBadge px-3 py-2 fs-6">@Model.Incident.Status</span>
+                            </div>
+                            <h5 class="fw-semibold text-body mb-0">@Model.Incident.Title</h5>
+                            <div class="text-secondary small mt-1">
+                                Occurred: <strong class="text-body">@Model.Incident.OccurredAtUtc.ToString("yyyy-MM-dd HH:mm") UTC</strong> &bull;
+                                Branch: @(Model.Incident.BranchName ?? "Unassigned") &bull;
+                                Classification: <span class="badge bg-light text-dark border">@Model.Incident.IncidentType</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-4 text-center">
+                        <div>
+                            <div class="small text-muted fw-semibold text-uppercase">Vehicles</div>
+                            <div class="fs-3 fw-bold text-primary">@Model.Incident.Vehicles.Count</div>
+                        </div>
+                        <div class="border-start ps-3">
+                            <div class="small text-muted fw-semibold text-uppercase">People</div>
+                            <div class="fs-3 fw-bold text-success">@Model.Incident.Participants.Count</div>
+                        </div>
+                        <div class="border-start ps-3">
+                            <div class="small text-muted fw-semibold text-uppercase">Evidence</div>
+                            <div class="fs-3 fw-bold text-info">@Model.Incident.Evidence.Count</div>
+                        </div>
+                        <div class="border-start ps-3">
+                            <div class="small text-muted fw-semibold text-uppercase">Actions</div>
+                            <div class="fs-3 fw-bold text-danger">@Model.Incident.CorrectiveActions.Count(a => a.Status != ConnectedOps.Domain.Safety.CorrectiveActionStatus.Completed && a.Status != ConnectedOps.Domain.Safety.CorrectiveActionStatus.Verified)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 360 NAV TABS -->
+        <ul class="nav nav-pills mb-4" id="incidentTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="overview-tab" data-bs-toggle="pill" data-bs-target="#overview-pane" type="button" role="tab">
+                    <i class="bi bi-info-circle me-1"></i> Overview
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="investigation-tab" data-bs-toggle="pill" data-bs-target="#investigation-pane" type="button" role="tab">
+                    <i class="bi bi-search me-1"></i> Investigation
+                    @if (Model.Incident.Investigation != null)
+                    {
+                        <span class="badge bg-light text-dark ms-1">@Model.Incident.Investigation.Status</span>
+                    }
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="participants-tab" data-bs-toggle="pill" data-bs-target="#participants-pane" type="button" role="tab">
+                    <i class="bi bi-people me-1"></i> Participants (@Model.Incident.Participants.Count)
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="vehicles-tab" data-bs-toggle="pill" data-bs-target="#vehicles-pane" type="button" role="tab">
+                    <i class="bi bi-truck me-1"></i> Vehicles &amp; Assets (@(Model.Incident.Vehicles.Count + Model.Incident.Assets.Count))
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="evidence-tab" data-bs-toggle="pill" data-bs-target="#evidence-pane" type="button" role="tab">
+                    <i class="bi bi-paperclip me-1"></i> Evidence &amp; Files (@Model.Incident.Evidence.Count)
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="violations-tab" data-bs-toggle="pill" data-bs-target="#violations-pane" type="button" role="tab">
+                    <i class="bi bi-cone-striped me-1"></i> Violations (@Model.Incident.Violations.Count)
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="actions-tab" data-bs-toggle="pill" data-bs-target="#actions-pane" type="button" role="tab">
+                    <i class="bi bi-check2-circle me-1"></i> Corrective Actions (@Model.Incident.CorrectiveActions.Count)
+                </button>
+            </li>
+        </ul>
+
+        <!-- TAB CONTENT PANES -->
+        <div class="tab-content" id="incidentTabContent">
+            <!-- PANE 1: OVERVIEW -->
+            <div class="tab-pane fade show active" id="overview-pane" role="tabpanel">
+                <div class="row g-4">
+                    <div class="col-12 col-lg-8">
+                        <div class="card border-0 shadow-sm rounded-3 mb-4">
+                            <div class="card-header bg-transparent border-0 pt-3 px-3">
+                                <h6 class="fw-bold mb-0"><i class="bi bi-file-text text-primary me-2"></i>Incident Narrative &amp; Description</h6>
+                            </div>
+                            <div class="card-body p-3">
+                                <p class="lead fs-6 mb-3" style="white-space: pre-wrap;">@Model.Incident.Description</p>
+                                @if (!string.IsNullOrEmpty(Model.Incident.ImmediateActionTaken))
+                                {
+                                    <div class="alert alert-light border rounded-3 mt-3">
+                                        <h6 class="fw-bold text-success mb-1"><i class="bi bi-lightning-charge-fill me-1"></i>Immediate Actions Taken On Scene</h6>
+                                        <p class="mb-0 small" style="white-space: pre-wrap;">@Model.Incident.ImmediateActionTaken</p>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-lg-4">
+                        <div class="card border-0 shadow-sm rounded-3 mb-4">
+                            <div class="card-header bg-transparent border-0 pt-3 px-3">
+                                <h6 class="fw-bold mb-0"><i class="bi bi-geo-alt text-danger me-2"></i>Location &amp; Meta</h6>
+                            </div>
+                            <div class="card-body p-3">
+                                <div class="mb-2">
+                                    <span class="text-muted small">Branch:</span>
+                                    <span class="fw-semibold small d-block">@(Model.Incident.BranchName ?? "Unassigned")</span>
+                                </div>
+                                <div class="mb-2">
+                                    <span class="text-muted small">Location:</span>
+                                    <span class="fw-semibold small d-block">@(Model.Incident.LocationName ?? "General Route / Off-site")</span>
+                                </div>
+                                @if (Model.Incident.Latitude.HasValue && Model.Incident.Longitude.HasValue)
+                                {
+                                    <div class="mb-2">
+                                        <span class="text-muted small">GPS Coordinates:</span>
+                                        <span class="fw-semibold small d-block font-monospace">@Model.Incident.Latitude.Value.ToString("F5"), @Model.Incident.Longitude.Value.ToString("F5")</span>
+                                    </div>
+                                }
+                                <div class="mb-2">
+                                    <span class="text-muted small">Reported By:</span>
+                                    <span class="fw-semibold small d-block">@(Model.Incident.ReportedByUserName ?? "Staff") on @Model.Incident.ReportedAtUtc.ToString("yyyy-MM-dd HH:mm")</span>
+                                </div>
+                                @if (Model.Incident.ClosedAtUtc.HasValue)
+                                {
+                                    <div class="mb-2 pt-2 border-top">
+                                        <span class="text-muted small text-success">Closed At:</span>
+                                        <span class="fw-semibold small d-block text-success">@Model.Incident.ClosedAtUtc.Value.ToString("yyyy-MM-dd HH:mm") UTC</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANE 2: INVESTIGATION -->
+            <div class="tab-pane fade" id="investigation-pane" role="tabpanel">
+                <div class="card border-0 shadow-sm rounded-3 mb-4">
+                    <div class="card-header bg-transparent border-0 pt-3 px-3 d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold mb-0"><i class="bi bi-search text-primary me-2"></i>Formal Safety Investigation Record</h6>
+                        @if (Model.Incident.Investigation == null)
+                        {
+                            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#startInvestigationModal">
+                                <i class="bi bi-play-circle me-1"></i> Start Investigation
+                            </button>
+                        }
+                        else if (Model.Incident.Investigation.Status != ConnectedOps.Domain.Safety.SafetyInvestigationStatus.Completed)
+                        {
+                            <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#completeInvestigationModal">
+                                <i class="bi bi-check2-circle me-1"></i> Record Findings &amp; Root Cause
+                            </button>
+                        }
+                    </div>
+                    <div class="card-body p-3">
+                        @if (Model.Incident.Investigation == null)
+                        {
+                            <div class="text-center py-5 text-muted">
+                                <i class="bi bi-search fs-1 d-block mb-2"></i>
+                                <span>No formal investigation has been launched for this incident.</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="row g-3">
+                                <div class="col-12 col-md-4">
+                                    <div class="p-3 border rounded-3 bg-light">
+                                        <div class="small text-muted">Lead Investigator</div>
+                                        <div class="fw-bold">@(Model.Incident.Investigation.InvestigatorEmployeeName ?? "Internal Safety Officer")</div>
+                                        <div class="small text-muted mt-2">Started: @Model.Incident.Investigation.StartedAtUtc.ToString("yyyy-MM-dd HH:mm")</div>
+                                        @if (Model.Incident.Investigation.CompletedAtUtc.HasValue)
+                                        {
+                                            <div class="small text-success fw-semibold">Completed: @Model.Incident.Investigation.CompletedAtUtc.Value.ToString("yyyy-MM-dd HH:mm")</div>
+                                        }
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-8">
+                                    <div class="p-3 border rounded-3 bg-light">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="small text-muted text-uppercase fw-semibold">Identified Root Cause</span>
+                                            <span class="badge bg-danger px-3 py-1">@Model.Incident.Investigation.RootCause</span>
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(Model.Incident.Investigation.RootCauseDescription))
+                                        {
+                                            <p class="small mb-2">@Model.Incident.Investigation.RootCauseDescription</p>
+                                        }
+                                        @if (!string.IsNullOrEmpty(Model.Incident.Investigation.ContributingFactors))
+                                        {
+                                            <div class="small text-muted mt-2"><strong>Contributing Factors:</strong> @Model.Incident.Investigation.ContributingFactors</div>
+                                        }
+                                        @if (!string.IsNullOrEmpty(Model.Incident.Investigation.Recommendation))
+                                        {
+                                            <div class="small text-primary mt-2"><strong>Prevention Recommendation:</strong> @Model.Incident.Investigation.Recommendation</div>
+                                        }
+                                    </div>
+                                </div>
+                                @if (!string.IsNullOrEmpty(Model.Incident.Investigation.Summary))
+                                {
+                                    <div class="col-12">
+                                        <div class="card border-0 bg-light p-3">
+                                            <h6 class="fw-bold mb-1">Investigation Executive Summary</h6>
+                                            <p class="small mb-0" style="white-space: pre-wrap;">@Model.Incident.Investigation.Summary</p>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANE 3: PARTICIPANTS -->
+            <div class="tab-pane fade" id="participants-pane" role="tabpanel">
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-header bg-transparent border-0 pt-3 px-3 d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold mb-0"><i class="bi bi-people text-primary me-2"></i>Involved People &amp; Witnesses</h6>
+                        <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addParticipantModal">
+                            <i class="bi bi-plus-circle me-1"></i> Add Person
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (Model.Incident.Participants.Count == 0)
+                        {
+                            <div class="text-center py-4 text-muted">
+                                <i class="bi bi-person fs-2 d-block mb-1"></i>
+                                <span class="small">No participants or witnesses registered.</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="ps-3">Name / Entity</th>
+                                            <th>Participant Type</th>
+                                            <th>Role</th>
+                                            <th>Injury Reported</th>
+                                            <th>Notes</th>
+                                            <th class="text-end pe-3">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var p in Model.Incident.Participants)
+                                        {
+                                            <tr>
+                                                <td class="ps-3">
+                                                    <div class="fw-semibold small">@(p.DriverName ?? p.EmployeeName ?? p.Name ?? "Unnamed Participant")</div>
+                                                </td>
+                                                <td><span class="badge bg-secondary-subtle text-secondary">@p.ParticipantType</span></td>
+                                                <td><span class="small">@p.Role</span></td>
+                                                <td>
+                                                    @if (p.InjuryReported)
+                                                    {
+                                                        <span class="badge bg-danger">Injury Reported</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-success-subtle text-success">No Injury</span>
+                                                    }
+                                                </td>
+                                                <td><span class="small text-muted">@(p.Notes ?? "-")</span></td>
+                                                <td class="text-end pe-3">
+                                                    <form method="post" asp-page-handler="RemoveParticipant" asp-route-participantId="@p.Id" class="d-inline">
+                                                        <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2" title="Remove">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANE 4: VEHICLES & ASSETS -->
+            <div class="tab-pane fade" id="vehicles-pane" role="tabpanel">
+                <div class="card border-0 shadow-sm rounded-3 mb-4">
+                    <div class="card-header bg-transparent border-0 pt-3 px-3 d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold mb-0"><i class="bi bi-truck text-primary me-2"></i>Involved Vehicles</h6>
+                        <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#addVehicleModal">
+                            <i class="bi bi-plus-circle me-1"></i> Add Vehicle
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (Model.Incident.Vehicles.Count == 0)
+                        {
+                            <div class="text-center py-4 text-muted">
+                                <span class="small">No vehicles linked to this incident.</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="ps-3">Vehicle Plate / Number</th>
+                                            <th>Vehicle Model</th>
+                                            <th>Primary Fleet Unit</th>
+                                            <th>Damage Reported</th>
+                                            <th>Damage Notes</th>
+                                            <th class="text-end pe-3">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var v in Model.Incident.Vehicles)
+                                        {
+                                            <tr>
+                                                <td class="ps-3"><strong class="font-monospace">@v.VehiclePlate</strong></td>
+                                                <td><span class="small">@v.VehicleMakeModel</span></td>
+                                                <td>
+                                                    @if (v.IsPrimaryVehicle)
+                                                    {
+                                                        <span class="badge bg-primary">Primary Vehicle</span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    @if (v.DamageReported)
+                                                    {
+                                                        <span class="badge bg-danger">Damage Reported</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-success-subtle text-success">No Damage</span>
+                                                    }
+                                                </td>
+                                                <td><span class="small text-muted">@(v.DamageDescription ?? "-")</span></td>
+                                                <td class="text-end pe-3">
+                                                    <form method="post" asp-page-handler="RemoveVehicle" asp-route-incidentVehicleId="@v.Id" class="d-inline">
+                                                        <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2"><i class="bi bi-trash"></i></button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-header bg-transparent border-0 pt-3 px-3 d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold mb-0"><i class="bi bi-tools text-primary me-2"></i>Involved Assets &amp; Equipment</h6>
+                        <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#addAssetModal">
+                            <i class="bi bi-plus-circle me-1"></i> Add Asset
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (Model.Incident.Assets.Count == 0)
+                        {
+                            <div class="text-center py-4 text-muted">
+                                <span class="small">No assets or tools linked to this incident.</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="ps-3">Asset #</th>
+                                            <th>Asset Name</th>
+                                            <th>Damage Reported</th>
+                                            <th>Damage Notes</th>
+                                            <th class="text-end pe-3">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var a in Model.Incident.Assets)
+                                        {
+                                            <tr>
+                                                <td class="ps-3 font-monospace fw-bold">@a.AssetNumber</td>
+                                                <td><span class="small">@a.AssetName</span></td>
+                                                <td>
+                                                    @if (a.DamageReported)
+                                                    {
+                                                        <span class="badge bg-danger">Damaged</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-success-subtle text-success">Intact</span>
+                                                    }
+                                                </td>
+                                                <td><span class="small text-muted">@(a.DamageDescription ?? "-")</span></td>
+                                                <td class="text-end pe-3">
+                                                    <form method="post" asp-page-handler="RemoveAsset" asp-route-incidentAssetId="@a.Id" class="d-inline">
+                                                        <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2"><i class="bi bi-trash"></i></button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANE 5: EVIDENCE -->
+            <div class="tab-pane fade" id="evidence-pane" role="tabpanel">
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-header bg-transparent border-0 pt-3 px-3 d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold mb-0"><i class="bi bi-paperclip text-primary me-2"></i>Incident Evidence &amp; Attachments</h6>
+                        <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addEvidenceModal">
+                            <i class="bi bi-plus-circle me-1"></i> Add Evidence
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (Model.Incident.Evidence.Count == 0)
+                        {
+                            <div class="text-center py-4 text-muted">
+                                <i class="bi bi-images fs-2 d-block mb-1"></i>
+                                <span class="small">No photos, dashcam footage, or police reports attached yet.</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="ps-3">Title / Document</th>
+                                            <th>Type</th>
+                                            <th>File Name</th>
+                                            <th>Uploaded At</th>
+                                            <th>Notes</th>
+                                            <th class="text-end pe-3">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var ev in Model.Incident.Evidence)
+                                        {
+                                            <tr>
+                                                <td class="ps-3"><strong class="small">@ev.Title</strong></td>
+                                                <td><span class="badge bg-secondary-subtle text-secondary">@ev.EvidenceType</span></td>
+                                                <td><span class="small font-monospace text-muted">@ev.FileName</span></td>
+                                                <td><span class="small text-muted">@ev.UploadedAtUtc.ToString("yyyy-MM-dd HH:mm")</span></td>
+                                                <td><span class="small text-muted">@(ev.Notes ?? "-")</span></td>
+                                                <td class="text-end pe-3">
+                                                    <form method="post" asp-page-handler="RemoveEvidence" asp-route-evidenceId="@ev.Id" class="d-inline">
+                                                        <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2"><i class="bi bi-trash"></i></button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANE 6: VIOLATIONS -->
+            <div class="tab-pane fade" id="violations-pane" role="tabpanel">
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-header bg-transparent border-0 pt-3 px-3 d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold mb-0"><i class="bi bi-cone-striped text-warning me-2"></i>Associated Safety Infractions</h6>
+                        <button type="button" class="btn btn-outline-warning btn-sm text-dark" data-bs-toggle="modal" data-bs-target="#addViolationModal">
+                            <i class="bi bi-plus-circle me-1"></i> Log Violation
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (Model.Incident.Violations.Count == 0)
+                        {
+                            <div class="text-center py-4 text-muted">
+                                <span class="small">No driver infractions directly linked to this incident.</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="ps-3">Violation Type</th>
+                                            <th>Driver</th>
+                                            <th>Severity</th>
+                                            <th>Description</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var vio in Model.Incident.Violations)
+                                        {
+                                            <tr>
+                                                <td class="ps-3"><strong class="small text-warning">@vio.ViolationType</strong></td>
+                                                <td><span class="small">@(vio.DriverName ?? "Unassigned")</span></td>
+                                                <td><span class="badge bg-warning text-dark">@vio.Severity</span></td>
+                                                <td><span class="small">@vio.Description</span></td>
+                                                <td>
+                                                    @if (vio.IsResolved)
+                                                    {
+                                                        <span class="badge bg-success">Resolved</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-danger">Open</span>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANE 7: CORRECTIVE ACTIONS -->
+            <div class="tab-pane fade" id="actions-pane" role="tabpanel">
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-header bg-transparent border-0 pt-3 px-3 d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold mb-0"><i class="bi bi-check2-circle text-success me-2"></i>Corrective &amp; Preventive Actions (CAPA)</h6>
+                        <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#addActionModal">
+                            <i class="bi bi-plus-circle me-1"></i> Add Action Item
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (Model.Incident.CorrectiveActions.Count == 0)
+                        {
+                            <div class="text-center py-4 text-muted">
+                                <i class="bi bi-clipboard-check fs-2 d-block mb-1"></i>
+                                <span class="small">No corrective actions assigned yet.</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="ps-3">Action Title</th>
+                                            <th>Priority</th>
+                                            <th>Assignee</th>
+                                            <th>Due Date</th>
+                                            <th>Status</th>
+                                            <th class="text-end pe-3">Workflow Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var act in Model.Incident.CorrectiveActions)
+                                        {
+                                            var actBadge = act.Status switch
+                                            {
+                                                ConnectedOps.Domain.Safety.CorrectiveActionStatus.Verified => "bg-success",
+                                                ConnectedOps.Domain.Safety.CorrectiveActionStatus.Completed => "bg-info text-dark",
+                                                ConnectedOps.Domain.Safety.CorrectiveActionStatus.InProgress => "bg-primary",
+                                                _ => "bg-warning text-dark"
+                                            };
+
+                                            <tr>
+                                                <td class="ps-3">
+                                                    <div class="fw-bold small">@act.Title</div>
+                                                    <div class="small text-muted">@act.Description</div>
+                                                </td>
+                                                <td><span class="badge bg-secondary-subtle text-secondary">@act.Priority</span></td>
+                                                <td><span class="small">@(act.AssignedEmployeeName ?? "Unassigned")</span></td>
+                                                <td>
+                                                    <span class="small @(act.IsOverdue ? "text-danger fw-bold" : "")">
+                                                        @(act.DueDateUtc?.ToString("yyyy-MM-dd") ?? "-")
+                                                    </span>
+                                                    @if (act.IsOverdue)
+                                                    {
+                                                        <span class="badge bg-danger ms-1" style="font-size: 0.65rem;">Overdue</span>
+                                                    }
+                                                </td>
+                                                <td><span class="badge @actBadge">@act.Status</span></td>
+                                                <td class="text-end pe-3">
+                                                    <div class="btn-group btn-group-sm">
+                                                        @if (act.Status == ConnectedOps.Domain.Safety.CorrectiveActionStatus.Open)
+                                                        {
+                                                            <form method="post" asp-page-handler="StartAction" asp-route-actionId="@act.Id" class="d-inline">
+                                                                <button type="submit" class="btn btn-outline-primary btn-sm py-0 px-2" title="Start Action">Start</button>
+                                                            </form>
+                                                        }
+                                                        else if (act.Status == ConnectedOps.Domain.Safety.CorrectiveActionStatus.InProgress)
+                                                        {
+                                                            <form method="post" asp-page-handler="CompleteAction" asp-route-actionId="@act.Id" class="d-inline">
+                                                                <button type="submit" class="btn btn-outline-success btn-sm py-0 px-2" title="Complete Action">Complete</button>
+                                                            </form>
+                                                        }
+                                                        else if (act.Status == ConnectedOps.Domain.Safety.CorrectiveActionStatus.Completed && act.VerificationRequired && act.VerifiedAtUtc == null)
+                                                        {
+                                                            <form method="post" asp-page-handler="VerifyAction" asp-route-actionId="@act.Id" class="d-inline">
+                                                                <button type="submit" class="btn btn-outline-success btn-sm py-0 px-2" title="Verify Remediation">Verify</button>
+                                                            </form>
+                                                        }
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODALS -->
+
+<!-- START INVESTIGATION MODAL -->
+<div class="modal fade" id="startInvestigationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="StartInvestigation">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-play-circle text-primary me-2"></i>Start Safety Investigation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Assign Lead Investigator</label>
+                        <select name="investigatorEmployeeId" class="form-select form-select-sm">
+                            <option value="">Internal Safety Committee</option>
+                            @foreach (var emp in Model.EmployeesList)
+                            {
+                                <option value="@emp.Value">@emp.Text</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Launch Investigation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- COMPLETE INVESTIGATION MODAL -->
+<div class="modal fade" id="completeInvestigationModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="CompleteInvestigation">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-check2-circle text-success me-2"></i>Record Investigation Findings</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold">Primary Root Cause *</label>
+                            <select name="rootCause" class="form-select form-select-sm" required>
+                                <option value="DriverBehavior">Driver Behavior / Inattention</option>
+                                <option value="Speeding">Speeding / Inappropriate Speed</option>
+                                <option value="Fatigue">Driver Fatigue</option>
+                                <option value="MechanicalFailure">Mechanical / Equipment Failure</option>
+                                <option value="AdverseWeather">Adverse Weather Conditions</option>
+                                <option value="RoadCondition">Poor Road / Environmental Condition</option>
+                                <option value="ThirdPartyFault">Third Party Fault</option>
+                                <option value="InadequateTraining">Inadequate Training</option>
+                                <option value="ProcedureViolation">Operating Procedure Violation</option>
+                                <option value="Other">Other / Indeterminate</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold">Root Cause Summary *</label>
+                            <input type="text" name="summary" class="form-control form-control-sm" placeholder="e.g. Failure to maintain safe stopping distance" required />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Contributing Factors</label>
+                            <textarea name="contributingFactors" class="form-control form-control-sm" rows="2" placeholder="e.g. Wet road surface, heavy traffic, low visibility"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Preventive Recommendations</label>
+                            <textarea name="recommendation" class="form-control form-control-sm" rows="2" placeholder="e.g. Mandate defensive driving refresher course"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success btn-sm">Save &amp; Complete Investigation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- CLOSE INCIDENT MODAL -->
+<div class="modal fade" id="closeIncidentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="Close">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-check-circle text-success me-2"></i>Close Incident</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Closing Remarks / Audit Notes</label>
+                        <textarea name="notes" class="form-control form-control-sm" rows="3" placeholder="Verify all actions completed and sign off..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success btn-sm">Confirm Closure</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ADD PARTICIPANT MODAL -->
+<div class="modal fade" id="addParticipantModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="AddParticipant">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-person-plus text-primary me-2"></i>Add Incident Participant</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold">Participant Classification</label>
+                            <select name="participantType" class="form-select form-select-sm">
+                                <option value="Driver">Fleet Driver</option>
+                                <option value="Employee">Staff / Employee</option>
+                                <option value="Passenger">Passenger</option>
+                                <option value="ThirdPartyDriver">Third Party Driver</option>
+                                <option value="Witness">Witness</option>
+                                <option value="Pedestrian">Pedestrian</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold">Role *</label>
+                            <input type="text" name="role" class="form-control form-control-sm" placeholder="e.g. Primary Driver, Witness" required />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold">Select Fleet Driver</label>
+                            <select name="driverId" class="form-select form-select-sm">
+                                <option value="">None / External</option>
+                                @foreach (var d in Model.DriversList)
+                                {
+                                    <option value="@d.Value">@d.Text</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold">Or External Person Name</label>
+                            <input type="text" name="name" class="form-control form-control-sm" placeholder="e.g. John Doe" />
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="injuryReported" value="true" id="chkInjury">
+                                <label class="form-check-label small fw-semibold text-danger" for="chkInjury">Injury Reported</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Notes</label>
+                            <input type="text" name="notes" class="form-control form-control-sm" placeholder="Statement / contact details" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Add Participant</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ADD VEHICLE MODAL -->
+<div class="modal fade" id="addVehicleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="AddVehicle">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-truck text-danger me-2"></i>Add Vehicle to Incident</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Vehicle *</label>
+                            <select name="vehicleId" class="form-select form-select-sm" required>
+                                <option value="">Select Fleet Vehicle...</option>
+                                @foreach (var v in Model.VehiclesList)
+                                {
+                                    <option value="@v.Value">@v.Text</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="isPrimaryVehicle" value="true" id="chkPrimaryV">
+                                <label class="form-check-label small fw-semibold" for="chkPrimaryV">Is Primary Vehicle</label>
+                            </div>
+                            <div class="form-check mt-1">
+                                <input class="form-check-input" type="checkbox" name="damageReported" value="true" id="chkDamageV">
+                                <label class="form-check-label small fw-semibold text-danger" for="chkDamageV">Damage Reported</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Damage Description</label>
+                            <input type="text" name="damageDescription" class="form-control form-control-sm" placeholder="e.g. Front bumper and headlamp cracked" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger btn-sm">Add Vehicle</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ADD ASSET MODAL -->
+<div class="modal fade" id="addAssetModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="AddAsset">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-tools text-primary me-2"></i>Add Asset to Incident</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Asset *</label>
+                            <select name="assetId" class="form-select form-select-sm" required>
+                                <option value="">Select Equipment...</option>
+                                @foreach (var a in Model.AssetsList)
+                                {
+                                    <option value="@a.Value">@a.Text</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="damageReported" value="true" id="chkDamageA">
+                                <label class="form-check-label small fw-semibold text-danger" for="chkDamageA">Damage Reported</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Damage Description</label>
+                            <input type="text" name="damageDescription" class="form-control form-control-sm" placeholder="e.g. Fork attachment bent" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Add Asset</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ADD EVIDENCE MODAL -->
+<div class="modal fade" id="addEvidenceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="AddEvidence">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-paperclip text-primary me-2"></i>Log Incident Evidence</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold">Evidence Type</label>
+                            <select name="evidenceType" class="form-select form-select-sm">
+                                <option value="Photo">Scene Photo</option>
+                                <option value="DashcamFootage">Dashcam Video</option>
+                                <option value="PoliceReport">Police / Traffic Report</option>
+                                <option value="WitnessStatement">Witness Statement</option>
+                                <option value="InspectionDocument">Inspection Report</option>
+                                <option value="Other">Other Document</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold">Title *</label>
+                            <input type="text" name="title" class="form-control form-control-sm" placeholder="e.g. Left front bumper damage" required />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">File Name *</label>
+                            <input type="text" name="fileName" class="form-control form-control-sm" placeholder="e.g. incident_photo_01.jpg" required />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Notes / Description</label>
+                            <input type="text" name="notes" class="form-control form-control-sm" placeholder="e.g. Captured immediately post-collision" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Save Evidence Record</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ADD VIOLATION MODAL -->
+<div class="modal fade" id="addViolationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="AddViolation">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-cone-striped text-warning me-2"></i>Log Incident Violation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold">Violation Type *</label>
+                            <select name="violationType" class="form-select form-select-sm">
+                                <option value="Speeding">Speeding</option>
+                                <option value="HarshBraking">Harsh Braking</option>
+                                <option value="HarshAcceleration">Harsh Acceleration</option>
+                                <option value="MobilePhoneUsage">Distracted / Mobile Phone</option>
+                                <option value="SeatbeltNotFastened">Seatbelt Unfastened</option>
+                                <option value="RedLightViolation">Red Light Violation</option>
+                                <option value="Tailgating">Tailgating / Distance</option>
+                                <option value="Other">Other Safety Violation</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold">Severity</label>
+                            <select name="severity" class="form-select form-select-sm">
+                                <option value="Low">Low</option>
+                                <option value="Medium" selected>Medium</option>
+                                <option value="High">High</option>
+                                <option value="Critical">Critical</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold">Driver</label>
+                            <select name="driverId" class="form-select form-select-sm">
+                                <option value="">Select Driver...</option>
+                                @foreach (var d in Model.DriversList)
+                                {
+                                    <option value="@d.Value">@d.Text</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold">Occurred At</label>
+                            <input type="datetime-local" name="occurredAtUtc" class="form-control form-control-sm" value="@DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm")" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Description *</label>
+                            <textarea name="description" class="form-control form-control-sm" rows="2" placeholder="e.g. Exceeded speed limit by 25 km/h before impact" required></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning btn-sm text-dark">Save Violation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ADD CORRECTIVE ACTION MODAL -->
+<div class="modal fade" id="addActionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="AddAction">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-check2-circle text-success me-2"></i>Create Corrective Action</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Action Title *</label>
+                            <input type="text" name="title" class="form-control form-control-sm" placeholder="e.g. Schedule Defensive Driving Refresher" required />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold">Priority</label>
+                            <select name="priority" class="form-select form-select-sm">
+                                <option value="Low">Low</option>
+                                <option value="Medium" selected>Medium</option>
+                                <option value="High">High</option>
+                                <option value="Critical">Critical</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold">Due Date</label>
+                            <input type="date" name="dueDateUtc" class="form-control form-control-sm" value="@DateTime.UtcNow.AddDays(14).ToString("yyyy-MM-dd")" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Assignee (Employee)</label>
+                            <select name="assignedEmployeeId" class="form-select form-select-sm">
+                                <option value="">Select Assignee...</option>
+                                @foreach (var emp in Model.EmployeesList)
+                                {
+                                    <option value="@emp.Value">@emp.Text</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Description / Remediation Instructions *</label>
+                            <textarea name="description" class="form-control form-control-sm" rows="2" placeholder="Describe the specific action items required..." required></textarea>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="verificationRequired" value="true" id="chkVerifyA" checked>
+                                <label class="form-check-label small fw-semibold" for="chkVerifyA">Requires Verification by Safety Officer</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success btn-sm">Assign Action Item</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

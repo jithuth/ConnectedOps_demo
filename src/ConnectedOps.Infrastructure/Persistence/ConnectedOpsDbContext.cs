@@ -21,6 +21,8 @@ using ConnectedOps.Domain.Demo;
 using ConnectedOps.Domain.Maintenance;
 using ConnectedOps.Domain.Fuel;
 using ConnectedOps.Domain.Assets;
+using ConnectedOps.Domain.Compliance;
+using ConnectedOps.Domain.Safety;
 
 namespace ConnectedOps.Infrastructure.Persistence;
 
@@ -337,6 +339,45 @@ public sealed class ConnectedOpsDbContext
 
     public DbSet<AssetNote> AssetNotes =>
         Set<AssetNote>();
+
+    public DbSet<ComplianceRequirement> ComplianceRequirements =>
+        Set<ComplianceRequirement>();
+
+    public DbSet<ComplianceRequirementRule> ComplianceRequirementRules =>
+        Set<ComplianceRequirementRule>();
+
+    public DbSet<ComplianceRecord> ComplianceRecords =>
+        Set<ComplianceRecord>();
+
+    public DbSet<ComplianceDocument> ComplianceDocuments =>
+        Set<ComplianceDocument>();
+
+    public DbSet<ComplianceException> ComplianceExceptions =>
+        Set<ComplianceException>();
+
+    public DbSet<SafetyIncident> SafetyIncidents =>
+        Set<SafetyIncident>();
+
+    public DbSet<SafetyIncidentParticipant> SafetyIncidentParticipants =>
+        Set<SafetyIncidentParticipant>();
+
+    public DbSet<SafetyIncidentVehicle> SafetyIncidentVehicles =>
+        Set<SafetyIncidentVehicle>();
+
+    public DbSet<SafetyIncidentAsset> SafetyIncidentAssets =>
+        Set<SafetyIncidentAsset>();
+
+    public DbSet<SafetyIncidentEvidence> SafetyIncidentEvidence =>
+        Set<SafetyIncidentEvidence>();
+
+    public DbSet<SafetyIncidentInvestigation> SafetyIncidentInvestigations =>
+        Set<SafetyIncidentInvestigation>();
+
+    public DbSet<SafetyViolation> SafetyViolations =>
+        Set<SafetyViolation>();
+
+    public DbSet<CorrectiveAction> CorrectiveActions =>
+        Set<CorrectiveAction>();
 
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)

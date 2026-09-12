@@ -1,0 +1,344 @@
+@page
+@model ConnectedOps.Web.Pages.Compliance.Assets.DetailsModel
+@{
+    ViewData["Title"] = $"Asset Compliance - {Model.Evaluation.SubjectDisplayName}";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row align-items-center mb-3">
+            <div class="col-sm-6">
+                <div class="d-flex align-items-center gap-2">
+                    <a href="/Compliance" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
+                    <h1 class="m-0 fw-bold">Asset Compliance Profile</h1>
+                </div>
+                <p class="text-muted small mb-0 ms-4 ps-2">Equipment calibration, mandatory QA inspections, and compliance certifications.</p>
+            </div>
+            <div class="col-sm-6 text-sm-end mt-2 mt-sm-0">
+                <button type="button" class="btn btn-primary btn-sm me-1" data-bs-toggle="modal" data-bs-target="#addRecordModal">
+                    <i class="bi bi-file-earmark-plus me-1"></i> Add Record
+                </button>
+                <a href="/Assets/Details?id=@Model.Id" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-tools me-1"></i> Asset Hub
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.ErrorMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i>@Model.SuccessMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <!-- SUBJECT HERO CARD -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-body p-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle bg-info-subtle text-info d-flex align-items-center justify-content-center" style="width: 58px; height: 58px; font-size: 1.6rem;">
+                            <i class="bi bi-tools"></i>
+                        </div>
+                        <div>
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <h3 class="fw-bold mb-0">@Model.Evaluation.SubjectDisplayName</h3>
+                                @if (Model.Evaluation.OverallStatus == ConnectedOps.Domain.Compliance.ComplianceStatus.Valid)
+                                {
+                                    <span class="badge bg-success px-3 py-2 fs-6"><i class="bi bi-shield-check me-1"></i>Fully Compliant</span>
+                                }
+                                else if (Model.Evaluation.OverallStatus == ConnectedOps.Domain.Compliance.ComplianceStatus.ExpiringSoon)
+                                {
+                                    <span class="badge bg-warning text-dark px-3 py-2 fs-6"><i class="bi bi-alarm me-1"></i>Expiring Soon</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger px-3 py-2 fs-6"><i class="bi bi-shield-x me-1"></i>Non-Compliant</span>
+                                }
+                            </div>
+                            <div class="text-secondary small fw-semibold">
+                                Asset #: <span class="text-body font-monospace">@Model.Evaluation.SubjectIdentifier</span> &bull; Branch: @(Model.Evaluation.BranchName ?? "Unassigned")
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-4 text-center">
+                        <div>
+                            <div class="small text-muted fw-semibold text-uppercase">Score</div>
+                            <div class="fs-2 fw-bold text-info">@Model.Evaluation.Score%</div>
+                        </div>
+                        <div class="border-start ps-4">
+                            <div class="small text-muted fw-semibold text-uppercase">Grade</div>
+                            <div class="fs-2 fw-bold text-success">@Model.Evaluation.Grade</div>
+                        </div>
+                        <div class="border-start ps-4">
+                            <div class="small text-muted fw-semibold text-uppercase">Requirements</div>
+                            <div class="fs-2 fw-bold text-secondary">@Model.Evaluation.ValidCount / @Model.Evaluation.TotalRequirements</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- REQUIREMENTS EVALUATION BREAKDOWN -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-transparent border-0 pt-3 px-3 d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0"><i class="bi bi-clipboard-check text-primary me-2"></i>Asset QA &amp; Calibration Mandates Breakdown</h6>
+                <span class="small text-muted">Evaluated at @Model.Evaluation.EvaluatedAtUtc.ToString("yyyy-MM-dd HH:mm") UTC</span>
+            </div>
+            <div class="card-body p-0">
+                @if (Model.Evaluation.RequirementResults.Count == 0)
+                {
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-info-circle fs-1 d-block mb-2"></i>
+                        <span>No compliance requirements are mapped to this equipment.</span>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">Requirement</th>
+                                    <th>Category</th>
+                                    <th>Mandatory</th>
+                                    <th>Authoritative Source</th>
+                                    <th>Ref / Issue Date</th>
+                                    <th>Expiry Date</th>
+                                    <th>Days Left</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var res in Model.Evaluation.RequirementResults)
+                                {
+                                    var rowStatusBadge = res.Status switch
+                                    {
+                                        ConnectedOps.Domain.Compliance.ComplianceStatus.Valid => "bg-success",
+                                        ConnectedOps.Domain.Compliance.ComplianceStatus.ExpiringSoon => "bg-warning text-dark",
+                                        ConnectedOps.Domain.Compliance.ComplianceStatus.Expired => "bg-danger",
+                                        ConnectedOps.Domain.Compliance.ComplianceStatus.Missing => "bg-dark",
+                                        _ => "bg-secondary"
+                                    };
+
+                                    <tr>
+                                        <td class="ps-3">
+                                            <div class="fw-bold">@res.RequirementName</div>
+                                            <div class="small text-muted font-monospace">@res.RequirementCode</div>
+                                        </td>
+                                        <td>
+                                            <span class="small">@res.RequirementType</span>
+                                        </td>
+                                        <td>
+                                            @if (res.IsMandatory)
+                                            {
+                                                <span class="badge bg-danger-subtle text-danger">Mandatory</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary-subtle text-secondary">Optional</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-light text-dark border">@(res.AuthoritativeSourceType ?? "Direct Record")</span>
+                                        </td>
+                                        <td>
+                                            <div class="small">@(res.ReferenceNumber ?? "-")</div>
+                                            @if (res.IssueDateUtc.HasValue)
+                                            {
+                                                <div class="text-muted" style="font-size: 0.75rem;">Issued: @res.IssueDateUtc.Value.ToString("yyyy-MM-dd")</div>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (res.ExpiryDateUtc.HasValue)
+                                            {
+                                                <span class="small fw-semibold">@res.ExpiryDateUtc.Value.ToString("yyyy-MM-dd")</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted small">N/A</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (res.DaysRemaining.HasValue)
+                                            {
+                                                if (res.DaysRemaining < 0)
+                                                {
+                                                    <span class="badge bg-danger-subtle text-danger">@res.DaysRemaining d (Expired)</span>
+                                                }
+                                                else if (res.DaysRemaining <= 30)
+                                                {
+                                                    <span class="badge bg-warning-subtle text-warning">@res.DaysRemaining d remaining</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-success-subtle text-success">@res.DaysRemaining d</span>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted small">-</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <span class="badge @rowStatusBadge px-2 py-1">@res.Status</span>
+                                            @if (res.HasActiveException)
+                                            {
+                                                <span class="badge bg-info-subtle text-info ms-1" title="Active Exemption">Exempted</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- COMPLIANCE RECORDS HISTORY -->
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-transparent border-0 pt-3 px-3 d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0"><i class="bi bi-folder2-open text-primary me-2"></i>Asset Compliance Records &amp; Calibration Certificates</h6>
+                <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addRecordModal">
+                    <i class="bi bi-plus-circle me-1"></i> Add Record
+                </button>
+            </div>
+            <div class="card-body p-0">
+                @if (Model.Records.Count == 0)
+                {
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-inbox fs-2 d-block mb-1"></i>
+                        <span class="small">No standalone compliance records logged for this asset yet.</span>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">Requirement</th>
+                                    <th>Ref #</th>
+                                    <th>Issuing Authority / Lab</th>
+                                    <th>Issue Date</th>
+                                    <th>Expiry Date</th>
+                                    <th>Status</th>
+                                    <th>Verification</th>
+                                    <th class="text-end pe-3">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var rec in Model.Records)
+                                {
+                                    <tr>
+                                        <td class="ps-3">
+                                            <div class="fw-semibold small">@rec.RequirementName</div>
+                                            <div class="text-muted font-monospace" style="font-size: 0.75rem;">@rec.RequirementCode</div>
+                                        </td>
+                                        <td><span class="small font-monospace">@(rec.ReferenceNumber ?? "-")</span></td>
+                                        <td><span class="small text-muted">@(rec.Notes ?? "-")</span></td>
+                                        <td><span class="small">@(rec.IssueDateUtc?.ToString("yyyy-MM-dd") ?? "-")</span></td>
+                                        <td><span class="small fw-semibold">@(rec.ExpiryDateUtc?.ToString("yyyy-MM-dd") ?? "-")</span></td>
+                                        <td>
+                                            <span class="badge bg-light text-dark border">@rec.Status</span>
+                                        </td>
+                                        <td>
+                                            @if (rec.VerifiedAtUtc.HasValue)
+                                            {
+                                                <span class="badge bg-success-subtle text-success"><i class="bi bi-check-circle me-1"></i>Verified</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning-subtle text-warning">Pending</span>
+                                            }
+                                        </td>
+                                        <td class="text-end pe-3">
+                                            @if (!rec.VerifiedAtUtc.HasValue)
+                                            {
+                                                <form method="post" asp-page-handler="VerifyRecord" asp-route-recordId="@rec.Id" class="d-inline">
+                                                    <button type="submit" class="btn btn-outline-success btn-sm py-0 px-2" title="Verify Record">
+                                                        <i class="bi bi-check2"></i> Verify
+                                                    </button>
+                                                </form>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ADD RECORD MODAL -->
+<div class="modal fade" id="addRecordModal" tabindex="-1" aria-labelledby="addRecordModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="AddRecord">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="addRecordModalLabel"><i class="bi bi-file-earmark-plus text-primary me-2"></i>Add Asset Compliance Record</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Compliance Requirement *</label>
+                            <select asp-for="NewRecord.ComplianceRequirementId" class="form-select form-select-sm" required>
+                                <option value="">Select Requirement...</option>
+                                @foreach (var req in Model.AssetRequirements)
+                                {
+                                    <option value="@req.Value">@req.Text</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold">Issue Date</label>
+                            <input type="date" asp-for="NewRecord.IssueDateUtc" class="form-control form-control-sm" />
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold">Expiry Date</label>
+                            <input type="date" asp-for="NewRecord.ExpiryDateUtc" class="form-control form-control-sm" />
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold">Certificate / Ref #</label>
+                            <input type="text" asp-for="NewRecord.ReferenceNumber" class="form-control form-control-sm" placeholder="e.g. CAL-65432" />
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold">Issuing Lab / Authority</label>
+                            <input type="text" asp-for="NewRecord.IssuingAuthority" class="form-control form-control-sm" placeholder="e.g. Precision Calibration Services" />
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Remarks / Notes</label>
+                            <textarea asp-for="NewRecord.Notes" class="form-control form-control-sm" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-check-circle me-1"></i>Save Record</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

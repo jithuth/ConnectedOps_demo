@@ -1,0 +1,420 @@
+@page
+@model ConnectedOps.Web.Pages.Compliance.DashboardModel
+@{
+    ViewData["Title"] = "Fleet Compliance Intelligence";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row align-items-center mb-3">
+            <div class="col-sm-6">
+                <h1 class="m-0 fw-bold"><i class="bi bi-shield-check text-primary me-2"></i>Fleet &amp; Asset Compliance Intelligence</h1>
+                <p class="text-muted small mb-0">Multi-subject compliance monitoring, expiry tracking, and regulatory audit readiness.</p>
+            </div>
+            <div class="col-sm-6 text-sm-end mt-2 mt-sm-0">
+                <a href="/Compliance" class="btn btn-outline-primary btn-sm me-1">
+                    <i class="bi bi-card-checklist me-1"></i> Subject Directory
+                </a>
+                <a href="/Compliance/Requirements" class="btn btn-outline-secondary btn-sm me-1">
+                    <i class="bi bi-list-task me-1"></i> Requirements Catalog
+                </a>
+                <a href="/Compliance/Exceptions" class="btn btn-outline-warning btn-sm">
+                    <i class="bi bi-file-earmark-diff me-1"></i> Exemptions &amp; Exceptions
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        <!-- TOP SCORE & STATUS ROW -->
+        <div class="row g-3 mb-4">
+            <!-- Overall Compliance Score Card -->
+            <div class="col-12 col-xl-4">
+                <div class="card border-0 shadow-sm rounded-3 h-100 bg-gradient text-white position-relative overflow-hidden"
+                     style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
+                    <div class="card-body p-4 d-flex flex-column justify-content-between">
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="badge bg-white bg-opacity-25 text-white px-3 py-1 rounded-pill">
+                                    <i class="bi bi-patch-check-fill me-1"></i> Tenant Score
+                                </span>
+                                <span class="badge bg-warning text-dark fw-bold px-3 py-1 rounded-pill">
+                                    Grade: @Model.Dashboard.OverallGrade
+                                </span>
+                            </div>
+                            <h2 class="display-3 fw-bold mb-0">@Model.Dashboard.OverallScore<small class="fs-4 fw-normal opacity-75">/100</small></h2>
+                            <p class="mb-0 opacity-75 mt-1">Weighted aggregate compliance health across vehicles, drivers &amp; assets.</p>
+                        </div>
+
+                        <div class="row g-2 mt-3 pt-3 border-top border-white border-opacity-25 text-center">
+                            <div class="col-4">
+                                <div class="small opacity-75">Vehicles</div>
+                                <div class="fs-5 fw-bold">@Model.Dashboard.VehicleComplianceRate.ToString("F1")%</div>
+                            </div>
+                            <div class="col-4 border-start border-white border-opacity-25">
+                                <div class="small opacity-75">Drivers</div>
+                                <div class="fs-5 fw-bold">@Model.Dashboard.DriverComplianceRate.ToString("F1")%</div>
+                            </div>
+                            <div class="col-4 border-start border-white border-opacity-25">
+                                <div class="small opacity-75">Assets</div>
+                                <div class="fs-5 fw-bold">@Model.Dashboard.AssetComplianceRate.ToString("F1")%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Subject Type Quick Counters -->
+            <div class="col-12 col-xl-8">
+                <div class="row g-3 h-100">
+                    <!-- Vehicles -->
+                    <div class="col-12 col-sm-4">
+                        <div class="card border-0 shadow-sm rounded-3 h-100 border-start border-4 border-primary">
+                            <div class="card-body p-3 d-flex flex-column justify-content-between">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <span class="text-muted small text-uppercase fw-semibold">Vehicles</span>
+                                    <div class="rounded-circle bg-primary-subtle text-primary p-2">
+                                        <i class="bi bi-truck fs-5"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 class="fw-bold mb-1 text-primary">@Model.Dashboard.CompliantVehicles <span class="fs-6 text-muted fw-normal">/ @Model.Dashboard.TotalVehicles</span></h3>
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar bg-primary" role="progressbar" style="width: @Model.Dashboard.VehicleComplianceRate%" aria-valuenow="@Model.Dashboard.VehicleComplianceRate" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top small text-muted">
+                                    <span>Compliant: <strong class="text-success">@Model.Dashboard.VehicleComplianceRate.ToString("F1")%</strong></span>
+                                    <span class="text-danger fw-semibold">@Model.Dashboard.NonCompliantVehicles Non-compliant</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Drivers -->
+                    <div class="col-12 col-sm-4">
+                        <div class="card border-0 shadow-sm rounded-3 h-100 border-start border-4 border-success">
+                            <div class="card-body p-3 d-flex flex-column justify-content-between">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <span class="text-muted small text-uppercase fw-semibold">Drivers</span>
+                                    <div class="rounded-circle bg-success-subtle text-success p-2">
+                                        <i class="bi bi-person-badge fs-5"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 class="fw-bold mb-1 text-success">@Model.Dashboard.CompliantDrivers <span class="fs-6 text-muted fw-normal">/ @Model.Dashboard.TotalDrivers</span></h3>
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: @Model.Dashboard.DriverComplianceRate%" aria-valuenow="@Model.Dashboard.DriverComplianceRate" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top small text-muted">
+                                    <span>Compliant: <strong class="text-success">@Model.Dashboard.DriverComplianceRate.ToString("F1")%</strong></span>
+                                    <span class="text-danger fw-semibold">@Model.Dashboard.NonCompliantDrivers Non-compliant</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Assets & Equipment -->
+                    <div class="col-12 col-sm-4">
+                        <div class="card border-0 shadow-sm rounded-3 h-100 border-start border-4 border-info">
+                            <div class="card-body p-3 d-flex flex-column justify-content-between">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <span class="text-muted small text-uppercase fw-semibold">Assets / Tools</span>
+                                    <div class="rounded-circle bg-info-subtle text-info p-2">
+                                        <i class="bi bi-tools fs-5"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 class="fw-bold mb-1 text-info">@Model.Dashboard.CompliantAssets <span class="fs-6 text-muted fw-normal">/ @Model.Dashboard.TotalAssets</span></h3>
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar bg-info" role="progressbar" style="width: @Model.Dashboard.AssetComplianceRate%" aria-valuenow="@Model.Dashboard.AssetComplianceRate" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top small text-muted">
+                                    <span>Compliant: <strong class="text-success">@Model.Dashboard.AssetComplianceRate.ToString("F1")%</strong></span>
+                                    <span class="text-danger fw-semibold">@Model.Dashboard.NonCompliantAssets Non-compliant</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- EXPIRY WATCHTOWER ROW -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card border-0 shadow-sm rounded-3 text-center p-3 h-100">
+                    <div class="text-danger fs-3 mb-1"><i class="bi bi-exclamation-triangle-fill"></i></div>
+                    <div class="fs-4 fw-bold text-danger">@Model.Dashboard.ExpiredItems</div>
+                    <div class="small text-muted fw-semibold">Expired Items</div>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card border-0 shadow-sm rounded-3 text-center p-3 h-100">
+                    <div class="text-warning fs-3 mb-1"><i class="bi bi-alarm-fill"></i></div>
+                    <div class="fs-4 fw-bold text-warning">@Model.Dashboard.ExpiringIn7Days</div>
+                    <div class="small text-muted fw-semibold">Expiring &lt;= 7 Days</div>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card border-0 shadow-sm rounded-3 text-center p-3 h-100">
+                    <div class="text-info fs-3 mb-1"><i class="bi bi-calendar-event"></i></div>
+                    <div class="fs-4 fw-bold text-info">@Model.Dashboard.ExpiringIn30Days</div>
+                    <div class="small text-muted fw-semibold">Expiring &lt;= 30 Days</div>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card border-0 shadow-sm rounded-3 text-center p-3 h-100">
+                    <div class="text-danger fs-3 mb-1"><i class="bi bi-x-octagon-fill"></i></div>
+                    <div class="fs-4 fw-bold text-danger">@Model.Dashboard.MissingMandatoryItems</div>
+                    <div class="small text-muted fw-semibold">Missing Mandatory</div>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card border-0 shadow-sm rounded-3 text-center p-3 h-100">
+                    <div class="text-primary fs-3 mb-1"><i class="bi bi-hourglass-split"></i></div>
+                    <div class="fs-4 fw-bold text-primary">@Model.Dashboard.PendingVerificationItems</div>
+                    <div class="small text-muted fw-semibold">Pending Verification</div>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card border-0 shadow-sm rounded-3 text-center p-3 h-100">
+                    <div class="text-secondary fs-3 mb-1"><i class="bi bi-file-earmark-diff"></i></div>
+                    <div class="fs-4 fw-bold text-secondary">@Model.Dashboard.ActiveExceptions</div>
+                    <div class="small text-muted fw-semibold">Active Exceptions</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- UPCOMING EXPIRIES & ACTION TABLES -->
+        <div class="row g-3 mb-4">
+            <!-- Upcoming Expiries & Watchtower -->
+            <div class="col-12 col-lg-7">
+                <div class="card border-0 shadow-sm rounded-3 h-100">
+                    <div class="card-header bg-transparent border-0 pt-3 px-3 d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold mb-0"><i class="bi bi-clock-history text-warning me-2"></i>Critical &amp; Upcoming Expiries</h6>
+                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle">Requires Attention</span>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (Model.Dashboard.UpcomingExpiries.Count == 0 && Model.Dashboard.RecentlyExpired.Count == 0)
+                        {
+                            <div class="text-center py-5 text-muted">
+                                <i class="bi bi-check-circle-fill text-success fs-1 d-block mb-2"></i>
+                                <span>No upcoming or expired compliance requirements. Excellent status!</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="ps-3">Subject</th>
+                                            <th>Requirement</th>
+                                            <th>Expiry Date</th>
+                                            <th>Status</th>
+                                            <th class="text-end pe-3">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in Model.Dashboard.RecentlyExpired.Concat(Model.Dashboard.UpcomingExpiries).Take(10))
+                                        {
+                                            var targetUrl = item.SubjectType switch
+                                            {
+                                                ConnectedOps.Domain.Compliance.ComplianceSubjectType.Vehicle => $"/Compliance/Vehicles/Details?id={item.SubjectId}",
+                                                ConnectedOps.Domain.Compliance.ComplianceSubjectType.Driver => $"/Compliance/Drivers/Details?id={item.SubjectId}",
+                                                _ => $"/Compliance/Assets/Details?id={item.SubjectId}"
+                                            };
+
+                                            var icon = item.SubjectType switch
+                                            {
+                                                ConnectedOps.Domain.Compliance.ComplianceSubjectType.Vehicle => "bi-truck",
+                                                ConnectedOps.Domain.Compliance.ComplianceSubjectType.Driver => "bi-person-badge",
+                                                _ => "bi-tools"
+                                            };
+
+                                            <tr>
+                                                <td class="ps-3">
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <i class="bi @icon text-secondary"></i>
+                                                        <div>
+                                                            <a href="@targetUrl" class="fw-semibold text-decoration-none text-body small">@item.SubjectDisplayName</a>
+                                                            <div class="text-muted" style="font-size: 0.75rem;">@item.SubjectIdentifier (@item.SubjectType)</div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="small fw-semibold">@item.RequirementName</div>
+                                                    <div class="text-muted" style="font-size: 0.75rem;">@item.RequirementCode</div>
+                                                </td>
+                                                <td>
+                                                    @if (item.ExpiryDateUtc.HasValue)
+                                                    {
+                                                        <div class="small fw-semibold">@item.ExpiryDateUtc.Value.ToString("yyyy-MM-dd")</div>
+                                                        @if (item.DaysRemaining < 0)
+                                                        {
+                                                            <span class="badge bg-danger-subtle text-danger" style="font-size: 0.7rem;">Expired @Math.Abs(item.DaysRemaining.Value)d ago</span>
+                                                        }
+                                                        else if (item.DaysRemaining <= 7)
+                                                        {
+                                                            <span class="badge bg-danger-subtle text-danger" style="font-size: 0.7rem;">In @item.DaysRemaining d</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="badge bg-warning-subtle text-warning" style="font-size: 0.7rem;">In @item.DaysRemaining d</span>
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted small">No Expiry Date</span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    @if (item.Status == ConnectedOps.Domain.Compliance.ComplianceStatus.Expired)
+                                                    {
+                                                        <span class="badge bg-danger">Expired</span>
+                                                    }
+                                                    else if (item.Status == ConnectedOps.Domain.Compliance.ComplianceStatus.ExpiringSoon)
+                                                    {
+                                                        <span class="badge bg-warning text-dark">Expiring</span>
+                                                    }
+                                                    else if (item.Status == ConnectedOps.Domain.Compliance.ComplianceStatus.Missing)
+                                                    {
+                                                        <span class="badge bg-danger">Missing</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-secondary">@item.Status</span>
+                                                    }
+                                                </td>
+                                                <td class="text-end pe-3">
+                                                    <a href="@targetUrl" class="btn btn-outline-primary btn-sm py-0 px-2" style="font-size: 0.8rem;">
+                                                        Inspect
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lowest Compliance Subjects -->
+            <div class="col-12 col-lg-5">
+                <div class="card border-0 shadow-sm rounded-3 h-100">
+                    <div class="card-header bg-transparent border-0 pt-3 px-3 d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold mb-0"><i class="bi bi-exclamation-octagon text-danger me-2"></i>Lowest Compliance Subjects</h6>
+                        <a href="/Compliance" class="small text-decoration-none">View All</a>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (Model.Dashboard.LowestComplianceSubjects.Count == 0)
+                        {
+                            <div class="text-center py-5 text-muted">
+                                <i class="bi bi-shield-check text-success fs-1 d-block mb-2"></i>
+                                <span>All evaluated subjects are fully compliant.</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="ps-3">Subject</th>
+                                            <th>Type</th>
+                                            <th class="text-center">Score</th>
+                                            <th class="text-end pe-3">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var sub in Model.Dashboard.LowestComplianceSubjects)
+                                        {
+                                            var targetUrl = sub.SubjectType switch
+                                            {
+                                                ConnectedOps.Domain.Compliance.ComplianceSubjectType.Vehicle => $"/Compliance/Vehicles/Details?id={sub.SubjectId}",
+                                                ConnectedOps.Domain.Compliance.ComplianceSubjectType.Driver => $"/Compliance/Drivers/Details?id={sub.SubjectId}",
+                                                _ => $"/Compliance/Assets/Details?id={sub.SubjectId}"
+                                            };
+
+                                            var scoreBadge = sub.Score switch
+                                            {
+                                                >= 90 => "bg-success",
+                                                >= 75 => "bg-info",
+                                                >= 60 => "bg-warning text-dark",
+                                                _ => "bg-danger"
+                                            };
+
+                                            <tr>
+                                                <td class="ps-3">
+                                                    <a href="@targetUrl" class="fw-semibold text-decoration-none text-body small d-block">@sub.SubjectDisplayName</a>
+                                                    <span class="text-muted" style="font-size: 0.75rem;">@sub.SubjectIdentifier &bull; @(sub.BranchName ?? "No Branch")</span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-secondary-subtle text-secondary small">@sub.SubjectType</span>
+                                                </td>
+                                                <td class="text-center">
+                                                    <span class="badge @scoreBadge px-2 py-1">@sub.Score%</span>
+                                                </td>
+                                                <td class="text-end pe-3">
+                                                    <a href="@targetUrl" class="btn btn-outline-secondary btn-sm py-0 px-2" style="font-size: 0.8rem;">
+                                                        <i class="bi bi-arrow-right"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BRANCH BREAKDOWN ROW -->
+        @if (Model.Dashboard.ComplianceByBranch.Count > 0)
+        {
+            <div class="card border-0 shadow-sm rounded-3 mb-4">
+                <div class="card-header bg-transparent border-0 pt-3 px-3">
+                    <h6 class="fw-bold mb-0"><i class="bi bi-building text-primary me-2"></i>Compliance Health by Branch</h6>
+                </div>
+                <div class="card-body p-3">
+                    <div class="row g-3">
+                        @foreach (var branch in Model.Dashboard.ComplianceByBranch)
+                        {
+                            var rateColor = branch.ComplianceRate >= 80 ? "bg-success" : branch.ComplianceRate >= 60 ? "bg-warning" : "bg-danger";
+                            <div class="col-12 col-md-6 col-lg-4">
+                                <div class="p-3 border rounded-3 bg-light bg-opacity-50">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="fw-bold mb-0 text-truncate">@branch.BranchName</h6>
+                                        <span class="badge @rateColor">@branch.ComplianceRate.ToString("F1")%</span>
+                                    </div>
+                                    <div class="progress mb-2" style="height: 6px;">
+                                        <div class="progress-bar @rateColor" role="progressbar" style="width: @branch.ComplianceRate%"></div>
+                                    </div>
+                                    <div class="d-flex justify-content-between small text-muted">
+                                        <span>Total: @branch.TotalSubjects</span>
+                                        <span class="text-success">Compliant: @branch.CompliantSubjects</span>
+                                        <span class="text-danger">Non-compliant: @branch.NonCompliantSubjects</span>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

@@ -1,0 +1,236 @@
+@page
+@model ConnectedOps.Web.Pages.Safety.Incidents.IndexModel
+@{
+    ViewData["Title"] = "Safety & Accident Register";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row align-items-center mb-3">
+            <div class="col-sm-6">
+                <h1 class="m-0 fw-bold"><i class="bi bi-exclamation-octagon text-danger me-2"></i>Safety Incident &amp; Accident Register</h1>
+                <p class="text-muted small mb-0">Track vehicular accidents, near misses, equipment failures, and safety investigations.</p>
+            </div>
+            <div class="col-sm-6 text-sm-end mt-2 mt-sm-0">
+                <a href="/Safety/Dashboard" class="btn btn-outline-secondary btn-sm me-1">
+                    <i class="bi bi-speedometer2 me-1"></i> Safety Dashboard
+                </a>
+                <a href="/Safety/Incidents/Create" class="btn btn-danger btn-sm">
+                    <i class="bi bi-plus-circle me-1"></i> Report New Incident
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        <!-- FILTER CARD -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-body p-3">
+                <form method="get" class="row g-2 align-items-end">
+                    <div class="col-12 col-md-3">
+                        <label class="form-label small fw-semibold text-muted mb-1">Search</label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                            <input type="text" name="SearchTerm" class="form-control" placeholder="Incident #, title, location..." value="@Model.SearchTerm">
+                        </div>
+                    </div>
+
+                    <div class="col-6 col-md-2">
+                        <label class="form-label small fw-semibold text-muted mb-1">Type</label>
+                        <select name="IncidentType" class="form-select form-select-sm">
+                            <option value="">All Types</option>
+                            <option value="VehicleAccident" selected="@(Model.IncidentType?.ToString() == "VehicleAccident")">Vehicle Accident</option>
+                            <option value="NearMiss" selected="@(Model.IncidentType?.ToString() == "NearMiss")">Near Miss</option>
+                            <option value="UnsafeAct" selected="@(Model.IncidentType?.ToString() == "UnsafeAct")">Unsafe Act</option>
+                            <option value="UnsafeCondition" selected="@(Model.IncidentType?.ToString() == "UnsafeCondition")">Unsafe Condition</option>
+                            <option value="EquipmentIncident" selected="@(Model.IncidentType?.ToString() == "EquipmentIncident")">Equipment Incident</option>
+                            <option value="PropertyDamage" selected="@(Model.IncidentType?.ToString() == "PropertyDamage")">Property Damage</option>
+                            <option value="TrafficViolation" selected="@(Model.IncidentType?.ToString() == "TrafficViolation")">Traffic Violation</option>
+                            <option value="DriverBehavior" selected="@(Model.IncidentType?.ToString() == "DriverBehavior")">Driver Behavior</option>
+                            <option value="Environmental" selected="@(Model.IncidentType?.ToString() == "Environmental")">Environmental</option>
+                        </select>
+                    </div>
+
+                    <div class="col-6 col-md-2">
+                        <label class="form-label small fw-semibold text-muted mb-1">Severity</label>
+                        <select name="Severity" class="form-select form-select-sm">
+                            <option value="">All Severities</option>
+                            <option value="Low" selected="@(Model.Severity?.ToString() == "Low")">Low</option>
+                            <option value="Moderate" selected="@(Model.Severity?.ToString() == "Moderate")">Moderate</option>
+                            <option value="High" selected="@(Model.Severity?.ToString() == "High")">High</option>
+                            <option value="Critical" selected="@(Model.Severity?.ToString() == "Critical")">Critical</option>
+                        </select>
+                    </div>
+
+                    <div class="col-6 col-md-2">
+                        <label class="form-label small fw-semibold text-muted mb-1">Status</label>
+                        <select name="Status" class="form-select form-select-sm">
+                            <option value="">All Statuses</option>
+                            <option value="Open" selected="@(Model.Status?.ToString() == "Open")">Open</option>
+                            <option value="UnderReview" selected="@(Model.Status?.ToString() == "UnderReview")">Under Review</option>
+                            <option value="UnderInvestigation" selected="@(Model.Status?.ToString() == "UnderInvestigation")">Under Investigation</option>
+                            <option value="CorrectiveActionPending" selected="@(Model.Status?.ToString() == "CorrectiveActionPending")">Action Pending</option>
+                            <option value="Closed" selected="@(Model.Status?.ToString() == "Closed")">Closed</option>
+                            <option value="Cancelled" selected="@(Model.Status?.ToString() == "Cancelled")">Cancelled</option>
+                        </select>
+                    </div>
+
+                    <div class="col-6 col-md-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
+                            <i class="bi bi-funnel me-1"></i> Filter
+                        </button>
+                        <a href="/Safety/Incidents" class="btn btn-outline-secondary btn-sm" title="Reset Filters">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- INCIDENTS TABLE -->
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-body p-0">
+                @if (Model.Incidents.Items.Count == 0)
+                {
+                    <div class="text-center py-5">
+                        <i class="bi bi-shield-check text-success fs-1 d-block mb-3"></i>
+                        <h5 class="fw-semibold text-muted">No Safety Incidents Logged</h5>
+                        <p class="text-muted small">No records match your filters. To report an incident, click below.</p>
+                        <a href="/Safety/Incidents/Create" class="btn btn-danger btn-sm mt-2">
+                            <i class="bi bi-plus-circle me-1"></i> Report Incident
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">Incident # &amp; Title</th>
+                                    <th>Type</th>
+                                    <th>Severity</th>
+                                    <th>Date &amp; Time (UTC)</th>
+                                    <th>Branch / Location</th>
+                                    <th>Investigation</th>
+                                    <th>Involved Entities</th>
+                                    <th>Status</th>
+                                    <th class="text-end pe-3">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var inc in Model.Incidents.Items)
+                                {
+                                    var sevBadge = inc.Severity switch
+                                    {
+                                        ConnectedOps.Domain.Safety.SafetyIncidentSeverity.Critical => "bg-danger",
+                                        ConnectedOps.Domain.Safety.SafetyIncidentSeverity.High => "bg-warning text-dark",
+                                        ConnectedOps.Domain.Safety.SafetyIncidentSeverity.Moderate => "bg-info text-dark",
+                                        _ => "bg-secondary"
+                                    };
+
+                                    var statusBadge = inc.Status switch
+                                    {
+                                        ConnectedOps.Domain.Safety.SafetyIncidentStatus.Closed => "bg-success-subtle text-success border border-success-subtle",
+                                        ConnectedOps.Domain.Safety.SafetyIncidentStatus.UnderInvestigation => "bg-warning-subtle text-warning border border-warning-subtle",
+                                        ConnectedOps.Domain.Safety.SafetyIncidentStatus.Open => "bg-danger-subtle text-danger border border-danger-subtle",
+                                        _ => "bg-secondary-subtle text-secondary"
+                                    };
+
+                                    <tr>
+                                        <td class="ps-3">
+                                            <a href="/Safety/Incidents/Details?id=@inc.Id" class="fw-bold text-decoration-none font-monospace">@inc.IncidentNumber</a>
+                                            <div class="small fw-semibold text-body">@inc.Title</div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary-subtle text-secondary">@inc.IncidentType</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge @sevBadge px-2 py-1">@inc.Severity</span>
+                                        </td>
+                                        <td>
+                                            <div class="small fw-semibold">@inc.OccurredAtUtc.ToString("yyyy-MM-dd HH:mm")</div>
+                                        </td>
+                                        <td>
+                                            <div class="small">@(inc.BranchName ?? "Depot")</div>
+                                            @if (!string.IsNullOrEmpty(inc.LocationName))
+                                            {
+                                                <div class="text-muted small">@inc.LocationName</div>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (inc.InvestigationRequired)
+                                            {
+                                                <span class="badge bg-light text-dark border">@inc.InvestigationStatus</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted small">Not Required</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <div class="d-flex gap-1 small">
+                                                @if (inc.VehicleCount > 0)
+                                                {
+                                                    <span class="badge bg-light text-dark border" title="Vehicles"><i class="bi bi-truck me-1"></i>@inc.VehicleCount</span>
+                                                }
+                                                @if (inc.ParticipantCount > 0)
+                                                {
+                                                    <span class="badge bg-light text-dark border" title="People"><i class="bi bi-person me-1"></i>@inc.ParticipantCount</span>
+                                                }
+                                                @if (inc.EvidenceCount > 0)
+                                                {
+                                                    <span class="badge bg-light text-dark border" title="Evidence"><i class="bi bi-paperclip me-1"></i>@inc.EvidenceCount</span>
+                                                }
+                                                @if (inc.OpenCorrectiveActionCount > 0)
+                                                {
+                                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle" title="Open Actions"><i class="bi bi-check2-circle me-1"></i>@inc.OpenCorrectiveActionCount</span>
+                                                }
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge @statusBadge px-2 py-1">@inc.Status</span>
+                                        </td>
+                                        <td class="text-end pe-3">
+                                            <a href="/Safety/Incidents/Details?id=@inc.Id" class="btn btn-outline-primary btn-sm">
+                                                <i class="bi bi-eye me-1"></i> Hub
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- PAGINATION -->
+                    @if (Model.Incidents.TotalPages > 1)
+                    {
+                        <div class="card-footer bg-transparent border-top p-3 d-flex justify-content-between align-items-center">
+                            <span class="small text-muted">
+                                Showing @(((Model.PageNumber - 1) * Model.Incidents.PageSize) + 1) to @(Math.Min(Model.PageNumber * Model.Incidents.PageSize, Model.Incidents.TotalCount)) of @Model.Incidents.TotalCount incidents
+                            </span>
+                            <nav>
+                                <ul class="pagination pagination-sm mb-0">
+                                    <li class="page-item @(!Model.Incidents.HasPreviousPage ? "disabled" : "")">
+                                        <a class="page-link" href="?PageNumber=@(Model.PageNumber - 1)&SearchTerm=@Model.SearchTerm&Status=@Model.Status&Severity=@Model.Severity&IncidentType=@Model.IncidentType">Previous</a>
+                                    </li>
+                                    @for (var p = 1; p <= Model.Incidents.TotalPages; p++)
+                                    {
+                                        <li class="page-item @(p == Model.PageNumber ? "active" : "")">
+                                            <a class="page-link" href="?PageNumber=@p&SearchTerm=@Model.SearchTerm&Status=@Model.Status&Severity=@Model.Severity&IncidentType=@Model.IncidentType">@p</a>
+                                        </li>
+                                    }
+                                    <li class="page-item @(!Model.Incidents.HasNextPage ? "disabled" : "")">
+                                        <a class="page-link" href="?PageNumber=@(Model.PageNumber + 1)&SearchTerm=@Model.SearchTerm&Status=@Model.Status&Severity=@Model.Severity&IncidentType=@Model.IncidentType">Next</a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>

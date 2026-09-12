@@ -71,6 +71,10 @@ using ConnectedOps.Application.Fuel;
 using ConnectedOps.Infrastructure.Fuel;
 using ConnectedOps.Application.Assets;
 using ConnectedOps.Infrastructure.Assets;
+using ConnectedOps.Application.Compliance;
+using ConnectedOps.Infrastructure.Compliance;
+using ConnectedOps.Application.Safety;
+using ConnectedOps.Infrastructure.Safety;
 
 
 
@@ -161,6 +165,8 @@ public static class DependencyInjection
         AddFuelServices(services);
 
         AddAssetServices(services);
+
+        AddComplianceAndSafetyServices(services);
 
         AddValidation(
             services);
@@ -833,5 +839,28 @@ public static class DependencyInjection
         services.AddScoped<IAssetUtilizationService, AssetUtilizationService>();
         services.AddScoped<IAssetActivityTimelineService, AssetActivityTimelineService>();
         services.AddScoped<IAssetDashboardService, AssetDashboardService>();
+    }
+
+    // ================================================================
+    // PHASE 11 - COMPLIANCE & SAFETY MANAGEMENT
+    // ================================================================
+    private static void AddComplianceAndSafetyServices(
+        IServiceCollection services)
+    {
+        services.AddScoped<IComplianceExpiryService, ComplianceExpiryService>();
+        services.AddScoped<IComplianceStatusService, ComplianceStatusService>();
+        services.AddScoped<IComplianceScoreService, ComplianceScoreService>();
+        services.AddScoped<IComplianceRequirementService, ComplianceRequirementService>();
+        services.AddScoped<IComplianceRecordService, ComplianceRecordService>();
+        services.AddScoped<IComplianceExceptionService, ComplianceExceptionService>();
+        services.AddScoped<IComplianceEvaluationService, ComplianceEvaluationService>();
+        services.AddScoped<IComplianceDashboardService, ComplianceDashboardService>();
+
+        services.AddScoped<IIncidentNumberGenerator, IncidentNumberGenerator>();
+        services.AddScoped<ISafetyIncidentService, SafetyIncidentService>();
+        services.AddScoped<ISafetyViolationService, SafetyViolationService>();
+        services.AddScoped<ICorrectiveActionService, CorrectiveActionService>();
+        services.AddScoped<ISafetyScoreService, SafetyScoreService>();
+        services.AddScoped<ISafetyDashboardService, SafetyDashboardService>();
     }
 }

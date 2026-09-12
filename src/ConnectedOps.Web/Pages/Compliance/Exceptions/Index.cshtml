@@ -1,0 +1,263 @@
+@page
+@model ConnectedOps.Web.Pages.Compliance.Exceptions.IndexModel
+@{
+    ViewData["Title"] = "Compliance Exemptions & Exceptions";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row align-items-center mb-3">
+            <div class="col-sm-6">
+                <h1 class="m-0 fw-bold"><i class="bi bi-file-earmark-diff text-warning me-2"></i>Exemptions &amp; Exceptions Registry</h1>
+                <p class="text-muted small mb-0">Authorized waivers, grace periods, and audit trail of operational compliance exemptions.</p>
+            </div>
+            <div class="col-sm-6 text-sm-end mt-2 mt-sm-0">
+                <button type="button" class="btn btn-warning btn-sm text-dark" data-bs-toggle="modal" data-bs-target="#newExceptionModal">
+                    <i class="bi bi-plus-circle me-1"></i> Request Exemption
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.ErrorMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i>@Model.SuccessMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <!-- FILTER CARD -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-body p-3">
+                <form method="get" class="row g-2 align-items-end">
+                    <div class="col-12 col-md-4">
+                        <label class="form-label small fw-semibold text-muted mb-1">Requirement</label>
+                        <select name="RequirementId" class="form-select form-select-sm">
+                            <option value="">All Requirements</option>
+                            @foreach (var r in Model.RequirementsList)
+                            {
+                                <option value="@r.Value" selected="@r.Selected">@r.Text</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-6 col-md-3">
+                        <label class="form-label small fw-semibold text-muted mb-1">Subject Type</label>
+                        <select name="SubjectType" class="form-select form-select-sm">
+                            <option value="">All Subjects</option>
+                            <option value="Vehicle" selected="@(Model.SubjectType?.ToString() == "Vehicle")">Vehicles</option>
+                            <option value="Driver" selected="@(Model.SubjectType?.ToString() == "Driver")">Drivers</option>
+                            <option value="Asset" selected="@(Model.SubjectType?.ToString() == "Asset")">Assets / Tools</option>
+                        </select>
+                    </div>
+
+                    <div class="col-6 col-md-3">
+                        <label class="form-label small fw-semibold text-muted mb-1">Status</label>
+                        <select name="Status" class="form-select form-select-sm">
+                            <option value="">All Statuses</option>
+                            <option value="Pending" selected="@(Model.Status?.ToString() == "Pending")">Pending Approval</option>
+                            <option value="Approved" selected="@(Model.Status?.ToString() == "Approved")">Approved (Active)</option>
+                            <option value="Rejected" selected="@(Model.Status?.ToString() == "Rejected")">Rejected</option>
+                            <option value="Cancelled" selected="@(Model.Status?.ToString() == "Cancelled")">Cancelled</option>
+                            <option value="Expired" selected="@(Model.Status?.ToString() == "Expired")">Expired</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-2 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
+                            <i class="bi bi-funnel me-1"></i> Filter
+                        </button>
+                        <a href="/Compliance/Exceptions" class="btn btn-outline-secondary btn-sm" title="Reset Filters">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- EXCEPTIONS TABLE -->
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-body p-0">
+                @if (Model.Exceptions.Items.Count == 0)
+                {
+                    <div class="text-center py-5">
+                        <i class="bi bi-file-earmark-check text-muted fs-1 d-block mb-3"></i>
+                        <h5 class="fw-semibold text-muted">No Exceptions Found</h5>
+                        <p class="text-muted small">No compliance exemptions or temporary waivers currently on file.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">Requirement</th>
+                                    <th>Subject</th>
+                                    <th>Reason / Justification</th>
+                                    <th>Validity Window</th>
+                                    <th>Status</th>
+                                    <th>Approved By</th>
+                                    <th class="text-end pe-3">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.Exceptions.Items)
+                                {
+                                    var statusBadge = item.Status switch
+                                    {
+                                        ConnectedOps.Domain.Compliance.ComplianceExceptionStatus.Approved => "bg-success",
+                                        ConnectedOps.Domain.Compliance.ComplianceExceptionStatus.Pending => "bg-warning text-dark",
+                                        ConnectedOps.Domain.Compliance.ComplianceExceptionStatus.Rejected => "bg-danger",
+                                        ConnectedOps.Domain.Compliance.ComplianceExceptionStatus.Cancelled => "bg-secondary",
+                                        _ => "bg-dark"
+                                    };
+
+                                    <tr>
+                                        <td class="ps-3">
+                                            <div class="fw-bold">@item.RequirementName</div>
+                                            <div class="small text-muted font-monospace">@item.RequirementCode</div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-light text-dark border">@item.SubjectType</span>
+                                            @{
+                                                var subjectLabel = item.SubjectType switch
+                                                {
+                                                    ConnectedOps.Domain.Compliance.ComplianceSubjectType.Vehicle => item.VehiclePlateOrVin ?? item.VehicleId?.ToString(),
+                                                    ConnectedOps.Domain.Compliance.ComplianceSubjectType.Driver => item.DriverName ?? item.DriverId?.ToString(),
+                                                    ConnectedOps.Domain.Compliance.ComplianceSubjectType.Asset => item.AssetNumberOrName ?? item.AssetId?.ToString(),
+                                                    _ => "-"
+                                                };
+                                            }
+                                            <div class="small text-muted font-monospace" style="font-size: 0.75rem;">@subjectLabel</div>
+                                        </td>
+                                        <td>
+                                            <div class="small">@item.Reason</div>
+                                        </td>
+                                        <td>
+                                            <div class="small fw-semibold">@item.EffectiveFromUtc.ToString("yyyy-MM-dd") &rarr; @item.EffectiveToUtc.ToString("yyyy-MM-dd")</div>
+                                        </td>
+                                        <td>
+                                            <span class="badge @statusBadge px-2 py-1">@item.Status</span>
+                                        </td>
+                                        <td>
+                                            <div class="small">@(item.ApprovedByUserName ?? "-")</div>
+                                            <div class="text-muted" style="font-size: 0.75rem;">@item.CreatedAtUtc.ToString("yyyy-MM-dd")</div>
+                                        </td>
+                                        <td class="text-end pe-3">
+                                            @if (item.Status == ConnectedOps.Domain.Compliance.ComplianceExceptionStatus.Pending)
+                                            {
+                                                <div class="btn-group btn-group-sm">
+                                                    <form method="post" asp-page-handler="Approve" asp-route-id="@item.Id" class="d-inline">
+                                                        <button type="submit" class="btn btn-outline-success btn-sm" title="Approve">
+                                                            <i class="bi bi-check-lg"></i> Approve
+                                                        </button>
+                                                    </form>
+                                                    <form method="post" asp-page-handler="Reject" asp-route-id="@item.Id" class="d-inline ms-1">
+                                                        <button type="submit" class="btn btn-outline-danger btn-sm" title="Reject">
+                                                            <i class="bi bi-x-lg"></i> Reject
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            }
+                                            else if (item.Status == ConnectedOps.Domain.Compliance.ComplianceExceptionStatus.Approved)
+                                            {
+                                                <form method="post" asp-page-handler="Cancel" asp-route-id="@item.Id" class="d-inline" onsubmit="return confirm('Cancel this approved exception?');">
+                                                    <button type="submit" class="btn btn-outline-secondary btn-sm py-0 px-2" title="Cancel Exception">
+                                                        <i class="bi bi-slash-circle"></i> Cancel
+                                                    </button>
+                                                </form>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- NEW EXCEPTION MODAL -->
+<div class="modal fade" id="newExceptionModal" tabindex="-1" aria-labelledby="newExceptionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="Create">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="newExceptionModalLabel"><i class="bi bi-file-earmark-diff text-warning me-2"></i>Request Compliance Exemption</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold">Requirement *</label>
+                            <select asp-for="NewException.ComplianceRequirementId" class="form-select form-select-sm" required>
+                                <option value="">Select Requirement...</option>
+                                @foreach (var r in Model.RequirementsList)
+                                {
+                                    <option value="@r.Value">@r.Text</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-12 col-md-3">
+                            <label class="form-label small fw-semibold">Subject Type *</label>
+                            <select asp-for="NewException.SubjectType" class="form-select form-select-sm">
+                                <option value="Vehicle">Vehicle</option>
+                                <option value="Driver">Driver</option>
+                                <option value="Asset">Asset / Equipment</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12 col-md-3">
+                            <label class="form-label small fw-semibold">Subject ID (UUID) *</label>
+                            <input type="text" asp-for="NewException.SubjectId" class="form-control form-control-sm font-monospace" placeholder="Subject GUID" required />
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold">Valid From *</label>
+                            <input type="date" asp-for="NewException.ValidFromUtc" class="form-control form-control-sm" required />
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold">Valid To (Grace Expiry)</label>
+                            <input type="date" asp-for="NewException.ValidToUtc" class="form-control form-control-sm" />
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Reason / Operational Waiver Justification *</label>
+                            <textarea asp-for="NewException.Reason" class="form-control form-control-sm" rows="2" placeholder="Explain why this exemption or grace period is authorized..." required></textarea>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold">Supporting Document Reference</label>
+                            <input type="text" asp-for="NewException.SupportingDocumentReference" class="form-control form-control-sm" placeholder="e.g. WAIVER-2026-088" />
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold">Internal Notes</label>
+                            <input type="text" asp-for="NewException.Notes" class="form-control form-control-sm" placeholder="Additional audit remarks" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning btn-sm text-dark"><i class="bi bi-check-circle me-1"></i>Submit Exemption Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

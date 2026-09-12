@@ -145,7 +145,7 @@ public sealed class DemoFleetSimulatorTests
 
         await simulator.CreateDemoFleetAsync(new CreateDemoFleetRequest { VehicleCount = 10 });
         var demoVehicles = await simulator.GetDemoVehiclesAsync();
-        var firstVehicle = demoVehicles.First();
+        var firstVehicle = demoVehicles.First(v => !v.IsSimulatingOffline);
 
         // Toggle offline
         var isOffline = await simulator.ToggleVehicleOfflineSimulationAsync(firstVehicle.VehicleId);

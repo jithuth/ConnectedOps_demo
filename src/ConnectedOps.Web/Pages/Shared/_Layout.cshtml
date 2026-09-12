@@ -691,6 +691,58 @@
                             </a>
                         </li>
 
+                        <li class="nav-header">COMPLIANCE</li>
+                        <li class="nav-item">
+                            <a href="/Compliance/Dashboard" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Compliance/Dashboard") ? "active" : "")">
+                                <i class="nav-icon bi bi-shield-check"></i>
+                                <p>Compliance Dashboard</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Compliance" class="nav-link @(ViewContext.HttpContext.Request.Path.Value == "/Compliance" || (ViewContext.HttpContext.Request.Path.StartsWithSegments("/Compliance") && !ViewContext.HttpContext.Request.Path.StartsWithSegments("/Compliance/Dashboard") && !ViewContext.HttpContext.Request.Path.StartsWithSegments("/Compliance/Requirements") && !ViewContext.HttpContext.Request.Path.StartsWithSegments("/Compliance/Exceptions") && !ViewContext.HttpContext.Request.Path.StartsWithSegments("/Compliance/Vehicles") && !ViewContext.HttpContext.Request.Path.StartsWithSegments("/Compliance/Drivers") && !ViewContext.HttpContext.Request.Path.StartsWithSegments("/Compliance/Assets")) ? "active" : "")">
+                                <i class="nav-icon bi bi-card-checklist"></i>
+                                <p>Subject Directory</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Compliance/Requirements" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Compliance/Requirements") ? "active" : "")">
+                                <i class="nav-icon bi bi-list-task"></i>
+                                <p>Requirements Catalog</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Compliance/Exceptions" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Compliance/Exceptions") ? "active" : "")">
+                                <i class="nav-icon bi bi-file-earmark-diff"></i>
+                                <p>Exemptions &amp; Exceptions</p>
+                            </a>
+                        </li>
+
+                        <li class="nav-header">SAFETY &amp; INCIDENTS</li>
+                        <li class="nav-item">
+                            <a href="/Safety/Dashboard" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Safety/Dashboard") ? "active" : "")">
+                                <i class="nav-icon bi bi-speedometer2"></i>
+                                <p>Safety Dashboard</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Safety/Incidents" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Safety/Incidents") ? "active" : "")">
+                                <i class="nav-icon bi bi-exclamation-octagon-fill text-danger"></i>
+                                <p>Incidents &amp; Accidents</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Safety/Violations" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Safety/Violations") ? "active" : "")">
+                                <i class="nav-icon bi bi-cone-striped text-warning"></i>
+                                <p>Safety Violations</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Safety/CorrectiveActions" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Safety/CorrectiveActions") ? "active" : "")">
+                                <i class="nav-icon bi bi-check2-circle text-success"></i>
+                                <p>Corrective Actions</p>
+                            </a>
+                        </li>
+
                         <li class="nav-header">SIMULATION &amp; DEMO</li>
                         <li class="nav-item">
                             <a href="/Demo/FleetSimulator" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Demo/FleetSimulator") ? "active" : "")">

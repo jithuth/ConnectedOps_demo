@@ -787,7 +787,67 @@ public static class PermissionSeeder
         new(
             PermissionKeys.FuelDocuments.Manage,
             "Manage Fuel Documents",
-            "Fuel")
+            "Fuel"),
+
+        // PHASE 10 - ASSET MANAGEMENT
+        new(PermissionKeys.Assets.View, "View Assets", "Assets"),
+        new(PermissionKeys.Assets.Create, "Create Assets", "Assets"),
+        new(PermissionKeys.Assets.Edit, "Edit Assets", "Assets"),
+        new(PermissionKeys.Assets.Delete, "Delete Assets", "Assets"),
+        new(PermissionKeys.Assets.ChangeStatus, "Change Asset Status", "Assets"),
+        new(PermissionKeys.Assets.ManageLocation, "Manage Asset Location", "Assets"),
+        new(PermissionKeys.AssetCategories.View, "View Asset Categories", "Assets"),
+        new(PermissionKeys.AssetCategories.Manage, "Manage Asset Categories", "Assets"),
+        new(PermissionKeys.AssetTypes.View, "View Asset Types", "Assets"),
+        new(PermissionKeys.AssetTypes.Manage, "Manage Asset Types", "Assets"),
+        new(PermissionKeys.AssetCustody.View, "View Asset Custody", "Assets"),
+        new(PermissionKeys.AssetCustody.Manage, "Manage Asset Custody", "Assets"),
+        new(PermissionKeys.AssetCustody.CheckOut, "Check Out Assets", "Assets"),
+        new(PermissionKeys.AssetCustody.CheckIn, "Check In Assets", "Assets"),
+        new(PermissionKeys.AssetTransfers.View, "View Asset Transfers", "Assets"),
+        new(PermissionKeys.AssetTransfers.Create, "Create Asset Transfers", "Assets"),
+        new(PermissionKeys.AssetTransfers.Complete, "Complete Asset Transfers", "Assets"),
+        new(PermissionKeys.AssetTransfers.Cancel, "Cancel Asset Transfers", "Assets"),
+        new(PermissionKeys.AssetInspections.View, "View Asset Inspections", "Assets"),
+        new(PermissionKeys.AssetInspections.Manage, "Manage Asset Inspections", "Assets"),
+        new(PermissionKeys.AssetConditions.View, "View Asset Conditions", "Assets"),
+        new(PermissionKeys.AssetConditions.Manage, "Manage Asset Conditions", "Assets"),
+        new(PermissionKeys.AssetDocuments.View, "View Asset Documents", "Assets"),
+        new(PermissionKeys.AssetDocuments.Manage, "Manage Asset Documents", "Assets"),
+        new(PermissionKeys.AssetIdentifiers.View, "View Asset Identifiers", "Assets"),
+        new(PermissionKeys.AssetIdentifiers.Manage, "Manage Asset Identifiers", "Assets"),
+        new(PermissionKeys.AssetDashboard.View, "View Asset Dashboard", "Assets"),
+
+        // PHASE 11 - COMPLIANCE MANAGEMENT
+        new(PermissionKeys.Compliance.View, "View Compliance Subsystem", "Compliance"),
+        new(PermissionKeys.ComplianceRequirements.View, "View Compliance Requirements", "Compliance"),
+        new(PermissionKeys.ComplianceRequirements.Manage, "Manage Compliance Requirements", "Compliance"),
+        new(PermissionKeys.ComplianceRecords.View, "View Compliance Records", "Compliance"),
+        new(PermissionKeys.ComplianceRecords.Create, "Create Compliance Records", "Compliance"),
+        new(PermissionKeys.ComplianceRecords.Edit, "Edit Compliance Records", "Compliance"),
+        new(PermissionKeys.ComplianceRecords.Verify, "Verify Compliance Records", "Compliance"),
+        new(PermissionKeys.ComplianceRecords.Delete, "Delete Compliance Records", "Compliance"),
+        new(PermissionKeys.ComplianceExceptions.View, "View Compliance Exceptions", "Compliance"),
+        new(PermissionKeys.ComplianceExceptions.Manage, "Manage Compliance Exceptions", "Compliance"),
+        new(PermissionKeys.ComplianceDashboard.View, "View Compliance Dashboard", "Compliance"),
+
+        // PHASE 11 - SAFETY MANAGEMENT
+        new(PermissionKeys.Safety.View, "View Safety Subsystem", "Safety"),
+        new(PermissionKeys.SafetyIncidents.View, "View Safety Incidents", "Safety"),
+        new(PermissionKeys.SafetyIncidents.Create, "Create Safety Incidents", "Safety"),
+        new(PermissionKeys.SafetyIncidents.Edit, "Edit Safety Incidents", "Safety"),
+        new(PermissionKeys.SafetyIncidents.Close, "Close Safety Incidents", "Safety"),
+        new(PermissionKeys.SafetyIncidents.Cancel, "Cancel Safety Incidents", "Safety"),
+        new(PermissionKeys.SafetyInvestigations.View, "View Safety Investigations", "Safety"),
+        new(PermissionKeys.SafetyInvestigations.Manage, "Manage Safety Investigations", "Safety"),
+        new(PermissionKeys.SafetyViolations.View, "View Safety Violations", "Safety"),
+        new(PermissionKeys.SafetyViolations.Create, "Create Safety Violations", "Safety"),
+        new(PermissionKeys.SafetyViolations.Edit, "Edit Safety Violations", "Safety"),
+        new(PermissionKeys.SafetyViolations.Resolve, "Resolve Safety Violations", "Safety"),
+        new(PermissionKeys.CorrectiveActions.View, "View Corrective Actions", "Safety"),
+        new(PermissionKeys.CorrectiveActions.Manage, "Manage Corrective Actions", "Safety"),
+        new(PermissionKeys.CorrectiveActions.Verify, "Verify Corrective Actions", "Safety"),
+        new(PermissionKeys.SafetyDashboard.View, "View Safety Dashboard", "Safety")
     ];
 
     public static async Task SeedAsync(
