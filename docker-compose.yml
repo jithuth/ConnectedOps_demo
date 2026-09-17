@@ -38,8 +38,8 @@ services:
       Jwt__Issuer: "https://connectedops.io"
       Jwt__Audience: "https://connectedops.io"
       PlatformBootstrap__Enabled: "true"
-      PlatformBootstrap__Email: "${SUPERADMIN_EMAIL:-admin@connectedops.io}"
-      PlatformBootstrap__Password: "${SUPERADMIN_PASSWORD:-Admin123!SafePass2026}"
+      PlatformBootstrap__Email: "${SUPERADMIN_EMAIL:-tjithu1992@gmail.com}"
+      PlatformBootstrap__Password: "${SUPERADMIN_PASSWORD:-Krish@123}"
     ports:
       - "5000:8080"
     depends_on:
@@ -62,8 +62,8 @@ services:
       Jwt__Issuer: "https://connectedops.io"
       Jwt__Audience: "https://connectedops.io"
       PlatformBootstrap__Enabled: "true"
-      PlatformBootstrap__Email: "${SUPERADMIN_EMAIL:-admin@connectedops.io}"
-      PlatformBootstrap__Password: "${SUPERADMIN_PASSWORD:-Admin123!SafePass2026}"
+      PlatformBootstrap__Email: "${SUPERADMIN_EMAIL:-tjithu1992@gmail.com}"
+      PlatformBootstrap__Password: "${SUPERADMIN_PASSWORD:-Krish@123}"
       ApiUrl: "http://connectedops-api:8080"
     ports:
       - "5001:8080"
