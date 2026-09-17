@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -11,41 +11,18 @@ namespace ConnectedOps.Infrastructure.Persistence.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "AlertEscalationRules");
-
-            migrationBuilder.DropTable(
-                name: "AlertRuleConditions");
-
-            migrationBuilder.DropTable(
-                name: "AlertRuleScopes");
-
-            migrationBuilder.DropTable(
-                name: "AlertSuppressions");
-
-            migrationBuilder.DropTable(
-                name: "NotificationDeliveryAttempts");
-
-            migrationBuilder.DropTable(
-                name: "NotificationPreferences");
-
-            migrationBuilder.DropTable(
-                name: "NotificationTemplates");
-
-            migrationBuilder.DropTable(
-                name: "UserPushDevices");
-
-            migrationBuilder.DropTable(
-                name: "Notifications");
-
-            migrationBuilder.DropTable(
-                name: "Alerts");
-
-            migrationBuilder.DropTable(
-                name: "AlertRules");
-
-            migrationBuilder.DropTable(
-                name: "AlertTypeDefinitions");
+            migrationBuilder.Sql("IF OBJECT_ID(N'[AlertEscalationRules]', N'U') IS NOT NULL DROP TABLE [AlertEscalationRules];");
+            migrationBuilder.Sql("IF OBJECT_ID(N'[AlertRuleConditions]', N'U') IS NOT NULL DROP TABLE [AlertRuleConditions];");
+            migrationBuilder.Sql("IF OBJECT_ID(N'[AlertRuleScopes]', N'U') IS NOT NULL DROP TABLE [AlertRuleScopes];");
+            migrationBuilder.Sql("IF OBJECT_ID(N'[AlertSuppressions]', N'U') IS NOT NULL DROP TABLE [AlertSuppressions];");
+            migrationBuilder.Sql("IF OBJECT_ID(N'[NotificationDeliveryAttempts]', N'U') IS NOT NULL DROP TABLE [NotificationDeliveryAttempts];");
+            migrationBuilder.Sql("IF OBJECT_ID(N'[NotificationPreferences]', N'U') IS NOT NULL DROP TABLE [NotificationPreferences];");
+            migrationBuilder.Sql("IF OBJECT_ID(N'[NotificationTemplates]', N'U') IS NOT NULL DROP TABLE [NotificationTemplates];");
+            migrationBuilder.Sql("IF OBJECT_ID(N'[UserPushDevices]', N'U') IS NOT NULL DROP TABLE [UserPushDevices];");
+            migrationBuilder.Sql("IF OBJECT_ID(N'[Notifications]', N'U') IS NOT NULL DROP TABLE [Notifications];");
+            migrationBuilder.Sql("IF OBJECT_ID(N'[Alerts]', N'U') IS NOT NULL DROP TABLE [Alerts];");
+            migrationBuilder.Sql("IF OBJECT_ID(N'[AlertRules]', N'U') IS NOT NULL DROP TABLE [AlertRules];");
+            migrationBuilder.Sql("IF OBJECT_ID(N'[AlertTypeDefinitions]', N'U') IS NOT NULL DROP TABLE [AlertTypeDefinitions];");
 
             migrationBuilder.CreateTable(
                 name: "EsgEmissionFactors",
