@@ -1,0 +1,264 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'ConnectedOps Enterprise Cloud Platform - Automated Multi-Container Deployment'
+
+Parameters:
+  InstanceType:
+    Type: String
+    Default: t2.medium
+    AllowedValues:
+      - t2.micro
+      - t2.small
+      - t2.medium
+      - t2.large
+      - t3.micro
+      - t3.small
+      - t3.medium
+      - t3.large
+      - t3.xlarge
+      - c6i.large
+      - m6i.large
+    Description: EC2 Instance Type. t2.medium provides 2 vCPUs and 4 GB RAM (ideal for SQL Server + .NET).
+
+  KeyName:
+    Type: String
+    Default: ''
+    Description: (Optional) Name of an existing EC2 KeyPair for SSH terminal access. Leave empty if you plan to use AWS Systems Manager (SSM) Session Manager.
+
+  AdminCidr:
+    Type: String
+    Default: 0.0.0.0/0
+    Description: IP CIDR range allowed to connect to SSH (port 22). Set to your office/home IP (e.g. 1.2.3.4/32) for enhanced security.
+
+  GitRepositoryUrl:
+    Type: String
+    Default: ''
+    Description: (Optional) Git repository URL to automatically clone upon initial boot. If empty, the server sets up the runtime and awaits your code upload.
+
+Resources:
+  # ============================================================================
+  # NETWORKING (VPC, Subnet, Internet Gateway)
+  # ============================================================================
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: ConnectedOps-VPC
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: ConnectedOps-IGW
+
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [0, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: ConnectedOps-PublicSubnet
+
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: ConnectedOps-PublicRouteTable
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  SubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      RouteTableId: !Ref RouteTable
+
+  # ============================================================================
+  # SECURITY GROUP (Firewall Rules)
+  # ============================================================================
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable inbound HTTP, HTTPS, Web (5001), API (5000), and SSH (22)
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        # Web Management Portal
+        - IpProtocol: tcp
+          FromPort: 5001
+          ToPort: 5001
+          CidrIp: 0.0.0.0/0
+          Description: ConnectedOps Web UI
+        # API Gateway Swagger & Endpoints
+        - IpProtocol: tcp
+          FromPort: 5000
+          ToPort: 5000
+          CidrIp: 0.0.0.0/0
+          Description: ConnectedOps REST API Gateway
+        # Standard HTTP (Reverse Proxy / Let's Encrypt)
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: Standard HTTP
+        # Standard HTTPS (TLS/SSL)
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: Standard HTTPS
+        # SSH
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref AdminCidr
+          Description: SSH Terminal Access
+      Tags:
+        - Key: Name
+          Value: ConnectedOps-SecurityGroup
+
+  # ============================================================================
+  # IAM ROLE (Allows AWS Systems Manager Session Manager for browser terminal)
+  # ============================================================================
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref InstanceRole
+
+  # ============================================================================
+  # EC2 INSTANCE (Amazon Linux 2023, Docker Engine, Storage)
+  # ============================================================================
+  ConnectedOpsInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      SubnetId: !Ref PublicSubnet
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      IamInstanceProfile: !Ref InstanceProfile
+      KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
+      ImageId: '{{resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64}}'
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: 45
+            VolumeType: gp3
+            DeleteOnTermination: true
+            Encrypted: true
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -e
+          exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+
+          echo "Starting ConnectedOps automated initialization..."
+          
+          # Setup 4GB swap file for micro instances
+          if [ ! -f /swapfile ]; then
+            echo "Creating 4GB swap space..."
+            dd if=/dev/zero of=/swapfile bs=1M count=4096 status=none
+            chmod 600 /swapfile
+            mkswap /swapfile
+            swapon /swapfile
+            echo '/swapfile none swap sw 0 0' >> /etc/fstab
+          fi
+
+          dnf update -y
+          dnf install -y docker git openssl curl jq amazon-ssm-agent
+          systemctl enable --now docker
+          systemctl enable --now amazon-ssm-agent
+
+          # Install Docker Compose Plugin
+          mkdir -p /usr/local/lib/docker/cli-plugins
+          curl -SL "https://github.com/docker/compose/releases/download/v2.29.2/docker-compose-linux-x86_64" -o /usr/local/lib/docker/cli-plugins/docker-compose
+          chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+          ln -sf /usr/local/lib/docker/cli-plugins/docker-compose /usr/bin/docker-compose
+
+          mkdir -p /opt/connectedops
+          cd /opt/connectedops
+
+          if [ -n "${GitRepositoryUrl}" ]; then
+            echo "Cloning repository ${GitRepositoryUrl}..."
+            git clone "${GitRepositoryUrl}" .
+            if [ -f "aws/setup-ec2.sh" ]; then
+              chmod +x aws/setup-ec2.sh
+              bash aws/setup-ec2.sh
+            fi
+          fi
+
+          echo "ConnectedOps cloud initialization completed successfully."
+      Tags:
+        - Key: Name
+          Value: ConnectedOps-Production-Server
+
+  # ============================================================================
+  # STATIC PUBLIC IP (Elastic IP)
+  # ============================================================================
+  InstanceEIP:
+    Type: AWS::EC2::EIP
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: ConnectedOps-Static-IP
+
+  EIPAssociation:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      InstanceId: !Ref ConnectedOpsInstance
+      AllocationId: !GetAtt InstanceEIP.AllocationId
+
+Conditions:
+  HasKeyName: !Not [!Equals [!Ref KeyName, '']]
+
+Outputs:
+  WebPortalUrl:
+    Description: Live URL for ConnectedOps Web Management Portal
+    Value: !Sub 'http://${InstanceEIP.PublicIp}:5001'
+
+  ApiGatewayUrl:
+    Description: Live URL for ConnectedOps REST API Swagger Documentation
+    Value: !Sub 'http://${InstanceEIP.PublicIp}:5000/swagger'
+
+  ServerStaticIp:
+    Description: Permanent Static Public IPv4 Address
+    Value: !GetAtt InstanceEIP.PublicIp
+
+  SshCommand:
+    Description: SSH Command to connect to server (if KeyPair was provided)
+    Value: !Sub 'ssh -i <YOUR_KEY.pem> ec2-user@${InstanceEIP.PublicIp}'
