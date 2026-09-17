@@ -58,15 +58,13 @@ if [[ "$OS" == "amzn" || "$OS" == "fedora" || "$OS" == "rhel" || "$OS" == "cento
     chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
     ln -sf /usr/local/lib/docker/cli-plugins/docker-compose /usr/bin/docker-compose
   fi
-  # Install Docker Buildx plugin if not present
-  if ! docker buildx version &> /dev/null; then
-    echo "Installing Docker Buildx plugin..."
-    mkdir -p /usr/local/lib/docker/cli-plugins
-    BUILDX_VER=$(curl -s https://api.github.com/repos/docker/buildx/releases/latest | jq -r .tag_name 2>/dev/null || echo "v0.19.3")
-    curl -SL "https://github.com/docker/buildx/releases/download/${BUILDX_VER}/buildx-${BUILDX_VER}.linux-$(uname -m)" -o /usr/local/lib/docker/cli-plugins/docker-buildx
-    chmod +x /usr/local/lib/docker/cli-plugins/docker-buildx
-    ln -sf /usr/local/lib/docker/cli-plugins/docker-buildx /usr/bin/docker-buildx
-  fi
+  # Always ensure modern Docker Buildx plugin (>=0.17 required by Compose v2)
+  echo "Ensuring modern Docker Buildx plugin (v0.19.3)..."
+  mkdir -p /usr/local/lib/docker/cli-plugins /usr/lib/docker/cli-plugins
+  curl -SL "https://github.com/docker/buildx/releases/download/v0.19.3/buildx-v0.19.3.linux-$(uname -m)" -o /usr/local/lib/docker/cli-plugins/docker-buildx
+  chmod +x /usr/local/lib/docker/cli-plugins/docker-buildx
+  cp -f /usr/local/lib/docker/cli-plugins/docker-buildx /usr/lib/docker/cli-plugins/docker-buildx
+  ln -sf /usr/local/lib/docker/cli-plugins/docker-buildx /usr/bin/docker-buildx
 elif [[ "$OS" == "ubuntu" || "$OS" == "debian" ]]; then
   apt-get update -y
   apt-get install -y ca-certificates curl gnupg lsb-release git openssl jq
