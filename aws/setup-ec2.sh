@@ -174,8 +174,11 @@ systemctl enable connectedops.service
 
 # 6. Build and Start Application Containers
 echo -e "${CYAN}[5/6] Building and Starting ConnectedOps Containers...${NC}"
-echo "This will compile .NET 10 Web, API, and initialize SQL Server 2022."
-docker compose build
+echo "Building API container (1/2)..."
+docker compose build connectedops-api
+echo "Building Web container (2/2)..."
+docker compose build connectedops-web
+echo "Starting all ConnectedOps containers and SQL Server 2022..."
 docker compose up -d
 
 # 7. Discover Public IP & Verify Deployment

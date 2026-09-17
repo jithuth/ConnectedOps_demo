@@ -1,0 +1,11 @@
+.git
+.github
+.vs
+.idea
+tests
+aws
+bin
+obj
+*.md
+*.log
+docker-compose*.yml
