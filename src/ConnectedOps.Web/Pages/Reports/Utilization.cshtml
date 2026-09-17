@@ -1,0 +1,348 @@
+@page
+@model ConnectedOps.Web.Pages.Reports.UtilizationModel
+@{
+    ViewData["Title"] = "Fleet & Asset Utilization";
+    ViewData["Subtitle"] = "Operating hours, trip frequencies, and weekly capacity utilization analytics";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <div>
+                <h1 class="m-0 text-dark fw-bold">Fleet &amp; Asset Utilization</h1>
+                <p class="text-muted small mb-0">Identify underutilized capital assets, balance shift workloads, and optimize fleet sizing</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a asp-page="./Dashboard" class="btn btn-outline-secondary d-flex align-items-center gap-1 shadow-sm">
+                    <i class="bi bi-arrow-left"></i>
+                    <span>Executive BI</span>
+                </a>
+                <a asp-page-handler="Export" asp-route-StartDate="@Model.StartDate?.ToString("yyyy-MM-dd")" asp-route-EndDate="@Model.EndDate?.ToString("yyyy-MM-dd")" class="btn btn-primary d-flex align-items-center gap-1 shadow-sm">
+                    <i class="bi bi-download"></i>
+                    <span>Export Utilization (CSV)</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-body p-3">
+                <form method="get" class="row g-2 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label small fw-semibold text-muted mb-1">Start Date</label>
+                        <input type="date" name="StartDate" class="form-control form-control-sm" value="@(Model.StartDate?.ToString("yyyy-MM-dd"))" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-semibold text-muted mb-1">End Date</label>
+                        <input type="date" name="EndDate" class="form-control form-control-sm" value="@(Model.EndDate?.ToString("yyyy-MM-dd"))" />
+                    </div>
+                    <div class="col-md-4">
+                        <span class="small fw-semibold text-muted d-block mb-1">Quick Presets</span>
+                        <div class="btn-group btn-group-sm w-100" role="group">
+                            <button type="button" class="btn btn-outline-secondary" onclick="setFilterDates(7)">Last 7D</button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="setFilterDates(30)">Last 30D</button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="setFilterDates(90)">Last 90D</button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="setFilterYtd()">YTD</button>
+                        </div>
+                    </div>
+                    <div class="col-md-2 d-flex gap-2">
+                        <button type="submit" class="btn btn-sm btn-primary w-100 d-flex align-items-center justify-content-center gap-1">
+                            <i class="bi bi-filter"></i> Apply
+                        </button>
+                        <a asp-page="./Utilization" class="btn btn-sm btn-outline-secondary">Reset</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        <!-- TOP KPI CARDS -->
+        <div class="row g-3 mb-4">
+            <div class="col-xl-3 col-md-6">
+                <div class="card border-0 shadow-sm rounded-3 h-100 bg-primary text-white">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-white-50 small text-uppercase fw-semibold">Fleet Utilization Rate</div>
+                                <div class="fs-3 fw-bold my-1">@Model.Report.OverallFleetUtilizationRate.ToString("F1")%</div>
+                                <div class="small text-white-50">@Model.Report.VehicleUtilizations.Count vehicles monitored</div>
+                            </div>
+                            <div class="bg-white bg-opacity-25 rounded-circle p-3 d-flex align-items-center justify-content-center">
+                                <i class="bi bi-percent fs-3 text-white"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+                <div class="card border-0 shadow-sm rounded-3 h-100 bg-success text-white">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-white-50 small text-uppercase fw-semibold">Operating Hours Logged</div>
+                                <div class="fs-3 fw-bold my-1">@Model.Report.TotalFleetOperatingHours.ToString("N1") <span class="fs-6 fw-normal">hrs</span></div>
+                                <div class="small text-white-50">Active route &amp; mission time</div>
+                            </div>
+                            <div class="bg-white bg-opacity-25 rounded-circle p-3 d-flex align-items-center justify-content-center">
+                                <i class="bi bi-clock-history fs-3 text-white"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+                <div class="card border-0 shadow-sm rounded-3 h-100 bg-info text-dark">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-dark small text-uppercase fw-semibold">Total Mileage Logged</div>
+                                <div class="fs-3 fw-bold my-1">@Model.Report.TotalFleetDistanceKm.ToString("N0") <span class="fs-6 fw-normal">km</span></div>
+                                <div class="small text-dark text-opacity-75">Peak active: @Model.Report.PeakActiveVehicles units</div>
+                            </div>
+                            <div class="bg-white bg-opacity-50 rounded-circle p-3 d-flex align-items-center justify-content-center">
+                                <i class="bi bi-speedometer fs-3 text-dark"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+                <div class="card border-0 shadow-sm rounded-3 h-100 bg-secondary text-white">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-white-50 small text-uppercase fw-semibold">Active Sessions</div>
+                                <div class="fs-3 fw-bold my-1">@Model.Report.VehicleUtilizations.Sum(x => x.TotalSessionsCount)</div>
+                                <div class="small text-white-50">Across all fleet branches</div>
+                            </div>
+                            <div class="bg-white bg-opacity-25 rounded-circle p-3 d-flex align-items-center justify-content-center">
+                                <i class="bi bi-signpost-2 fs-3 text-white"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CHARTS SECTION: DAY OF WEEK HEATMAP & STATUS BREAKDOWN -->
+        <div class="row g-3 mb-4">
+            <!-- Day of Week Heatmap / Bar Chart -->
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm rounded-3 h-100">
+                    <div class="card-header bg-transparent border-0 pt-3 pb-0 d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold mb-0"><i class="bi bi-calendar3 text-primary me-2"></i>Weekly Demand &amp; Utilization Load</h6>
+                        <span class="badge bg-light text-dark">Operating Hours by Day</span>
+                    </div>
+                    <div class="card-body p-3">
+                        <div style="position: relative; height: 260px; width: 100%;">
+                            <canvas id="dayOfWeekChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Utilized Vehicles Bar Chart -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm rounded-3 h-100">
+                    <div class="card-header bg-transparent border-0 pt-3 pb-0">
+                        <h6 class="fw-bold mb-0"><i class="bi bi-pie-chart-fill text-success me-2"></i>Peak Utilization Assets</h6>
+                    </div>
+                    <div class="card-body p-3">
+                        <div style="position: relative; height: 240px; width: 100%;">
+                            <canvas id="topUtilVehiclesChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DETAILED UTILIZATION TABLE -->
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-transparent border-0 pt-3 pb-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h6 class="fw-bold mb-0"><i class="bi bi-table text-primary me-2"></i>Vehicle Utilization Ledger</h6>
+                <div class="d-flex align-items-center gap-2">
+                    <input type="text" id="tableSearch" class="form-control form-control-sm" placeholder="Search vehicle..." style="width: 200px;" onkeyup="filterUtilTable()" />
+                    <span class="badge bg-light text-dark border">@Model.Report.VehicleUtilizations.Count vehicles</span>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 small" id="utilTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Vehicle</th>
+                            <th>Branch</th>
+                            <th>Status</th>
+                            <th class="text-end">Sessions</th>
+                            <th class="text-end">Operating Hours</th>
+                            <th class="text-end">Total Distance</th>
+                            <th style="width: 180px;">Utilization Rate</th>
+                            <th class="text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Report.VehicleUtilizations.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center py-4 text-muted">No vehicle utilization records found for this period.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var v in Model.Report.VehicleUtilizations)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold text-dark">@v.LicensePlate</div>
+                                        <div class="text-muted" style="font-size: 0.75rem;">@v.MakeModel</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border">@v.BranchName</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border">@v.CurrentStatus</span>
+                                    </td>
+                                    <td class="text-end fw-semibold">@v.TotalSessionsCount</td>
+                                    <td class="text-end fw-bold text-dark">@v.TotalOperatingHours.ToString("N1") hrs</td>
+                                    <td class="text-end text-muted">@v.DistanceTraveledKm.ToString("N0") km</td>
+                                    <td>
+                                        <div class="d-flex justify-content-between small mb-1">
+                                            <span class="fw-semibold">@v.UtilizationRatePercent.ToString("F1")%</span>
+                                        </div>
+                                        <div class="progress" style="height: 6px;">
+                                            <div class="progress-bar @(v.UtilizationRatePercent > 60m ? "bg-success" : v.UtilizationRatePercent > 25m ? "bg-primary" : "bg-warning")" role="progressbar" style="width: @Math.Min(100, v.UtilizationRatePercent).ToString("F0")%"></div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="/Vehicles/Details?id=@v.VehicleId" class="btn btn-xs btn-outline-secondary btn-sm" title="View Vehicle Details">
+                                            <i class="bi bi-box-arrow-up-right"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script>
+        function setFilterDates(days) {
+            const end = new Date();
+            const start = new Date();
+            start.setDate(end.getDate() - days);
+            document.querySelector('input[name="StartDate"]').value = start.toISOString().split('T')[0];
+            document.querySelector('input[name="EndDate"]').value = end.toISOString().split('T')[0];
+        }
+
+        function setFilterYtd() {
+            const end = new Date();
+            const start = new Date(end.getFullYear(), 0, 1);
+            document.querySelector('input[name="StartDate"]').value = start.toISOString().split('T')[0];
+            document.querySelector('input[name="EndDate"]').value = end.toISOString().split('T')[0];
+        }
+
+        function filterUtilTable() {
+            const input = document.getElementById("tableSearch");
+            const filter = input.value.toLowerCase();
+            const table = document.getElementById("utilTable");
+            const tr = table.getElementsByTagName("tr");
+
+            for (let i = 1; i < tr.length; i++) {
+                const td = tr[i].getElementsByTagName("td")[0];
+                if (td) {
+                    const txtValue = td.textContent || td.innerText;
+                    tr[i].style.display = txtValue.toLowerCase().indexOf(filter) > -1 ? "" : "none";
+                }
+            }
+        }
+
+        // Day of Week Chart
+        const dayNames = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Report.DayOfWeekHeatmap.Select(x => x.DayName)));
+        const hoursData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Report.DayOfWeekHeatmap.Select(x => x.HoursLogged)));
+        const sessionData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Report.DayOfWeekHeatmap.Select(x => x.SessionCount)));
+
+        const dowCtx = document.getElementById('dayOfWeekChart').getContext('2d');
+        new Chart(dowCtx, {
+            type: 'bar',
+            data: {
+                labels: dayNames,
+                datasets: [
+                    {
+                        label: 'Operating Hours',
+                        data: hoursData,
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 6,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Trips / Sessions',
+                        data: sessionData,
+                        type: 'line',
+                        borderColor: '#10b981',
+                        backgroundColor: '#10b981',
+                        tension: 0.3,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: { display: true, text: 'Hours' }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        grid: { drawOnChartArea: false },
+                        title: { display: true, text: 'Sessions' }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'top' }
+                }
+            }
+        });
+
+        // Top Utilized Horizontal Bar Chart
+        const topUtilVehicles = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Report.VehicleUtilizations.OrderByDescending(x => x.TotalOperatingHours).Take(5).Select(x => x.LicensePlate)));
+        const topUtilHours = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Report.VehicleUtilizations.OrderByDescending(x => x.TotalOperatingHours).Take(5).Select(x => x.TotalOperatingHours)));
+
+        const topUtilCtx = document.getElementById('topUtilVehiclesChart').getContext('2d');
+        new Chart(topUtilCtx, {
+            type: 'bar',
+            data: {
+                labels: topUtilVehicles,
+                datasets: [{
+                    label: 'Hours Logged',
+                    data: topUtilHours,
+                    backgroundColor: '#10b981',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    </script>
+}

@@ -75,6 +75,18 @@ using ConnectedOps.Application.Compliance;
 using ConnectedOps.Infrastructure.Compliance;
 using ConnectedOps.Application.Safety;
 using ConnectedOps.Infrastructure.Safety;
+using ConnectedOps.Application.Reports;
+using ConnectedOps.Infrastructure.Reports;
+using ConnectedOps.Application.Dispatch;
+using ConnectedOps.Infrastructure.Dispatch;
+using ConnectedOps.Application.Alerts;
+using ConnectedOps.Infrastructure.Alerts;
+using ConnectedOps.Application.Inspections;
+using ConnectedOps.Infrastructure.Inspections;
+using ConnectedOps.Application.TollsAndFines;
+using ConnectedOps.Infrastructure.TollsAndFines;
+using ConnectedOps.Application.ColdChain;
+using ConnectedOps.Infrastructure.ColdChain;
 
 
 
@@ -167,6 +179,12 @@ public static class DependencyInjection
         AddAssetServices(services);
 
         AddComplianceAndSafetyServices(services);
+
+        AddReportServices(services);
+
+        AddDispatchServices(services);
+
+        AddOperationalIntelligenceServices(services);
 
         AddValidation(
             services);
@@ -862,5 +880,35 @@ public static class DependencyInjection
         services.AddScoped<ICorrectiveActionService, CorrectiveActionService>();
         services.AddScoped<ISafetyScoreService, SafetyScoreService>();
         services.AddScoped<ISafetyDashboardService, SafetyDashboardService>();
+    }
+
+    // ================================================================
+    // PHASE 12 - ADVANCED BI, EXECUTIVE REPORTS & ESG
+    // ================================================================
+    private static void AddReportServices(
+        IServiceCollection services)
+    {
+        services.AddScoped<IExecutiveReportService, ExecutiveReportService>();
+    }
+
+    // ================================================================
+    // PHASE 13 - ROUTE PLANNING, DISPATCH & JOB MANAGEMENT
+    // ================================================================
+    private static void AddDispatchServices(
+        IServiceCollection services)
+    {
+        services.AddScoped<IDispatchService, DispatchService>();
+    }
+
+    // ================================================================
+    // PHASE 14 - OPERATIONAL INTELLIGENCE SUITE
+    // ================================================================
+    private static void AddOperationalIntelligenceServices(
+        IServiceCollection services)
+    {
+        services.AddScoped<IAlertService, AlertService>();
+        services.AddScoped<IDvirService, DvirService>();
+        services.AddScoped<ITollAndFineService, TollAndFineService>();
+        services.AddScoped<IColdChainService, ColdChainService>();
     }
 }

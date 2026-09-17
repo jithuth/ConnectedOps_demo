@@ -525,6 +525,52 @@
                             </a>
                         </li>
 
+                        <li class="nav-header">DISPATCH &amp; ROUTING</li>
+                        <li class="nav-item">
+                            <a href="/Dispatch/Dashboard" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Dispatch/Dashboard") ? "active" : "")">
+                                <i class="nav-icon bi bi-speedometer2"></i>
+                                <p>Dispatch Console</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Dispatch/Jobs" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Dispatch/Jobs") ? "active" : "")">
+                                <i class="nav-icon bi bi-clipboard-check"></i>
+                                <p>Jobs &amp; Orders</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Dispatch/Routes" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Dispatch/Routes") || ViewContext.HttpContext.Request.Path.StartsWithSegments("/Dispatch/RouteDetails") ? "active" : "")">
+                                <i class="nav-icon bi bi-signpost-split"></i>
+                                <p>Routes &amp; Trips</p>
+                            </a>
+                        </li>
+
+                        <li class="nav-header">OPERATIONAL INTELLIGENCE</li>
+                        <li class="nav-item">
+                            <a href="/Alerts/Dashboard" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Alerts") ? "active" : "")">
+                                <i class="nav-icon bi bi-bell-fill text-danger"></i>
+                                <p>Alerts &amp; Escalations</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Inspections/Dvir" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Inspections") ? "active" : "")">
+                                <i class="nav-icon bi bi-clipboard2-check-fill text-success"></i>
+                                <p>Inspections (DVIR)</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/TollsAndFines" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/TollsAndFines") ? "active" : "")">
+                                <i class="nav-icon bi bi-receipt-cutoff text-primary"></i>
+                                <p>Tolls &amp; Violations</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/ColdChain" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/ColdChain") ? "active" : "")">
+                                <i class="nav-icon bi bi-thermometer-snow text-info"></i>
+                                <p>Cold Chain &amp; Reefer</p>
+                            </a>
+                        </li>
+
                         <li class="nav-header">MAPS &amp; GEOFENCING</li>
                         <li class="nav-item">
                             <a href="/Maps/Live" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Maps/Live") ? "active" : "")">
@@ -774,6 +820,38 @@
                             <a href="/Billing/Accounting" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Billing/Accounting") ? "active" : "")">
                                 <i class="nav-icon bi bi-book-half"></i>
                                 <p>General Ledger</p>
+                            </a>
+                        </li>
+
+                        <li class="nav-header">REPORTS &amp; BI</li>
+                        <li class="nav-item">
+                            <a href="/Reports/Dashboard" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Reports/Dashboard") ? "active" : "")">
+                                <i class="nav-icon bi bi-bar-chart-line"></i>
+                                <p>Executive BI</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Reports/Tco" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Reports/Tco") ? "active" : "")">
+                                <i class="nav-icon bi bi-cash-coin"></i>
+                                <p>TCO Analytics</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Reports/Utilization" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Reports/Utilization") ? "active" : "")">
+                                <i class="nav-icon bi bi-pie-chart"></i>
+                                <p>Fleet Utilization</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Reports/Esg" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Reports/Esg") ? "active" : "")">
+                                <i class="nav-icon bi bi-tree"></i>
+                                <p>ESG &amp; Carbon</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Reports" class="nav-link @(ViewContext.HttpContext.Request.Path.Value == "/Reports" || ViewContext.HttpContext.Request.Path.Value == "/Reports/" ? "active" : "")">
+                                <i class="nav-icon bi bi-file-earmark-spreadsheet"></i>
+                                <p>Report Catalog</p>
                             </a>
                         </li>
 

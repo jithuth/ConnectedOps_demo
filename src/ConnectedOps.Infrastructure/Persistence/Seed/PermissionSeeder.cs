@@ -429,9 +429,84 @@ public static class PermissionSeeder
             "Reports"),
 
         new(
+            PermissionKeys.Reports.ViewDashboard,
+            "View Executive BI Dashboard",
+            "Reports"),
+
+        new(
+            PermissionKeys.Reports.ViewTco,
+            "View Fleet Total Cost of Ownership",
+            "Reports"),
+
+        new(
+            PermissionKeys.Reports.ViewUtilization,
+            "View Asset & Fleet Utilization",
+            "Reports"),
+
+        new(
+            PermissionKeys.Reports.ViewEsg,
+            "View ESG Carbon Analytics",
+            "Reports"),
+
+        new(
             PermissionKeys.Reports.Export,
             "Export Reports",
             "Reports"),
+
+        new(
+            PermissionKeys.Dispatch.View,
+            "View Dispatch",
+            "Dispatch"),
+
+        new(
+            PermissionKeys.Dispatch.ViewDashboard,
+            "View Dispatch Dashboard",
+            "Dispatch"),
+
+        new(
+            PermissionKeys.Dispatch.ViewJobs,
+            "View Dispatch Jobs",
+            "Dispatch"),
+
+        new(
+            PermissionKeys.Dispatch.CreateJob,
+            "Create Dispatch Job",
+            "Dispatch"),
+
+        new(
+            PermissionKeys.Dispatch.EditJob,
+            "Edit Dispatch Job",
+            "Dispatch"),
+
+        new(
+            PermissionKeys.Dispatch.CancelJob,
+            "Cancel Dispatch Job",
+            "Dispatch"),
+
+        new(
+            PermissionKeys.Dispatch.ViewRoutes,
+            "View Dispatch Routes",
+            "Dispatch"),
+
+        new(
+            PermissionKeys.Dispatch.CreateRoute,
+            "Create Dispatch Route",
+            "Dispatch"),
+
+        new(
+            PermissionKeys.Dispatch.EditRoute,
+            "Edit Dispatch Route",
+            "Dispatch"),
+
+        new(
+            PermissionKeys.Dispatch.DispatchRoute,
+            "Dispatch Route",
+            "Dispatch"),
+
+        new(
+            PermissionKeys.Dispatch.CompletePod,
+            "Complete Proof of Delivery",
+            "Dispatch"),
 
         new(
             PermissionKeys.FleetOperations.View,
@@ -847,7 +922,41 @@ public static class PermissionSeeder
         new(PermissionKeys.CorrectiveActions.View, "View Corrective Actions", "Safety"),
         new(PermissionKeys.CorrectiveActions.Manage, "Manage Corrective Actions", "Safety"),
         new(PermissionKeys.CorrectiveActions.Verify, "Verify Corrective Actions", "Safety"),
-        new(PermissionKeys.SafetyDashboard.View, "View Safety Dashboard", "Safety")
+        new(PermissionKeys.SafetyDashboard.View, "View Safety Dashboard", "Safety"),
+
+        // PHASE 14 - OPERATIONAL INTELLIGENCE SUITE
+        // Alerts & Escalations
+        new(PermissionKeys.Alerts.View, "View Alerts", "Alerts"),
+        new(PermissionKeys.Alerts.Acknowledge, "Acknowledge Alerts", "Alerts"),
+        new(PermissionKeys.Alerts.Assign, "Assign Alerts", "Alerts"),
+        new(PermissionKeys.Alerts.Resolve, "Resolve Alerts", "Alerts"),
+        new(PermissionKeys.Alerts.Dismiss, "Dismiss Alerts", "Alerts"),
+        new(PermissionKeys.AlertRules.View, "View Alert Rules", "Alerts"),
+        new(PermissionKeys.AlertRules.Create, "Create Alert Rules", "Alerts"),
+        new(PermissionKeys.AlertRules.Edit, "Edit Alert Rules", "Alerts"),
+        new(PermissionKeys.AlertRules.EnableDisable, "Enable/Disable Alert Rules", "Alerts"),
+        new(PermissionKeys.AlertDashboard.View, "View Alert Dashboard", "Alerts"),
+
+        // DVIR (Driver Vehicle Inspection Reports)
+        new(PermissionKeys.Dvir.View, "View DVIR Inspections", "Dvir"),
+        new(PermissionKeys.Dvir.Create, "Create DVIR Inspections", "Dvir"),
+        new(PermissionKeys.Dvir.Edit, "Edit DVIR Inspections", "Dvir"),
+        new(PermissionKeys.Dvir.SignOff, "Mechanic Sign-Off DVIR", "Dvir"),
+        new(PermissionKeys.Dvir.ManageTemplates, "Manage DVIR Templates", "Dvir"),
+
+        // Tolls & Traffic Violations
+        new(PermissionKeys.TollsAndFines.View, "View Tolls and Violations", "TollsAndFines"),
+        new(PermissionKeys.TollsAndFines.Create, "Create Tolls and Violations", "TollsAndFines"),
+        new(PermissionKeys.TollsAndFines.Edit, "Edit Tolls and Violations", "TollsAndFines"),
+        new(PermissionKeys.TollsAndFines.AssignDriver, "Assign Driver Liability", "TollsAndFines"),
+        new(PermissionKeys.TollsAndFines.ResolveDispute, "Resolve Violation Disputes", "TollsAndFines"),
+        new(PermissionKeys.TollsAndFines.Export, "Export Tolls and Violations", "TollsAndFines"),
+
+        // Cold Chain Environmental Monitoring
+        new(PermissionKeys.ColdChain.View, "View Cold Chain Monitoring", "ColdChain"),
+        new(PermissionKeys.ColdChain.ManageSensors, "Manage Cargo Sensors", "ColdChain"),
+        new(PermissionKeys.ColdChain.ViewExcursions, "View Cold Chain Excursions", "ColdChain"),
+        new(PermissionKeys.ColdChain.ConfigureThresholds, "Configure Reefer Thresholds", "ColdChain")
     ];
 
     public static async Task SeedAsync(
@@ -908,6 +1017,32 @@ public static class PermissionSeeder
                 new ConnectedOps.Domain.Fuel.FuelTypeDefinition(null, "LPG", "Liquefied Petroleum Gas", ConnectedOps.Domain.Vehicles.FuelType.Lpg, "Gas", ConnectedOps.Domain.Fuel.FuelUnit.Liter, 0.540m),
                 new ConnectedOps.Domain.Fuel.FuelTypeDefinition(null, "ELECTRIC", "Electricity (EV)", ConnectedOps.Domain.Vehicles.FuelType.Electric, "Electric", ConnectedOps.Domain.Fuel.FuelUnit.KilowattHour, null),
                 new ConnectedOps.Domain.Fuel.FuelTypeDefinition(null, "HYDROGEN", "Hydrogen (H2 Fuel Cell)", ConnectedOps.Domain.Vehicles.FuelType.Hydrogen, "Gas", ConnectedOps.Domain.Fuel.FuelUnit.Kilogram, 0.089m));
+        }
+
+        // Seed default global ESG emission factors if not present
+        if (!await dbContext.EsgEmissionFactors.IgnoreQueryFilters().AnyAsync(cancellationToken))
+        {
+            dbContext.EsgEmissionFactors.AddRange(
+                new ConnectedOps.Domain.Reports.EsgEmissionFactor(null, "DIESEL", "Diesel Fuel", ConnectedOps.Domain.Vehicles.FuelType.Diesel, 2.68m, "Liter", "EPA GHG Protocol"),
+                new ConnectedOps.Domain.Reports.EsgEmissionFactor(null, "GAS_REG", "Gasoline Regular", ConnectedOps.Domain.Vehicles.FuelType.Gasoline, 2.31m, "Liter", "EPA GHG Protocol"),
+                new ConnectedOps.Domain.Reports.EsgEmissionFactor(null, "GAS_PREM", "Gasoline Premium", ConnectedOps.Domain.Vehicles.FuelType.Gasoline, 2.35m, "Liter", "EPA GHG Protocol"),
+                new ConnectedOps.Domain.Reports.EsgEmissionFactor(null, "BIODIESEL", "Biodiesel (B20)", ConnectedOps.Domain.Vehicles.FuelType.Biodiesel, 0.72m, "Liter", "EPA GHG Protocol"),
+                new ConnectedOps.Domain.Reports.EsgEmissionFactor(null, "CNG", "Compressed Natural Gas", ConnectedOps.Domain.Vehicles.FuelType.Cng, 1.98m, "CubicMeter", "EPA GHG Protocol"),
+                new ConnectedOps.Domain.Reports.EsgEmissionFactor(null, "LPG", "Liquefied Petroleum Gas", ConnectedOps.Domain.Vehicles.FuelType.Lpg, 1.51m, "Liter", "EPA GHG Protocol"),
+                new ConnectedOps.Domain.Reports.EsgEmissionFactor(null, "ELECTRIC", "Grid Electricity (EV Scope 1)", ConnectedOps.Domain.Vehicles.FuelType.Electric, 0.00m, "kWh", "Zero Direct Tailpipe Emission"),
+                new ConnectedOps.Domain.Reports.EsgEmissionFactor(null, "HYDROGEN", "Hydrogen Fuel Cell", ConnectedOps.Domain.Vehicles.FuelType.Hydrogen, 0.00m, "kg", "Zero Direct Tailpipe Emission"));
+        }
+
+        // Seed default report definitions if not present
+        if (!await dbContext.ReportDefinitions.IgnoreQueryFilters().AnyAsync(cancellationToken))
+        {
+            dbContext.ReportDefinitions.AddRange(
+                new ConnectedOps.Domain.Reports.ReportDefinition(null, "FLEET_TCO", "Fleet Total Cost of Ownership (TCO)", ConnectedOps.Domain.Reports.ReportCategory.Financial, "Calculates capital acquisition plus operational spend (fuel, maintenance, incidents) on a per-vehicle and per-kilometer basis.", null, true, true),
+                new ConnectedOps.Domain.Reports.ReportDefinition(null, "EXECUTIVE_KPI", "Executive Fleet Performance Summary", ConnectedOps.Domain.Reports.ReportCategory.Executive, "Consolidated C-suite overview of total expenditure, fleet uptime, cost efficiency, safety index, and carbon footprint.", null, true, true),
+                new ConnectedOps.Domain.Reports.ReportDefinition(null, "UTILIZATION", "Asset & Fleet Utilization Analytics", ConnectedOps.Domain.Reports.ReportCategory.Operational, "Detailed analysis of operating hours, active vs idle ratios, and day-of-week demand heatmaps.", null, true, true),
+                new ConnectedOps.Domain.Reports.ReportDefinition(null, "ESG_CARBON", "ESG Scope 1 Carbon Emissions Report", ConnectedOps.Domain.Reports.ReportCategory.Sustainability, "Greenhouse Gas Protocol (GHG) calculations of direct fuel combustion emissions and EV transition potential.", null, true, true),
+                new ConnectedOps.Domain.Reports.ReportDefinition(null, "MAINT_COST", "Preventive vs Corrective Maintenance Analysis", ConnectedOps.Domain.Reports.ReportCategory.Financial, "Breaks down workshop labour, replacement parts, scheduled services, and unplanned breakdown expenses.", null, true, true),
+                new ConnectedOps.Domain.Reports.ReportDefinition(null, "DRIVER_RISK", "Driver Safety & Telematics Risk Index", ConnectedOps.Domain.Reports.ReportCategory.Safety, "Evaluates driver safety compliance, speeding incidents, harsh maneuvers, and accident histories.", null, true, true));
         }
 
         await dbContext.SaveChangesAsync(

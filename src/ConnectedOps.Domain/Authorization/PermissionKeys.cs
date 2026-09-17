@@ -174,7 +174,26 @@ public static class PermissionKeys
     public static class Reports
     {
         public const string View = "Reports.View";
+        public const string ViewDashboard = "Reports.ViewDashboard";
+        public const string ViewTco = "Reports.ViewTco";
+        public const string ViewUtilization = "Reports.ViewUtilization";
+        public const string ViewEsg = "Reports.ViewEsg";
         public const string Export = "Reports.Export";
+    }
+
+    public static class Dispatch
+    {
+        public const string View = "Dispatch.View";
+        public const string ViewDashboard = "Dispatch.ViewDashboard";
+        public const string ViewJobs = "Dispatch.ViewJobs";
+        public const string CreateJob = "Dispatch.CreateJob";
+        public const string EditJob = "Dispatch.EditJob";
+        public const string CancelJob = "Dispatch.CancelJob";
+        public const string ViewRoutes = "Dispatch.ViewRoutes";
+        public const string CreateRoute = "Dispatch.CreateRoute";
+        public const string EditRoute = "Dispatch.EditRoute";
+        public const string DispatchRoute = "Dispatch.DispatchRoute";
+        public const string CompletePod = "Dispatch.CompletePod";
     }
 
     public static class Subscriptions
@@ -553,5 +572,32 @@ public static class PermissionKeys
     public static class NotificationPreferences
     {
         public const string ManageOwn = "NotificationPreferences.ManageOwn";
+    }
+
+    public static class Dvir
+    {
+        public const string View = "Dvir.View";
+        public const string Create = "Dvir.Create";
+        public const string Edit = "Dvir.Edit";
+        public const string SignOff = "Dvir.SignOff";
+        public const string ManageTemplates = "Dvir.ManageTemplates";
+    }
+
+    public static class TollsAndFines
+    {
+        public const string View = "TollsAndFines.View";
+        public const string Create = "TollsAndFines.Create";
+        public const string Edit = "TollsAndFines.Edit";
+        public const string AssignDriver = "TollsAndFines.AssignDriver";
+        public const string ResolveDispute = "TollsAndFines.ResolveDispute";
+        public const string Export = "TollsAndFines.Export";
+    }
+
+    public static class ColdChain
+    {
+        public const string View = "ColdChain.View";
+        public const string ManageSensors = "ColdChain.ManageSensors";
+        public const string ViewExcursions = "ColdChain.ViewExcursions";
+        public const string ConfigureThresholds = "ColdChain.ConfigureThresholds";
     }
 }

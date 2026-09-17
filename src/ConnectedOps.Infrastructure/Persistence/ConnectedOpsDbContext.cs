@@ -23,6 +23,12 @@ using ConnectedOps.Domain.Fuel;
 using ConnectedOps.Domain.Assets;
 using ConnectedOps.Domain.Compliance;
 using ConnectedOps.Domain.Safety;
+using ConnectedOps.Domain.Reports;
+using ConnectedOps.Domain.Dispatch;
+using ConnectedOps.Domain.Alerts;
+using ConnectedOps.Domain.Inspections;
+using ConnectedOps.Domain.TollsAndFines;
+using ConnectedOps.Domain.ColdChain;
 
 namespace ConnectedOps.Infrastructure.Persistence;
 
@@ -378,6 +384,61 @@ public sealed class ConnectedOpsDbContext
 
     public DbSet<CorrectiveAction> CorrectiveActions =>
         Set<CorrectiveAction>();
+
+    public DbSet<ReportDefinition> ReportDefinitions =>
+        Set<ReportDefinition>();
+
+    public DbSet<ReportExecutionLog> ReportExecutionLogs =>
+        Set<ReportExecutionLog>();
+
+    public DbSet<EsgEmissionFactor> EsgEmissionFactors =>
+        Set<EsgEmissionFactor>();
+
+    public DbSet<DispatchJob> DispatchJobs =>
+        Set<DispatchJob>();
+
+    public DbSet<DispatchRoute> DispatchRoutes =>
+        Set<DispatchRoute>();
+
+    public DbSet<DispatchRouteStop> DispatchRouteStops =>
+        Set<DispatchRouteStop>();
+
+    public DbSet<ProofOfDelivery> ProofOfDeliveries =>
+        Set<ProofOfDelivery>();
+
+    // Phase 14 - Operational Intelligence Suite
+    public DbSet<AlertRule> AlertRules =>
+        Set<AlertRule>();
+
+    public DbSet<AlertRuleCondition> AlertRuleConditions =>
+        Set<AlertRuleCondition>();
+
+    public DbSet<Alert> Alerts =>
+        Set<Alert>();
+
+    public DbSet<NotificationMessage> NotificationMessages =>
+        Set<NotificationMessage>();
+
+    public DbSet<DvirInspection> DvirInspections =>
+        Set<DvirInspection>();
+
+    public DbSet<DvirItemCheck> DvirItemChecks =>
+        Set<DvirItemCheck>();
+
+    public DbSet<TollTransaction> TollTransactions =>
+        Set<TollTransaction>();
+
+    public DbSet<TrafficViolation> TrafficViolations =>
+        Set<TrafficViolation>();
+
+    public DbSet<CargoSensorDevice> CargoSensorDevices =>
+        Set<CargoSensorDevice>();
+
+    public DbSet<CargoTelemetryReading> CargoTelemetryReadings =>
+        Set<CargoTelemetryReading>();
+
+    public DbSet<ColdChainExcursion> ColdChainExcursions =>
+        Set<ColdChainExcursion>();
 
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)

@@ -1,0 +1,132 @@
+@page
+@model ConnectedOps.Web.Pages.Reports.IndexModel
+@{
+    ViewData["Title"] = "Executive BI & Report Catalog";
+    ViewData["Subtitle"] = "Standardized enterprise reports, regulatory exports, and analytical datasets";
+}
+
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <div>
+                <h1 class="m-0 text-dark fw-bold">Enterprise Report Catalog</h1>
+                <p class="text-muted small mb-0">Browse certified analytical templates, configure parameters, and export operational datasets</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a asp-page="./Dashboard" class="btn btn-primary d-flex align-items-center gap-1 shadow-sm">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Live Executive BI</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        <!-- QUICK STATS -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm rounded-3 p-3 bg-light">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-primary bg-opacity-10 text-primary p-3 rounded-circle fs-4">
+                            <i class="bi bi-file-earmark-bar-graph"></i>
+                        </div>
+                        <div>
+                            <div class="fs-4 fw-bold">@Model.Catalog.Count</div>
+                            <div class="text-muted small">Standardized Templates</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm rounded-3 p-3 bg-light">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-success bg-opacity-10 text-success p-3 rounded-circle fs-4">
+                            <i class="bi bi-tree"></i>
+                        </div>
+                        <div>
+                            <div class="fs-4 fw-bold">EPA / GHG</div>
+                            <div class="text-muted small">Certified Scope 1 ESG</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm rounded-3 p-3 bg-light">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-info bg-opacity-10 text-info p-3 rounded-circle fs-4">
+                            <i class="bi bi-cloud-download"></i>
+                        </div>
+                        <div>
+                            <div class="fs-4 fw-bold">CSV / RFC 4180</div>
+                            <div class="text-muted small">Auditable Raw Data</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm rounded-3 p-3 bg-light">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-warning bg-opacity-10 text-warning p-3 rounded-circle fs-4">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <div>
+                            <div class="fs-4 fw-bold">RBAC &amp; Tenant</div>
+                            <div class="text-muted small">Strict Multi-Tenant Isolation</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- REPORT CATALOG GRID -->
+        <div class="row g-3">
+            @foreach (var report in Model.Catalog)
+            {
+                var liveUrl = report.Code.ToLowerInvariant() switch
+                {
+                    "rep-exec-summary" or "executive-summary" => "/Reports/Dashboard",
+                    "rep-tco-fleet" or "tco" => "/Reports/Tco",
+                    "rep-util-heatmap" or "utilization" => "/Reports/Utilization",
+                    "rep-esg-carbon" or "esg" => "/Reports/Esg",
+                    _ => "/Reports/Dashboard"
+                };
+
+                var badgeClass = report.Category switch
+                {
+                    ConnectedOps.Domain.Reports.ReportCategory.Executive => "bg-primary",
+                    ConnectedOps.Domain.Reports.ReportCategory.Financial => "bg-info text-dark",
+                    ConnectedOps.Domain.Reports.ReportCategory.Operational => "bg-secondary",
+                    ConnectedOps.Domain.Reports.ReportCategory.Sustainability => "bg-success",
+                    ConnectedOps.Domain.Reports.ReportCategory.Safety => "bg-danger",
+                    _ => "bg-light text-dark"
+                };
+
+                <div class="col-lg-4 col-md-6">
+                    <div class="card border-0 shadow-sm rounded-3 h-100 d-flex flex-column">
+                        <div class="card-body p-4 d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="badge @badgeClass">@report.Category</span>
+                                <span class="font-monospace text-muted small">@report.Code</span>
+                            </div>
+                            <h5 class="fw-bold mb-2 text-dark">@report.Name</h5>
+                            <p class="text-muted small flex-grow-1 mb-3">@report.Description</p>
+
+                            <div class="border-top pt-3 mt-auto">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <a href="@liveUrl" class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1">
+                                        <i class="bi bi-eye"></i> View Live
+                                    </a>
+                                    <a asp-page-handler="Export" asp-route-code="@report.Code" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1" title="Download Full CSV">
+                                        <i class="bi bi-filetype-csv"></i> CSV
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

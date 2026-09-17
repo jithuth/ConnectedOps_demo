@@ -1,0 +1,286 @@
+@page
+@using ConnectedOps.Domain.Dispatch
+@model ConnectedOps.Web.Pages.Dispatch.RoutesModel
+@{
+    ViewData["Title"] = "Routes & Trips - Dispatch";
+}
+
+<div class="content-header pb-2">
+    <div class="container-fluid">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div>
+                <h1 class="m-0 fs-3 fw-bold text-dark d-flex align-items-center gap-2">
+                    <i class="bi bi-signpost-split text-primary"></i> Multi-Stop Route Planning &amp; Dispatch
+                </h1>
+                <p class="text-muted small mb-0">
+                    Plan multi-stop delivery itineraries, assign fleet assets, and track live route execution
+                </p>
+            </div>
+            <div>
+                <button type="button" class="btn btn-primary btn-sm d-flex align-items-center gap-1 shadow-sm" data-bs-toggle="modal" data-bs-target="#createRouteModal">
+                    <i class="bi bi-plus-lg"></i> Plan New Route
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i> @Model.SuccessMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i> @Model.ErrorMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <!-- Filter Card -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-body p-3">
+                <form method="get" class="row g-2 align-items-center">
+                    <div class="col-md-4">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
+                            <input type="text" name="SearchTerm" class="form-control border-start-0" placeholder="Search route number, name, notes..." value="@Model.SearchTerm" />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <select name="Status" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="">All Route Statuses</option>
+                            @foreach (DispatchRouteStatus st in Enum.GetValues(typeof(DispatchRouteStatus)))
+                            {
+                                <option value="@st" selected="@(Model.Status == st)">@st</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select name="VehicleId" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="">All Assigned Vehicles</option>
+                            @foreach (var v in Model.Vehicles)
+                            {
+                                <option value="@v.Id" selected="@(Model.VehicleId == v.Id)">@(v.RegistrationNumber ?? v.VehicleNumber) - @v.MakeName @v.ModelName</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex gap-2">
+                        <button type="submit" class="btn btn-sm btn-secondary flex-grow-1">Filter</button>
+                        <a href="/Dispatch/Routes" class="btn btn-sm btn-outline-secondary">Reset</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Routes Grid / List -->
+        @if (Model.Routes.Items.Count == 0)
+        {
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body text-center py-5 text-muted">
+                    <i class="bi bi-signpost fs-1 d-block mb-2 opacity-50"></i>
+                    <h5>No dispatch routes found</h5>
+                    <p class="small text-muted mb-3">Create your first multi-stop itinerary or adjust filters.</p>
+                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#createRouteModal">
+                        <i class="bi bi-plus-lg"></i> Plan New Route
+                    </button>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="row g-3">
+                @foreach (var route in Model.Routes.Items)
+                {
+                    <div class="col-lg-6 col-xl-4">
+                        <div class="card border-0 shadow-sm rounded-3 h-100 position-relative">
+                            <div class="card-body p-3 d-flex flex-column justify-content-between">
+                                <div>
+                                    <!-- Header -->
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div>
+                                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 fw-bold">
+                                                @route.RouteNumber
+                                            </span>
+                                            <h5 class="fw-bold text-dark mt-1 mb-0">@route.Name</h5>
+                                        </div>
+                                        <div>
+                                            @switch (route.Status)
+                                            {
+                                                case DispatchRouteStatus.InProgress:
+                                                    <span class="badge bg-primary px-2 py-1"><i class="bi bi-play-fill"></i> In Progress</span>
+                                                    break;
+                                                case DispatchRouteStatus.Dispatched:
+                                                    <span class="badge bg-info text-dark px-2 py-1">Dispatched</span>
+                                                    break;
+                                                case DispatchRouteStatus.Completed:
+                                                    <span class="badge bg-success px-2 py-1"><i class="bi bi-check2"></i> Completed</span>
+                                                    break;
+                                                case DispatchRouteStatus.Cancelled:
+                                                    <span class="badge bg-danger px-2 py-1">Cancelled</span>
+                                                    break;
+                                                default:
+                                                    <span class="badge bg-secondary px-2 py-1">@route.StatusName</span>
+                                                    break;
+                                            }
+                                        </div>
+                                    </div>
+
+                                    <!-- Vehicle & Driver info -->
+                                    <div class="p-2 rounded bg-light mb-3">
+                                        <div class="d-flex justify-content-between small mb-1">
+                                            <span class="text-muted"><i class="bi bi-truck me-1"></i> Vehicle:</span>
+                                            <span class="fw-semibold text-dark">@(route.VehicleRegistration ?? route.VehicleNumber ?? "Unassigned")</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between small">
+                                            <span class="text-muted"><i class="bi bi-person me-1"></i> Driver:</span>
+                                            <span class="fw-semibold text-dark">@(route.DriverName ?? "Unassigned")</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Progress bar -->
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between small text-muted mb-1">
+                                            <span><strong>@route.CompletedStopsCount</strong> of <strong>@route.TotalStopsCount</strong> stops completed</span>
+                                            <span class="fw-semibold">@route.CompletionPercentage%</span>
+                                        </div>
+                                        <div class="progress" style="height: 6px;">
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: @(route.CompletionPercentage)%"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Metrics summary -->
+                                    <div class="row g-2 text-center small text-muted border-top pt-2 mb-3">
+                                        <div class="col-4 border-end">
+                                            <div class="text-dark fw-bold">@route.EstimatedDistanceKm.ToString("F1") km</div>
+                                            <div style="font-size: 0.75rem;">Est. Distance</div>
+                                        </div>
+                                        <div class="col-4 border-end">
+                                            <div class="text-dark fw-bold">@route.EstimatedDurationMinutes m</div>
+                                            <div style="font-size: 0.75rem;">Est. Duration</div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="text-dark fw-bold">@route.ScheduledDate.ToString("dd MMM")</div>
+                                            <div style="font-size: 0.75rem;">Scheduled</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Actions -->
+                                <div class="d-flex gap-2 justify-content-between border-top pt-2 mt-auto">
+                                    <a href="/Dispatch/RouteDetails/@route.Id" class="btn btn-sm btn-outline-primary flex-grow-1">
+                                        <i class="bi bi-map"></i> View &amp; Manage Stops
+                                    </a>
+
+                                    @if (route.Status == DispatchRouteStatus.Scheduled || route.Status == DispatchRouteStatus.Draft || route.Status == DispatchRouteStatus.Dispatched)
+                                    {
+                                        <form method="post" asp-page-handler="Start" asp-route-routeId="@route.Id" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-success" title="Start Route">
+                                                <i class="bi bi-play-fill"></i> Start
+                                            </button>
+                                        </form>
+                                    }
+                                    else if (route.Status == DispatchRouteStatus.InProgress)
+                                    {
+                                        <form method="post" asp-page-handler="Complete" asp-route-routeId="@route.Id" class="d-inline" onsubmit="return confirm('Complete this route?');">
+                                            <button type="submit" class="btn btn-sm btn-primary" title="Complete Route">
+                                                <i class="bi bi-check2-circle"></i> Complete
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Pagination -->
+            @if (Model.Routes.TotalPages > 1)
+            {
+                <div class="card border-0 shadow-sm rounded-3 mt-4">
+                    <div class="card-body py-2 d-flex justify-content-between align-items-center">
+                        <span class="small text-muted">
+                            Showing @(((Model.Routes.PageNumber - 1) * Model.Routes.PageSize) + 1) to @Math.Min(Model.Routes.PageNumber * Model.Routes.PageSize, Model.Routes.TotalCount) of @Model.Routes.TotalCount routes
+                        </span>
+                        <ul class="pagination pagination-sm mb-0">
+                            @for (var i = 1; i <= Model.Routes.TotalPages; i++)
+                            {
+                                <li class="page-item @(i == Model.Routes.PageNumber ? "active" : "")">
+                                    <a class="page-link" href="?PageNumber=@i&SearchTerm=@Model.SearchTerm&Status=@Model.Status&VehicleId=@Model.VehicleId">@i</a>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+<!-- CREATE ROUTE MODAL -->
+<div class="modal fade" id="createRouteModal" tabindex="-1" aria-labelledby="createRouteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="Create">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="createRouteModalLabel">
+                        <i class="bi bi-signpost-split text-primary me-1"></i> Plan New Dispatch Route
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label small fw-semibold">Route Name / Title *</label>
+                            <input type="text" asp-for="CreateInput.Name" class="form-control form-control-sm" required placeholder="e.g. Dubai Marina &amp; JBR Morning Run" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Assigned Vehicle</label>
+                            <select asp-for="CreateInput.VehicleId" class="form-select form-select-sm">
+                                <option value="">-- Select Vehicle (Optional) --</option>
+                                @foreach (var v in Model.Vehicles)
+                                {
+                                    <option value="@v.Id">@(v.RegistrationNumber ?? v.VehicleNumber) - @v.MakeName @v.ModelName</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Assigned Driver</label>
+                            <select asp-for="CreateInput.DriverId" class="form-select form-select-sm">
+                                <option value="">-- Select Driver (Optional) --</option>
+                                @foreach (var d in Model.Drivers)
+                                {
+                                    <option value="@d.Id">@d.DisplayName (@d.DriverNumber)</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Scheduled Date</label>
+                            <input type="date" asp-for="CreateInput.ScheduledDate" class="form-control form-control-sm" />
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label small fw-semibold">Route Notes / Instructions</label>
+                            <textarea asp-for="CreateInput.Notes" rows="2" class="form-control form-control-sm" placeholder="Pre-trip inspection required, check refrigeration level."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary">
+                        <i class="bi bi-check-lg"></i> Create &amp; Plan Stops
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
