@@ -1,0 +1,543 @@
+@page
+@model ConnectedOps.Web.Pages.Hos.LogbookModel
+@using ConnectedOps.Domain.Hos
+@{
+    ViewData["Title"] = "Hours of Service (HOS) & ELD Logbook";
+}
+
+<div class="content-header pb-2">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col-sm-6">
+                <h1 class="m-0 text-dark fw-bold">
+                    <i class="bi bi-stopwatch text-primary me-2"></i>Hours of Service (HOS) & ELD
+                </h1>
+                <p class="text-muted small mb-0">Electronic Logging Device (ELD) compliance, live driver duty clocks, customizable regional transport policies, and roadside inspection mode.</p>
+            </div>
+            <div class="col-sm-6 text-sm-end mt-3 mt-sm-0">
+                <button type="button" class="btn btn-outline-primary shadow-sm me-2" data-bs-toggle="modal" data-bs-target="#changeStatusModal">
+                    <i class="bi bi-arrow-repeat me-1"></i> Change Duty Status
+                </button>
+                <a href="#policyPane" class="btn btn-outline-secondary shadow-sm" onclick="document.getElementById('policy-tab').click()">
+                    <i class="bi bi-sliders me-1"></i> Policy Rules (@Model.Policy.PresetType)
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+        {
+            <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i>@Model.SuccessMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.ErrorMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <!-- Driver Filter Bar -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body py-3">
+                <form method="get" class="row g-3 align-items-center">
+                    <div class="col-md-5">
+                        <label class="form-label small text-muted mb-1 fw-semibold">Select Active Driver</label>
+                        <select name="DriverId" class="form-select select2" onchange="this.form.submit()">
+                            @foreach (var d in Model.Drivers)
+                            {
+                                <option value="@d.Id" selected="@(Model.DriverId == d.Id ? "selected" : null)">
+                                    @d.DisplayName (@d.DriverNumber)
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small text-muted mb-1 fw-semibold">Current Active Policy</label>
+                        <div class="d-flex align-items-center">
+                            <span class="badge bg-primary px-3 py-2 fs-6 me-2">
+                                <i class="bi bi-shield-check me-1"></i>@Model.Policy.PresetName
+                            </span>
+                            <span class="badge bg-light text-dark border">
+                                @Model.Policy.PresetType
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-end">
+                        <button type="submit" class="btn btn-primary w-100 mt-md-4">
+                            <i class="bi bi-arrow-clockwise me-1"></i> Refresh Clocks
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        @if (Model.Clocks != null)
+        {
+            <!-- Live Duty Clocks -->
+            <div class="row g-3 mb-4">
+                <!-- Current Status Card -->
+                <div class="col-xl-3 col-md-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body text-center p-4">
+                            <span class="text-muted small text-uppercase fw-semibold">Current Duty Status</span>
+                            <div class="mt-3">
+                                @switch (Model.Clocks.CurrentStatus)
+                                {
+                                    case DutyStatus.Driving:
+                                        <div class="display-6 fw-bold text-success"><i class="bi bi-truck me-2"></i>Driving</div>
+                                        <span class="badge bg-success mt-2">Commercial Motion Active</span>
+                                        break;
+                                    case DutyStatus.OnDutyNotDriving:
+                                        <div class="display-6 fw-bold text-warning"><i class="bi bi-cone-striped me-2"></i>On Duty</div>
+                                        <span class="badge bg-warning text-dark mt-2">Working / Loading</span>
+                                        break;
+                                    case DutyStatus.SleeperBerth:
+                                        <div class="display-6 fw-bold text-info"><i class="bi bi-moon-stars me-2"></i>Sleeper</div>
+                                        <span class="badge bg-info text-dark mt-2">In Sleeper Berth</span>
+                                        break;
+                                    default:
+                                        <div class="display-6 fw-bold text-secondary"><i class="bi bi-power me-2"></i>Off Duty</div>
+                                        <span class="badge bg-secondary mt-2">Rest Period</span>
+                                        break;
+                                }
+                            </div>
+                            <p class="text-muted small mt-3 mb-0">Status since @Model.Clocks.CurrentStatusStartedAtUtc.ToString("MMM dd, HH:mm") UTC</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Driving Remaining -->
+                <div class="col-xl-3 col-md-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-muted small text-uppercase fw-semibold">Driving Clock</span>
+                                <i class="bi bi-speedometer2 text-primary fs-4"></i>
+                            </div>
+                            <h2 class="fw-bold @(Model.Clocks.RemainingDrivingHours <= 0.5 ? "text-danger" : "text-dark") mb-1">
+                                @((int)Model.Clocks.RemainingDrivingHours)h @((int)((Model.Clocks.RemainingDrivingHours % 1) * 60))m
+                            </h2>
+                            <div class="progress mb-2" style="height: 8px;">
+                                @{
+                                    var drivePct = Model.Policy.MaxDrivingHoursPerShift > 0 
+                                        ? Math.Clamp((int)(Model.Clocks.RemainingDrivingHours / Model.Policy.MaxDrivingHoursPerShift * 100), 0, 100) 
+                                        : 0;
+                                }
+                                <div class="progress-bar @(drivePct <= 15 ? "bg-danger" : "bg-primary")" style="width: @drivePct%"></div>
+                            </div>
+                            <div class="d-flex justify-content-between text-muted small">
+                                <span>Remaining Drive</span>
+                                <span>Max: @Model.Policy.MaxDrivingHoursPerShift hrs</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shift Duty Remaining -->
+                <div class="col-xl-3 col-md-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-muted small text-uppercase fw-semibold">Shift Window</span>
+                                <i class="bi bi-clock-history text-warning fs-4"></i>
+                            </div>
+                            <h2 class="fw-bold @(Model.Clocks.RemainingShiftDutyHours <= 1.0 ? "text-danger" : "text-dark") mb-1">
+                                @((int)Model.Clocks.RemainingShiftDutyHours)h @((int)((Model.Clocks.RemainingShiftDutyHours % 1) * 60))m
+                            </h2>
+                            <div class="progress mb-2" style="height: 8px;">
+                                @{
+                                    var shiftPct = Model.Policy.MaxShiftDutyHours > 0 
+                                        ? Math.Clamp((int)(Model.Clocks.RemainingShiftDutyHours / Model.Policy.MaxShiftDutyHours * 100), 0, 100) 
+                                        : 0;
+                                }
+                                <div class="progress-bar @(shiftPct <= 15 ? "bg-danger" : "bg-warning")" style="width: @shiftPct%"></div>
+                            </div>
+                            <div class="d-flex justify-content-between text-muted small">
+                                <span>Shift Duty Left</span>
+                                <span>Max: @Model.Policy.MaxShiftDutyHours hrs</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cycle Remaining / Mandatory Break -->
+                <div class="col-xl-3 col-md-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-muted small text-uppercase fw-semibold">Mandatory Break & Cycle</span>
+                                <i class="bi bi-cup-hot text-info fs-4"></i>
+                            </div>
+                            <h2 class="fw-bold text-dark mb-1">
+                                @((int)Model.Clocks.HoursUntilBreakRequired)h @((int)((Model.Clocks.HoursUntilBreakRequired % 1) * 60))m
+                            </h2>
+                            <div class="progress mb-2" style="height: 8px;">
+                                @{
+                                    var breakPct = Model.Policy.DriveHoursBeforeMandatoryBreak > 0
+                                        ? Math.Clamp((int)(Model.Clocks.HoursUntilBreakRequired / Model.Policy.DriveHoursBeforeMandatoryBreak * 100), 0, 100)
+                                        : 0;
+                                }
+                                <div class="progress-bar bg-info" style="width: @breakPct%"></div>
+                            </div>
+                            <div class="d-flex justify-content-between text-muted small">
+                                <span>Break Due In</span>
+                                <span>Cycle: @((int)Model.Clocks.CycleHoursRemaining)h left</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs Section: Logs, Violations, Roadside Inspection, Regional Policy Customizer -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom-0 pt-3">
+                    <ul class="nav nav-pills card-header-pills" id="hosTab" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" id="logs-tab" data-bs-toggle="pill" href="#logsPane" role="tab">
+                                <i class="bi bi-journal-text me-1"></i> Duty Status Logbook
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="violations-tab" data-bs-toggle="pill" href="#violationsPane" role="tab">
+                                <i class="bi bi-exclamation-octagon me-1"></i> Violations Ledger
+                                @if (Model.Violations != null && Model.Violations.TotalCount > 0)
+                                {
+                                    <span class="badge bg-danger ms-1">@Model.Violations.TotalCount</span>
+                                }
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="roadside-tab" data-bs-toggle="pill" href="#roadsidePane" role="tab">
+                                <i class="bi bi-shield-shaded me-1"></i> Roadside Inspection Mode
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="policy-tab" data-bs-toggle="pill" href="#policyPane" role="tab">
+                                <i class="bi bi-sliders me-1"></i> Regional Policy Customizer
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="card-body">
+                    <div class="tab-content" id="hosTabContent">
+                        <!-- Duty Status Logbook -->
+                        <div class="tab-pane fade show active" id="logsPane" role="tabpanel">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Status</th>
+                                            <th>Started At (UTC)</th>
+                                            <th>Ended At (UTC)</th>
+                                            <th>Duration</th>
+                                            <th>Vehicle</th>
+                                            <th>Location</th>
+                                            <th>Odometer</th>
+                                            <th>Certified</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @if (Model.Logs != null && Model.Logs.Items.Count > 0)
+                                        {
+                                            @foreach (var log in Model.Logs.Items)
+                                            {
+                                                <tr>
+                                                    <td>
+                                                        <span class="badge @(log.Status == DutyStatus.Driving ? "bg-success" : log.Status == DutyStatus.OnDutyNotDriving ? "bg-warning text-dark" : log.Status == DutyStatus.SleeperBerth ? "bg-info text-dark" : "bg-secondary")">
+                                                            @log.StatusName
+                                                        </span>
+                                                    </td>
+                                                    <td>@log.StartedAtUtc.ToString("yyyy-MM-dd HH:mm")</td>
+                                                    <td>@(log.EndedAtUtc.HasValue ? log.EndedAtUtc.Value.ToString("yyyy-MM-dd HH:mm") : "Active")</td>
+                                                    <td>@((int)log.DurationHours)h @((int)((log.DurationHours % 1) * 60))m</td>
+                                                    <td>@(string.IsNullOrWhiteSpace(log.VehiclePlateNumber) ? "N/A" : log.VehiclePlateNumber)</td>
+                                                    <td>@(string.IsNullOrWhiteSpace(log.LocationName) ? "-" : log.LocationName)</td>
+                                                    <td>@(log.StartOdometer.HasValue ? $"{log.StartOdometer:N0} km" : "-")</td>
+                                                    <td>
+                                                        @if (log.IsCertified)
+                                                        {
+                                                            <span class="badge bg-success-subtle text-success border border-success-subtle"><i class="bi bi-check-all"></i> Certified</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="badge bg-light text-muted border">Pending</span>
+                                                        }
+                                                    </td>
+                                                </tr>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <tr>
+                                                <td colspan="8" class="text-center py-4 text-muted">
+                                                    No duty logs found for the selected driver. Use "Change Duty Status" above to record duty events.
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Violations Ledger -->
+                        <div class="tab-pane fade" id="violationsPane" role="tabpanel">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Violation Type</th>
+                                            <th>Occurred At</th>
+                                            <th>Duration Breach</th>
+                                            <th>Notes</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @if (Model.Violations != null && Model.Violations.Items.Count > 0)
+                                        {
+                                            @foreach (var v in Model.Violations.Items)
+                                            {
+                                                <tr>
+                                                    <td>
+                                                        <span class="badge bg-danger">
+                                                            <i class="bi bi-exclamation-triangle-fill me-1"></i>@v.ViolationTypeName
+                                                        </span>
+                                                    </td>
+                                                    <td>@v.OccurredAtUtc.ToString("yyyy-MM-dd HH:mm") UTC</td>
+                                                    <td>@v.DurationMinutes min</td>
+                                                    <td>@(string.IsNullOrWhiteSpace(v.Notes) ? "-" : v.Notes)</td>
+                                                    <td>
+                                                        @if (v.IsAcknowledged)
+                                                        {
+                                                            <span class="badge bg-secondary">Acknowledged</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="badge bg-warning text-dark">Action Required</span>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        @if (!v.IsAcknowledged)
+                                                        {
+                                                            <form method="post" asp-page-handler="AcknowledgeViolation" class="d-inline">
+                                                                <input type="hidden" name="violationId" value="@v.Id" />
+                                                                <input type="hidden" name="targetDriverId" value="@Model.DriverId" />
+                                                                <button type="submit" class="btn btn-sm btn-outline-success">
+                                                                    <i class="bi bi-check-lg me-1"></i> Acknowledge
+                                                                </button>
+                                                            </form>
+                                                        }
+                                                    </td>
+                                                </tr>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <tr>
+                                                <td colspan="6" class="text-center py-4 text-success">
+                                                    <i class="bi bi-shield-check fs-3 d-block mb-1"></i>
+                                                    No HOS rule violations recorded for this driver! 100% compliance clean sheet.
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Roadside Inspection Mode -->
+                        <div class="tab-pane fade" id="roadsidePane" role="tabpanel">
+                            <div class="p-3 border rounded bg-light">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-file-earmark-lock me-2"></i>Official Roadside Electronic Record</h5>
+                                        <p class="text-muted small mb-0">Compliant with DOT / RTA transport authority roadside data transfer protocols.</p>
+                                    </div>
+                                    <button type="button" class="btn btn-primary" onclick="window.print()">
+                                        <i class="bi bi-printer me-1"></i> Print / Export Report
+                                    </button>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-white border rounded">
+                                            <span class="text-muted small">Driver Name</span>
+                                            <div class="fw-bold fs-6">@Model.Clocks.DriverName</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-white border rounded">
+                                            <span class="text-muted small">Rule Set in Effect</span>
+                                            <div class="fw-bold fs-6">@Model.Policy.PresetName (@Model.Policy.PresetType)</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-white border rounded">
+                                            <span class="text-muted small">Total Duty Logs (Active Window)</span>
+                                            <div class="fw-bold fs-6">@(Model.Logs?.TotalCount ?? 0) Certified Records</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Regional Policy Customizer -->
+                        <div class="tab-pane fade" id="policyPane" role="tabpanel">
+                            <div class="p-3 border rounded bg-white">
+                                <h5 class="fw-bold mb-2 text-dark"><i class="bi bi-sliders me-2 text-primary"></i>Customizable Hours of Service (HOS) Engine</h5>
+                                <p class="text-muted small mb-4">Adapt the fleet HOS calculation engine dynamically to any regional transport regulation (GCC/UAE RTA, EU Tachograph, US FMCSA) or company policy.</p>
+
+                                <form method="post" asp-page-handler="UpdatePolicy">
+                                    <div class="row g-3">
+                                        <div class="col-md-12">
+                                            <label class="form-label fw-semibold">Regulation Preset Type</label>
+                                            <select name="presetType" id="policyPresetSelect" class="form-select" onchange="applyPreset(this.value)">
+                                                <option value="GccUaeStandard" selected="@(Model.Policy.PresetType == HosPresetType.GccUaeStandard ? "selected" : null)">GCC / UAE Transport Standard (10h Drive / 4h Break)</option>
+                                                <option value="EuTachograph" selected="@(Model.Policy.PresetType == HosPresetType.EuTachograph ? "selected" : null)">EU Tachograph EC 561/2006 (9h Drive / 4.5h Break / 45m)</option>
+                                                <option value="UsFmcsa" selected="@(Model.Policy.PresetType == HosPresetType.UsFmcsa ? "selected" : null)">US FMCSA Part 395 (11h Drive / 14h Shift / 10h Off-Duty)</option>
+                                                <option value="Custom" selected="@(Model.Policy.PresetType == HosPresetType.Custom ? "selected" : null)">Custom Company Transport Policy</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="col-md-4">
+                                            <label class="form-label small text-muted">Max Driving Hours / Shift</label>
+                                            <input type="number" step="0.5" name="maxDrivingHoursPerShift" id="maxDrivingInput" class="form-control" value="@Model.Policy.MaxDrivingHoursPerShift" min="1" max="24" required />
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label small text-muted">Max Shift Duty Window (Hours)</label>
+                                            <input type="number" step="0.5" name="maxShiftDutyHours" id="maxShiftInput" class="form-control" value="@Model.Policy.MaxShiftDutyHours" min="1" max="24" required />
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label small text-muted">Continuous Drive Before Break (Hours)</label>
+                                            <input type="number" step="0.5" name="driveHoursBeforeMandatoryBreak" id="driveBeforeBreakInput" class="form-control" value="@Model.Policy.DriveHoursBeforeMandatoryBreak" min="1" max="12" required />
+                                        </div>
+
+                                        <div class="col-md-4">
+                                            <label class="form-label small text-muted">Mandatory Break Duration (Minutes)</label>
+                                            <input type="number" name="mandatoryBreakMinutes" id="breakMinutesInput" class="form-control" value="@Model.Policy.MandatoryBreakMinutes" min="15" max="120" required />
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label small text-muted">Min Consecutive Off-Duty Rest (Hours)</label>
+                                            <input type="number" step="0.5" name="minConsecutiveOffDutyHours" id="minOffDutyInput" class="form-control" value="@Model.Policy.MinConsecutiveOffDutyHours" min="6" max="24" required />
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label small text-muted">Cycle Days</label>
+                                            <input type="number" name="cycleDays" id="cycleDaysInput" class="form-control" value="@Model.Policy.CycleDays" min="1" max="14" required />
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label small text-muted">Cycle Max Duty (Hours)</label>
+                                            <input type="number" step="0.5" name="cycleMaxDutyHours" id="cycleMaxHoursInput" class="form-control" value="@Model.Policy.CycleMaxDutyHours" min="10" max="120" required />
+                                        </div>
+
+                                        <div class="col-12 text-end mt-4">
+                                            <button type="submit" class="btn btn-primary px-4">
+                                                <i class="bi bi-save me-1"></i> Save & Apply Policy
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</section>
+
+<!-- Modal: Change Duty Status -->
+<div class="modal fade" id="changeStatusModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="ChangeDutyStatus">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-arrow-repeat text-primary me-2"></i>Record Duty Status</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="targetDriverId" value="@Model.DriverId" />
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Select New Duty Status</label>
+                        <select name="newStatus" class="form-select" required>
+                            <option value="OffDuty">Off Duty (Rest / Home)</option>
+                            <option value="SleeperBerth">Sleeper Berth</option>
+                            <option value="Driving">Driving (Behind the Wheel)</option>
+                            <option value="OnDutyNotDriving">On Duty (Not Driving - Loading / Yard)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Assigned Vehicle</label>
+                        <select name="vehicleId" class="form-select">
+                            <option value="">-- None / Off-Duty --</option>
+                            @foreach (var v in Model.Vehicles)
+                            {
+                                <option value="@v.Id">@v.VehicleNumber (@v.RegistrationNumber)</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Current Location / Terminal</label>
+                        <input type="text" name="locationName" class="form-control" placeholder="e.g. Dubai Central Depot, Bay 4" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Odometer (km)</label>
+                        <input type="number" step="0.1" name="odometer" class="form-control" placeholder="Current odometer reading" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Remarks / Notes</label>
+                        <textarea name="notes" class="form-control" rows="2" placeholder="Optional notes"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i> Submit Status Change</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function applyPreset(preset) {
+        if (preset === 'GccUaeStandard') {
+            document.getElementById('maxDrivingInput').value = 10;
+            document.getElementById('maxShiftInput').value = 14;
+            document.getElementById('driveBeforeBreakInput').value = 4;
+            document.getElementById('breakMinutesInput').value = 30;
+            document.getElementById('minOffDutyInput').value = 10;
+            document.getElementById('cycleDaysInput').value = 7;
+            document.getElementById('cycleMaxHoursInput').value = 60;
+        } else if (preset === 'EuTachograph') {
+            document.getElementById('maxDrivingInput').value = 9;
+            document.getElementById('maxShiftInput').value = 13;
+            document.getElementById('driveBeforeBreakInput').value = 4.5;
+            document.getElementById('breakMinutesInput').value = 45;
+            document.getElementById('minOffDutyInput').value = 11;
+            document.getElementById('cycleDaysInput').value = 6;
+            document.getElementById('cycleMaxHoursInput').value = 56;
+        } else if (preset === 'UsFmcsa') {
+            document.getElementById('maxDrivingInput').value = 11;
+            document.getElementById('maxShiftInput').value = 14;
+            document.getElementById('driveBeforeBreakInput').value = 8;
+            document.getElementById('breakMinutesInput').value = 30;
+            document.getElementById('minOffDutyInput').value = 10;
+            document.getElementById('cycleDaysInput').value = 7;
+            document.getElementById('cycleMaxHoursInput').value = 60;
+        }
+    }
+</script>
+}

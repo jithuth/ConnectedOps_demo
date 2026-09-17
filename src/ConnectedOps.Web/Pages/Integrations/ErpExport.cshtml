@@ -1,0 +1,254 @@
+@page
+@model ConnectedOps.Web.Pages.Integrations.ErpExportModel
+@using ConnectedOps.Domain.Integrations
+@{
+    ViewData["Title"] = "ERP & Accounting Integration";
+    ViewData["Subtitle"] = "Batch export fleet expenses, fuel spend, and workshop maintenance into QuickBooks, Xero, SAP, Dynamics 365";
+}
+
+@section HeaderActions {
+    <button class="btn btn-primary d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#newBatchModal">
+        <i class="bi bi-file-earmark-plus"></i> Generate Export Batch
+    </button>
+}
+
+@if (!string.IsNullOrEmpty(Model.SuccessMessage))
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> @Model.SuccessMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @Model.ErrorMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- STATS CARDS -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card shadow-sm border-0 border-start border-primary border-4 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-secondary small fw-bold text-uppercase">Total Batches</div>
+                        <div class="h3 fw-bold mb-0">@(Model.Batches?.TotalCount ?? 0)</div>
+                    </div>
+                    <div class="p-3 bg-primary-subtle text-primary rounded-circle">
+                        <i class="bi bi-boxes fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card shadow-sm border-0 border-start border-success border-4 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-secondary small fw-bold text-uppercase">Exported to Ledger</div>
+                        <div class="h3 fw-bold mb-0 text-success">@(Model.Batches?.Items.Count(b => b.Status == ErpBatchStatus.Exported) ?? 0)</div>
+                    </div>
+                    <div class="p-3 bg-success-subtle text-success rounded-circle">
+                        <i class="bi bi-check-circle fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card shadow-sm border-0 border-start border-info border-4 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-secondary small fw-bold text-uppercase">Supported ERPs</div>
+                        <div class="h5 fw-bold mb-0 text-info">5 Connectors</div>
+                    </div>
+                    <div class="p-3 bg-info-subtle text-info rounded-circle">
+                        <i class="bi bi-building fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card shadow-sm border-0 border-start border-warning border-4 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-secondary small fw-bold text-uppercase">Batch Amount (Page)</div>
+                        <div class="h4 fw-bold mb-0 text-warning">@(Model.Batches?.Items.Sum(b => b.TotalAmount).ToString("N2") ?? "0.00")</div>
+                    </div>
+                    <div class="p-3 bg-warning-subtle text-warning rounded-circle">
+                        <i class="bi bi-cash-stack fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ERP CONNECTORS OVERVIEW -->
+<div class="card shadow-sm border-0 mb-4 bg-body-tertiary">
+    <div class="card-body py-3">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div class="d-flex align-items-center gap-2">
+                <span class="fw-bold small text-uppercase text-secondary">Certified Connectors:</span>
+                <span class="badge bg-white text-dark border"><i class="bi bi-check-circle text-success me-1"></i> QuickBooks Online</span>
+                <span class="badge bg-white text-dark border"><i class="bi bi-check-circle text-success me-1"></i> Xero Accounting</span>
+                <span class="badge bg-white text-dark border"><i class="bi bi-check-circle text-success me-1"></i> SAP S/4HANA</span>
+                <span class="badge bg-white text-dark border"><i class="bi bi-check-circle text-success me-1"></i> Microsoft Dynamics 365</span>
+                <span class="badge bg-white text-dark border"><i class="bi bi-check-circle text-success me-1"></i> Generic CSV/JSON</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ERP BATCHES TABLE -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-body py-3 d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0 fw-bold"><i class="bi bi-journal-check me-2 text-primary"></i> General Ledger Export Batches</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Status</th>
+                        <th>Batch #</th>
+                        <th>Target System</th>
+                        <th>Batch Category</th>
+                        <th>Period Covered</th>
+                        <th>Records</th>
+                        <th>Total Spend</th>
+                        <th>Export Date</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Batches == null || Model.Batches.Items.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center py-4 text-secondary">
+                                <i class="bi bi-file-earmark-spreadsheet fs-2 d-block mb-2 text-muted"></i>
+                                No ERP export batches generated yet. Click <strong>Generate Export Batch</strong> above to create one.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var batch in Model.Batches.Items)
+                        {
+                            <tr>
+                                <td>
+                                    @if (batch.Status == ErpBatchStatus.Exported)
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                            <i class="bi bi-check-circle-fill me-1"></i> Exported
+                                        </span>
+                                    }
+                                    else if (batch.Status == ErpBatchStatus.Generated)
+                                    {
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
+                                            <i class="bi bi-hourglass-split me-1"></i> Generated
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">
+                                            <i class="bi bi-x-circle-fill me-1"></i> Failed
+                                        </span>
+                                    }
+                                </td>
+                                <td class="fw-bold font-monospace text-primary">@batch.BatchNumber</td>
+                                <td><span class="badge bg-light text-dark border">@batch.TargetSystemName</span></td>
+                                <td>@batch.BatchTypeName</td>
+                                <td class="small">@batch.PeriodStartUtc.ToString("yyyy-MM-dd") to @batch.PeriodEndUtc.ToString("yyyy-MM-dd")</td>
+                                <td><span class="badge bg-secondary">@batch.RecordCount</span></td>
+                                <td class="fw-bold">@batch.TotalAmount.ToString("N2") @batch.Currency</td>
+                                <td class="small">@(batch.ExportedAtUtc?.ToString("yyyy-MM-dd HH:mm") ?? "Pending")</td>
+                                <td class="text-end">
+                                    <div class="d-flex justify-content-end gap-1">
+                                        <button class="btn btn-sm btn-outline-info" type="button" data-bs-toggle="collapse" data-bs-target="#batchPayload-@batch.Id" title="View Payload">
+                                            <i class="bi bi-code-slash"></i> JSON
+                                        </button>
+                                        @if (batch.Status != ErpBatchStatus.Exported)
+                                        {
+                                            <form method="post" asp-page-handler="MarkExported" asp-route-batchId="@batch.Id" class="d-inline">
+                                                <button type="submit" class="btn btn-sm btn-outline-success" title="Mark as Exported">
+                                                    <i class="bi bi-check-lg"></i> Sync
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="collapse" id="batchPayload-@batch.Id">
+                                <td colspan="9" class="p-3 bg-body-tertiary">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <div class="fw-semibold small">Generated ERP Payload for @batch.TargetSystemName:</div>
+                                        <span class="badge bg-secondary">@batch.BatchNumber</span>
+                                    </div>
+                                    <pre class="bg-dark text-light p-2 rounded small mb-0" style="max-height: 200px; overflow-y: auto;">@batch.PayloadJson</pre>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: GENERATE BATCH -->
+<div class="modal fade" id="newBatchModal" tabindex="-1" aria-labelledby="newBatchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <form method="post" asp-page-handler="Generate">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="newBatchModalLabel"><i class="bi bi-file-earmark-plus me-2 text-primary"></i> Generate General Ledger Export Batch</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Target Accounting System <span class="text-danger">*</span></label>
+                            <select name="targetSystem" class="form-select" required>
+                                <option value="@ErpTargetSystem.QuickBooks">QuickBooks Online (Journal Entries)</option>
+                                <option value="@ErpTargetSystem.Xero">Xero Accounting (Manual Journals)</option>
+                                <option value="@ErpTargetSystem.Sap">SAP S/4HANA (BAPI / IDoc JSON)</option>
+                                <option value="@ErpTargetSystem.MicrosoftDynamics">Microsoft Dynamics 365 (F&O Journal)</option>
+                                <option value="@ErpTargetSystem.GenericCsv">Generic CSV / JSON Ledger</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Data Domain / Batch Type <span class="text-danger">*</span></label>
+                            <select name="batchType" class="form-select" required>
+                                <option value="@ErpBatchType.Expenses">Driver Trip Expenses (Approved Reimbursements)</option>
+                                <option value="@ErpBatchType.MaintenanceCosts">Vehicle Maintenance & Workshop Costs</option>
+                                <option value="@ErpBatchType.FuelSpend">Fleet Fuel Transactions & Card Spend</option>
+                                <option value="@ErpBatchType.GeneralLedgerSummary">Full General Ledger Summary</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Period Start Date <span class="text-danger">*</span></label>
+                            <input type="date" name="periodStartUtc" class="form-control" value="@DateTime.UtcNow.AddMonths(-1).ToString("yyyy-MM-01")" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Period End Date <span class="text-danger">*</span></label>
+                            <input type="date" name="periodEndUtc" class="form-control" value="@DateTime.UtcNow.ToString("yyyy-MM-dd")" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Generate Batch</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

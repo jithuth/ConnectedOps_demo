@@ -87,6 +87,18 @@ using ConnectedOps.Application.TollsAndFines;
 using ConnectedOps.Infrastructure.TollsAndFines;
 using ConnectedOps.Application.ColdChain;
 using ConnectedOps.Infrastructure.ColdChain;
+using ConnectedOps.Application.Hos;
+using ConnectedOps.Infrastructure.Hos;
+using ConnectedOps.Application.Gamification;
+using ConnectedOps.Infrastructure.Gamification;
+using ConnectedOps.Application.Expenses;
+using ConnectedOps.Infrastructure.Expenses;
+using ConnectedOps.Application.Tracking;
+using ConnectedOps.Infrastructure.Tracking;
+using ConnectedOps.Application.Integrations;
+using ConnectedOps.Infrastructure.Integrations;
+using ConnectedOps.Application.Predictive;
+using ConnectedOps.Infrastructure.Predictive;
 
 
 
@@ -185,6 +197,12 @@ public static class DependencyInjection
         AddDispatchServices(services);
 
         AddOperationalIntelligenceServices(services);
+
+        AddDriverExperienceServices(services);
+
+        AddIntegrationServices(services);
+
+        AddPredictiveMaintenanceServices(services);
 
         AddValidation(
             services);
@@ -910,5 +928,39 @@ public static class DependencyInjection
         services.AddScoped<IDvirService, DvirService>();
         services.AddScoped<ITollAndFineService, TollAndFineService>();
         services.AddScoped<IColdChainService, ColdChainService>();
+    }
+
+    // ================================================================
+    // PHASE 15 - DRIVER IN-CAB EXPERIENCE, HOS, GAMIFICATION & TRACKING
+    // ================================================================
+    private static void AddDriverExperienceServices(
+        IServiceCollection services)
+    {
+        services.AddScoped<IHosService, HosService>();
+        services.AddScoped<IGamificationService, GamificationService>();
+        services.AddScoped<IDriverExpenseService, DriverExpenseService>();
+        services.AddScoped<IPublicTrackingService, PublicTrackingService>();
+    }
+
+    // ================================================================
+    // PHASE 16 - EXTERNAL INTEGRATIONS, WEBHOOKS & OPEN API GATEWAY
+    // ================================================================
+    private static void AddIntegrationServices(
+        IServiceCollection services)
+    {
+        services.AddHttpClient();
+        services.AddScoped<IWebhookService, WebhookService>();
+        services.AddScoped<IApiKeyService, ApiKeyService>();
+        services.AddScoped<IErpExportService, ErpExportService>();
+        services.AddScoped<IFuelClearinghouseService, FuelClearinghouseService>();
+    }
+
+    // ================================================================
+    // PHASE 17 - AI PREDICTIVE FLEET MAINTENANCE & SUBSYSTEM HEALTH
+    // ================================================================
+    private static void AddPredictiveMaintenanceServices(
+        IServiceCollection services)
+    {
+        services.AddScoped<IPredictiveMaintenanceService, PredictiveMaintenanceService>();
     }
 }

@@ -29,6 +29,12 @@ using ConnectedOps.Domain.Alerts;
 using ConnectedOps.Domain.Inspections;
 using ConnectedOps.Domain.TollsAndFines;
 using ConnectedOps.Domain.ColdChain;
+using ConnectedOps.Domain.Hos;
+using ConnectedOps.Domain.Gamification;
+using ConnectedOps.Domain.Expenses;
+using ConnectedOps.Domain.Tracking;
+using ConnectedOps.Domain.Integrations;
+using ConnectedOps.Domain.Predictive;
 
 namespace ConnectedOps.Infrastructure.Persistence;
 
@@ -439,6 +445,51 @@ public sealed class ConnectedOpsDbContext
 
     public DbSet<ColdChainExcursion> ColdChainExcursions =>
         Set<ColdChainExcursion>();
+
+    // Phase 15 - Driver Experience, HOS, Gamification & Live Tracking
+    public DbSet<HosRuleConfiguration> HosRuleConfigurations =>
+        Set<HosRuleConfiguration>();
+
+    public DbSet<HosLogEntry> HosLogEntries =>
+        Set<HosLogEntry>();
+
+    public DbSet<HosViolation> HosViolations =>
+        Set<HosViolation>();
+
+    public DbSet<DriverScorecard> DriverScorecards =>
+        Set<DriverScorecard>();
+
+    public DbSet<DriverBadge> DriverBadges =>
+        Set<DriverBadge>();
+
+    public DbSet<DriverTripExpense> DriverTripExpenses =>
+        Set<DriverTripExpense>();
+
+    public DbSet<PublicTrackingToken> PublicTrackingTokens =>
+        Set<PublicTrackingToken>();
+
+    // Phase 16 - External Integrations, Webhooks & Open API Gateway
+    public DbSet<WebhookSubscription> WebhookSubscriptions =>
+        Set<WebhookSubscription>();
+
+    public DbSet<WebhookDeliveryAttempt> WebhookDeliveryAttempts =>
+        Set<WebhookDeliveryAttempt>();
+
+    public DbSet<TenantApiKey> TenantApiKeys =>
+        Set<TenantApiKey>();
+
+    public DbSet<ErpExportBatch> ErpExportBatches =>
+        Set<ErpExportBatch>();
+
+    public DbSet<FuelFeedSyncLog> FuelFeedSyncLogs =>
+        Set<FuelFeedSyncLog>();
+
+    // Phase 17 - AI Predictive Fleet Maintenance & Subsystem Health
+    public DbSet<VehicleSubsystemHealth> VehicleSubsystemHealths =>
+        Set<VehicleSubsystemHealth>();
+
+    public DbSet<PredictiveMaintenanceAlert> PredictiveMaintenanceAlerts =>
+        Set<PredictiveMaintenanceAlert>();
 
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)

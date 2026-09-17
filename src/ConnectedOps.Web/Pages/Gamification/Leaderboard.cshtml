@@ -1,0 +1,315 @@
+@page
+@model ConnectedOps.Web.Pages.Gamification.LeaderboardModel
+@using ConnectedOps.Domain.Gamification
+@{
+    ViewData["Title"] = "Driver Gamification & Fleet Leaderboard";
+}
+
+<div class="content-header pb-2">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col-sm-6">
+                <h1 class="m-0 text-dark fw-bold">
+                    <i class="bi bi-trophy-fill text-warning me-2"></i>Driver Gamification & Scorecards
+                </h1>
+                <p class="text-muted small mb-0">Monthly fleet safety and eco-driving leaderboard, driver tiers, and achievement awards.</p>
+            </div>
+            <div class="col-sm-6 text-sm-end mt-3 mt-sm-0">
+                <button type="button" class="btn btn-outline-primary shadow-sm me-2" data-bs-toggle="modal" data-bs-target="#awardBadgeModal">
+                    <i class="bi bi-award-fill me-1"></i> Award Driver Badge
+                </button>
+                <form method="post" asp-page-handler="Recalculate" class="d-inline">
+                    <input type="hidden" name="targetMonth" value="@Model.Month" />
+                    <input type="hidden" name="targetYear" value="@Model.Year" />
+                    <button type="submit" class="btn btn-primary shadow-sm">
+                        <i class="bi bi-cpu me-1"></i> Recalculate Scorecards
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+        {
+            <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i>@Model.SuccessMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.ErrorMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <!-- Filter Bar -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body py-3">
+                <form method="get" class="row g-3 align-items-center">
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted mb-1 fw-semibold">Month</label>
+                        <select name="Month" class="form-select">
+                            @for (int m = 1; m <= 12; m++)
+                            {
+                                <option value="@m" selected="@(Model.Month == m ? "selected" : null)">
+                                    @System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(m)
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted mb-1 fw-semibold">Year</label>
+                        <select name="Year" class="form-select">
+                            @for (int y = DateTime.UtcNow.Year; y >= DateTime.UtcNow.Year - 3; y--)
+                            {
+                                <option value="@y" selected="@(Model.Year == y ? "selected" : null)">@y</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted mb-1 fw-semibold">Driver Tier</label>
+                        <select name="TierFilter" class="form-select">
+                            <option value="">All Tiers</option>
+                            <option value="Platinum" selected="@(Model.TierFilter == DriverTier.Platinum ? "selected" : null)">Platinum (90%+)</option>
+                            <option value="Gold" selected="@(Model.TierFilter == DriverTier.Gold ? "selected" : null)">Gold (80-89%)</option>
+                            <option value="Silver" selected="@(Model.TierFilter == DriverTier.Silver ? "selected" : null)">Silver (70-79%)</option>
+                            <option value="Bronze" selected="@(Model.TierFilter == DriverTier.Bronze ? "selected" : null)">Bronze (<70%)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 text-end">
+                        <button type="submit" class="btn btn-outline-primary w-100 mt-md-4">
+                            <i class="bi bi-funnel me-1"></i> Filter Leaderboard
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- KPI Strip -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm text-center p-3">
+                    <span class="text-muted small text-uppercase">Total Drivers Ranked</span>
+                    <h2 class="fw-bold text-dark mb-0 mt-1">@Model.Leaderboard.TotalRankedDrivers</h2>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm text-center p-3">
+                    <span class="text-muted small text-uppercase">Fleet Average Composite Score</span>
+                    <h2 class="fw-bold text-primary mb-0 mt-1">@Model.Leaderboard.FleetAverageScore %</h2>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm text-center p-3">
+                    <span class="text-muted small text-uppercase">Scoring Period</span>
+                    <h2 class="fw-bold text-dark mb-0 mt-1">
+                        @System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(Model.Leaderboard.PeriodMonth) @Model.Leaderboard.PeriodYear
+                    </h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- Podium Section (Top 3) -->
+        @if (Model.Leaderboard.TopThreePodium.Count >= 3)
+        {
+            var p1 = Model.Leaderboard.TopThreePodium[0];
+            var p2 = Model.Leaderboard.TopThreePodium[1];
+            var p3 = Model.Leaderboard.TopThreePodium[2];
+
+            <div class="card border-0 shadow-sm mb-4 bg-light">
+                <div class="card-body py-4">
+                    <h5 class="text-center fw-bold mb-4 text-dark"><i class="bi bi-award text-warning me-2"></i>Monthly Fleet Champions Podium</h5>
+                    <div class="row g-3 align-items-end justify-content-center">
+                        <!-- 2nd Place (Silver) -->
+                        <div class="col-md-3 text-center">
+                            <div class="card border-0 shadow-sm p-3 bg-white">
+                                <div class="fs-1 text-secondary mb-2"><i class="bi bi-trophy"></i></div>
+                                <span class="badge bg-secondary mb-2 fs-6">2nd Place (Silver)</span>
+                                <h5 class="fw-bold mb-1">@p2.DriverName</h5>
+                                <div class="display-6 fw-bold text-dark mb-2">@p2.OverallScore%</div>
+                                <div class="d-flex justify-content-around text-muted small">
+                                    <span>Safety: @p2.SafetyScore%</span>
+                                    <span>Eco: @p2.EcoScore%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 1st Place (Gold) -->
+                        <div class="col-md-4 text-center">
+                            <div class="card border-0 shadow-lg p-4 bg-white border-top border-warning border-4">
+                                <div class="fs-1 text-warning mb-2"><i class="bi bi-trophy-fill"></i></div>
+                                <span class="badge bg-warning text-dark mb-2 fs-6">1st Place (Gold Champion)</span>
+                                <h4 class="fw-bold mb-1">@p1.DriverName</h4>
+                                <div class="display-5 fw-bold text-primary mb-2">@p1.OverallScore%</div>
+                                <div class="d-flex justify-content-around text-muted small">
+                                    <span>Safety: @p1.SafetyScore%</span>
+                                    <span>Eco: @p1.EcoScore%</span>
+                                    <span>Compliance: @p1.ComplianceScore%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 3rd Place (Bronze) -->
+                        <div class="col-md-3 text-center">
+                            <div class="card border-0 shadow-sm p-3 bg-white">
+                                <div class="fs-1 text-warning-subtle mb-2"><i class="bi bi-trophy"></i></div>
+                                <span class="badge bg-dark-subtle text-dark mb-2 fs-6">3rd Place (Bronze)</span>
+                                <h5 class="fw-bold mb-1">@p3.DriverName</h5>
+                                <div class="display-6 fw-bold text-dark mb-2">@p3.OverallScore%</div>
+                                <div class="d-flex justify-content-around text-muted small">
+                                    <span>Safety: @p3.SafetyScore%</span>
+                                    <span>Eco: @p3.EcoScore%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Leaderboard Table -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom-0 pt-3">
+                <h5 class="card-title fw-bold text-dark mb-0"><i class="bi bi-list-ol me-2 text-primary"></i>Complete Driver Ranking Ledger</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 70px;">Rank</th>
+                                <th>Driver</th>
+                                <th>Tier</th>
+                                <th>Overall Score</th>
+                                <th>Safety (35%)</th>
+                                <th>Eco (25%)</th>
+                                <th>Compliance (20%)</th>
+                                <th>Dispatch (20%)</th>
+                                <th>Harsh Events</th>
+                                <th>Idle Hours</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.Scorecards.Items.Count > 0)
+                            {
+                                @foreach (var sc in Model.Scorecards.Items)
+                                {
+                                    <tr>
+                                        <td>
+                                            @if (sc.RankInFleet == 1)
+                                            {
+                                                <span class="badge bg-warning text-dark rounded-pill px-2"><i class="bi bi-trophy-fill"></i> 1</span>
+                                            }
+                                            else if (sc.RankInFleet == 2)
+                                            {
+                                                <span class="badge bg-secondary rounded-pill px-2">2</span>
+                                            }
+                                            else if (sc.RankInFleet == 3)
+                                            {
+                                                <span class="badge bg-dark-subtle text-dark rounded-pill px-2">3</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="fw-bold text-muted ms-2">#@sc.RankInFleet</span>
+                                            }
+                                        </td>
+                                        <td class="fw-semibold">@sc.DriverName</td>
+                                        <td>
+                                            <span class="badge @(sc.Tier == DriverTier.Platinum ? "bg-info text-dark" : sc.Tier == DriverTier.Gold ? "bg-warning text-dark" : sc.Tier == DriverTier.Silver ? "bg-secondary" : "bg-light text-dark border")">
+                                                @sc.TierName
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="fw-bold fs-6 @(sc.OverallScore >= 90 ? "text-success" : sc.OverallScore >= 80 ? "text-primary" : "text-dark")">
+                                                @sc.OverallScore%
+                                            </span>
+                                        </td>
+                                        <td>@sc.SafetyScore%</td>
+                                        <td>@sc.EcoScore%</td>
+                                        <td>@sc.ComplianceScore%</td>
+                                        <td>@sc.DispatchScore%</td>
+                                        <td>
+                                            <span class="badge bg-light text-muted border">
+                                                Brakes: @sc.HarshBrakingCount | Accel: @sc.HarshAccelerationCount
+                                            </span>
+                                        </td>
+                                        <td>@sc.IdleHours hrs</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="10" class="text-center py-4 text-muted">
+                                        No scorecards calculated for this month. Click "Recalculate Scorecards" to generate fleet ratings!
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Modal: Award Badge -->
+<div class="modal fade" id="awardBadgeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="AwardBadge">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-award-fill text-warning me-2"></i>Award Driver Badge</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Recipient Driver</label>
+                        <select name="driverId" class="form-select" required>
+                            @foreach (var d in Model.Drivers)
+                            {
+                                <option value="@d.Id">@d.DisplayName (@d.DriverNumber)</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Badge Type</label>
+                        <select name="badgeType" class="form-select" required>
+                            <option value="EcoChampion">Eco Champion (Efficient Fuel Performance)</option>
+                            <option value="SafetyMaster">Safety Master (Zero Harsh Maneuvers)</option>
+                            <option value="ZeroViolationStreak">Zero Violation Streak (100% HOS Compliance)</option>
+                            <option value="PerfectInspectionStreak">Perfect Inspection Streak (100% DVIR Completed)</option>
+                            <option value="NightHauler">Night Hauler (Long-Haul Reliability)</option>
+                            <option value="TopPerformer">Top Performer (Monthly #1 Fleet Champion)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Badge Title</label>
+                        <input type="text" name="title" class="form-control" placeholder="e.g. Clean Sheet Safety Master" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Description / Milestone</label>
+                        <textarea name="description" class="form-control" rows="2" placeholder="e.g. Completed 45 consecutive routes with zero safety warnings." required></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Reward Points</label>
+                        <input type="number" name="points" class="form-control" value="150" min="10" max="2000" required />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i> Confirm & Award Badge</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

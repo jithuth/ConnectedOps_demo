@@ -1,0 +1,341 @@
+@page
+@model ConnectedOps.Web.Pages.Integrations.WebhooksModel
+@using ConnectedOps.Domain.Integrations
+@{
+    ViewData["Title"] = "Developer Webhooks";
+    ViewData["Subtitle"] = "Subscribe external HTTP endpoints to real-time fleet events with HMAC-SHA256 signature verification";
+}
+
+@section HeaderActions {
+    <button class="btn btn-primary d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#newWebhookModal">
+        <i class="bi bi-plus-circle"></i> Add Webhook Endpoint
+    </button>
+}
+
+@if (!string.IsNullOrEmpty(Model.SuccessMessage))
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> @Model.SuccessMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @Model.ErrorMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- STATS CARDS -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card shadow-sm border-0 border-start border-primary border-4 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-secondary small fw-bold text-uppercase">Total Endpoints</div>
+                        <div class="h3 fw-bold mb-0">@Model.Subscriptions.Count</div>
+                    </div>
+                    <div class="p-3 bg-primary-subtle text-primary rounded-circle">
+                        <i class="bi bi-broadcast-pin fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card shadow-sm border-0 border-start border-success border-4 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-secondary small fw-bold text-uppercase">Active & Healthy</div>
+                        <div class="h3 fw-bold mb-0 text-success">@Model.Subscriptions.Count(s => s.IsEnabled && s.FailureCount < 5)</div>
+                    </div>
+                    <div class="p-3 bg-success-subtle text-success rounded-circle">
+                        <i class="bi bi-check2-circle fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card shadow-sm border-0 border-start border-warning border-4 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-secondary small fw-bold text-uppercase">Failing / Paused</div>
+                        <div class="h3 fw-bold mb-0 text-warning">@Model.Subscriptions.Count(s => !s.IsEnabled || s.FailureCount >= 5)</div>
+                    </div>
+                    <div class="p-3 bg-warning-subtle text-warning rounded-circle">
+                        <i class="bi bi-exclamation-triangle fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card shadow-sm border-0 border-start border-info border-4 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-secondary small fw-bold text-uppercase">Logged Deliveries</div>
+                        <div class="h3 fw-bold mb-0 text-info">@(Model.DeliveryAttempts?.TotalCount ?? 0)</div>
+                    </div>
+                    <div class="p-3 bg-info-subtle text-info rounded-circle">
+                        <i class="bi bi-send-check fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- WEBHOOK SUBSCRIPTIONS TABLE -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-body py-3 d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0 fw-bold"><i class="bi bi-link-45deg me-2 text-primary"></i> Configured Endpoints</h5>
+        <span class="badge bg-secondary">HMAC SHA-256 Enabled</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Status</th>
+                        <th>Target URL</th>
+                        <th>Subscribed Events</th>
+                        <th>Secret Key</th>
+                        <th>Last Triggered</th>
+                        <th>Failures</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Subscriptions.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-secondary">
+                                <i class="bi bi-broadcast fs-2 d-block mb-2 text-muted"></i>
+                                No webhook subscriptions configured. Click <strong>Add Webhook Endpoint</strong> above to register one.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var sub in Model.Subscriptions)
+                        {
+                            <tr>
+                                <td>
+                                    @if (sub.IsEnabled)
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                            <i class="bi bi-record-fill me-1"></i> Active
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1">
+                                            <i class="bi bi-pause-fill me-1"></i> Paused
+                                        </span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="fw-bold font-monospace text-primary text-break" style="max-width: 280px;">@sub.Url</div>
+                                    <div class="small text-secondary">@sub.Description</div>
+                                </td>
+                                <td>
+                                    <div class="d-flex flex-wrap gap-1" style="max-width: 320px;">
+                                        @foreach (var ev in sub.Events)
+                                        {
+                                            <span class="badge bg-light text-dark border">@ev.ToString()</span>
+                                        }
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="font-monospace small bg-body-tertiary px-2 py-1 rounded border">@sub.SecretKeyMasked</span>
+                                </td>
+                                <td>
+                                    @if (sub.LastTriggeredAtUtc.HasValue)
+                                    {
+                                        <div>@sub.LastTriggeredAtUtc.Value.ToString("yyyy-MM-dd HH:mm") UTC</div>
+                                        @if (sub.LastResponseStatusCode.HasValue)
+                                        {
+                                            <span class="badge @(sub.LastResponseStatusCode >= 200 && sub.LastResponseStatusCode < 300 ? "bg-success" : "bg-danger")" style="font-size: 0.7rem;">
+                                                HTTP @sub.LastResponseStatusCode
+                                            </span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">Never</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (sub.FailureCount > 0)
+                                    {
+                                        <span class="badge bg-danger">@sub.FailureCount</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success">0</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <div class="d-flex justify-content-end gap-1">
+                                        <form method="post" asp-page-handler="Ping" asp-route-subscriptionId="@sub.Id" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-outline-info" title="Send Test Ping">
+                                                <i class="bi bi-send"></i> Ping
+                                            </button>
+                                        </form>
+                                        <form method="post" asp-page-handler="Toggle" asp-route-subscriptionId="@sub.Id" asp-route-isEnabled="@(!sub.IsEnabled)" class="d-inline">
+                                            <button type="submit" class="btn btn-sm @(sub.IsEnabled ? "btn-outline-warning" : "btn-outline-success")" title="@(sub.IsEnabled ? "Pause" : "Enable")">
+                                                <i class="bi @(sub.IsEnabled ? "bi-pause" : "bi-play")"></i>
+                                            </button>
+                                        </form>
+                                        <a href="/Integrations/Webhooks?SelectedSubscriptionId=@sub.Id" class="btn btn-sm btn-outline-secondary" title="View Logs">
+                                            <i class="bi bi-journal-text"></i>
+                                        </a>
+                                        <form method="post" asp-page-handler="Delete" asp-route-subscriptionId="@sub.Id" class="d-inline" onsubmit="return confirm('Delete this webhook endpoint permanently?');">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- DELIVERY ATTEMPTS LOG -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-body py-3 d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0 fw-bold"><i class="bi bi-clock-history me-2 text-info"></i> Recent Delivery Attempts</h5>
+        @if (Model.SelectedSubscriptionId.HasValue)
+        {
+            <div>
+                <span class="badge bg-info-subtle text-info me-2">Filtered to subscription</span>
+                <a href="/Integrations/Webhooks" class="btn btn-sm btn-outline-secondary">Clear Filter</a>
+            </div>
+        }
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Status</th>
+                        <th>Event Type</th>
+                        <th>Response Code</th>
+                        <th>Duration</th>
+                        <th>Timestamp</th>
+                        <th>Payload</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.DeliveryAttempts == null || Model.DeliveryAttempts.Items.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">No webhook deliveries recorded yet.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var attempt in Model.DeliveryAttempts.Items)
+                        {
+                            <tr>
+                                <td>
+                                    @if (attempt.Success)
+                                    {
+                                        <span class="badge bg-success"><i class="bi bi-check-lg"></i> Delivered</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger"><i class="bi bi-x-lg"></i> Failed</span>
+                                    }
+                                </td>
+                                <td><span class="badge bg-light text-dark border">@attempt.EventTypeName</span></td>
+                                <td>
+                                    <span class="badge @(attempt.ResponseStatusCode >= 200 && attempt.ResponseStatusCode < 300 ? "bg-success" : "bg-danger")">
+                                        @(attempt.ResponseStatusCode == 0 ? "TIMEOUT" : $"HTTP {attempt.ResponseStatusCode}")
+                                    </span>
+                                </td>
+                                <td>@attempt.DurationMs ms</td>
+                                <td>@attempt.AttemptedAtUtc.ToString("yyyy-MM-dd HH:mm:ss") UTC</td>
+                                <td>
+                                    <button class="btn btn-sm btn-link text-decoration-none p-0" type="button" data-bs-toggle="collapse" data-bs-target="#payload-@attempt.Id">
+                                        View JSON
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr class="collapse" id="payload-@attempt.Id">
+                                <td colspan="6" class="p-3 bg-body-tertiary">
+                                    <div class="fw-semibold small mb-1">Payload Sent:</div>
+                                    <pre class="bg-dark text-light p-2 rounded small mb-0" style="max-height: 150px; overflow-y: auto;">@attempt.PayloadJson</pre>
+                                    @if (!string.IsNullOrEmpty(attempt.ErrorMessage))
+                                    {
+                                        <div class="text-danger small mt-2"><strong>Error:</strong> @attempt.ErrorMessage</div>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: ADD WEBHOOK -->
+<div class="modal fade" id="newWebhookModal" tabindex="-1" aria-labelledby="newWebhookModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <form method="post" asp-page-handler="Create">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="newWebhookModalLabel"><i class="bi bi-plus-circle me-2 text-primary"></i> Register Webhook Endpoint</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Endpoint Destination URL <span class="text-danger">*</span></label>
+                        <input type="url" name="url" class="form-control font-monospace" placeholder="https://api.yourcompany.com/webhooks/connectedops" required>
+                        <div class="form-text">Must be a secure absolute HTTPS URL accepting POST requests.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Description</label>
+                        <input type="text" name="description" class="form-control" placeholder="Production TMS Event Ingestion Listener">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Subscribed Events <span class="text-danger">*</span></label>
+                        <div class="row g-2">
+                            @foreach (var ev in Enum.GetValues<WebhookEventType>())
+                            {
+                                <div class="col-md-6">
+                                    <div class="form-check p-2 border rounded">
+                                        <input class="form-check-input" type="checkbox" name="events" value="@ev" id="ev-@ev" checked>
+                                        <label class="form-check-label fw-semibold small" for="ev-@ev">
+                                            @ev.ToString()
+                                        </label>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div class="alert alert-info small mb-0">
+                        <i class="bi bi-shield-lock me-1"></i> ConnectedOps will automatically generate a cryptographically secure HMAC-SHA256 secret (<code>whsec_...</code>) for this endpoint. Each delivery includes signature header <code>X-ConnectedOps-Signature: sha256=...</code>.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Subscription</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

@@ -4,6 +4,7 @@ using ConnectedOps.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ConnectedOps.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(ConnectedOpsDbContext))]
-    partial class ConnectedOpsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260917044112_AddPhase16ExternalIntegrationsAndOpenApi")]
+    partial class AddPhase16ExternalIntegrationsAndOpenApi
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -8027,175 +8030,6 @@ namespace ConnectedOps.Infrastructure.Persistence.Migrations
                     b.ToTable("PlatformSettings", (string)null);
                 });
 
-            modelBuilder.Entity("ConnectedOps.Domain.Predictive.PredictiveMaintenanceAlert", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("AcknowledgedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("AcknowledgedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("ComponentTitle")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Currency")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.Property<DateTime?>("DeletedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("DetectedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("DismissReason")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<decimal>("EstimatedRepairCost")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("EstimatedRulDays")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("FailureProbability")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("decimal(5,2)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<Guid?>("PromotedMaintenanceRecordId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("RecommendedAction")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<int>("RiskLevel")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Subsystem")
-                        .HasColumnType("int");
-
-                    b.Property<string>("SymptomDescription")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("UpdatedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("VehicleId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("WorkOrderCreatedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DetectedAtUtc");
-
-                    b.HasIndex("VehicleId");
-
-                    b.HasIndex("TenantId", "RiskLevel");
-
-                    b.HasIndex("TenantId", "Status");
-
-                    b.HasIndex("TenantId", "VehicleId");
-
-                    b.ToTable("PredictiveMaintenanceAlerts", (string)null);
-                });
-
-            modelBuilder.Entity("ConnectedOps.Domain.Predictive.VehicleSubsystemHealth", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("AnomalyCount")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("DeletedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("DiagnosticsNotes")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<int?>("EstimatedRulDays")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("HealthScore")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("decimal(5,2)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime>("LastEvaluatedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("Subsystem")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("Trend")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("UpdatedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("VehicleId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("VehicleId");
-
-                    b.HasIndex("TenantId", "HealthScore");
-
-                    b.HasIndex("TenantId", "VehicleId", "Subsystem")
-                        .IsUnique();
-
-                    b.ToTable("VehicleSubsystemHealths", (string)null);
-                });
-
             modelBuilder.Entity("ConnectedOps.Domain.Reports.EsgEmissionFactor", b =>
                 {
                     b.Property<Guid>("Id")
@@ -13144,28 +12978,6 @@ namespace ConnectedOps.Infrastructure.Persistence.Migrations
                     b.Navigation("Department");
 
                     b.Navigation("TeamLead");
-                });
-
-            modelBuilder.Entity("ConnectedOps.Domain.Predictive.PredictiveMaintenanceAlert", b =>
-                {
-                    b.HasOne("ConnectedOps.Domain.Vehicles.Vehicle", "Vehicle")
-                        .WithMany()
-                        .HasForeignKey("VehicleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Vehicle");
-                });
-
-            modelBuilder.Entity("ConnectedOps.Domain.Predictive.VehicleSubsystemHealth", b =>
-                {
-                    b.HasOne("ConnectedOps.Domain.Vehicles.Vehicle", "Vehicle")
-                        .WithMany()
-                        .HasForeignKey("VehicleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Vehicle");
                 });
 
             modelBuilder.Entity("ConnectedOps.Domain.Safety.CorrectiveAction", b =>

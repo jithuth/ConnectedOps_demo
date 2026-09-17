@@ -956,7 +956,38 @@ public static class PermissionSeeder
         new(PermissionKeys.ColdChain.View, "View Cold Chain Monitoring", "ColdChain"),
         new(PermissionKeys.ColdChain.ManageSensors, "Manage Cargo Sensors", "ColdChain"),
         new(PermissionKeys.ColdChain.ViewExcursions, "View Cold Chain Excursions", "ColdChain"),
-        new(PermissionKeys.ColdChain.ConfigureThresholds, "Configure Reefer Thresholds", "ColdChain")
+        new(PermissionKeys.ColdChain.ConfigureThresholds, "Configure Reefer Thresholds", "ColdChain"),
+
+        // Phase 15: Hours of Service (HOS) & ELD
+        new(PermissionKeys.Hos.View, "View Hours of Service Logs", "Hos"),
+        new(PermissionKeys.Hos.LogDuty, "Record Duty Status", "Hos"),
+        new(PermissionKeys.Hos.ConfigurePolicy, "Configure HOS Policy", "Hos"),
+        new(PermissionKeys.Hos.ViewViolations, "View HOS Violations", "Hos"),
+        new(PermissionKeys.Hos.RoadsideInspection, "Roadside Inspection Export", "Hos"),
+
+        // Phase 15: Driver Gamification & Scorecards
+        new(PermissionKeys.Gamification.ViewLeaderboard, "View Gamification Leaderboard", "Gamification"),
+        new(PermissionKeys.Gamification.ViewScorecards, "View Driver Scorecards", "Gamification"),
+        new(PermissionKeys.Gamification.ManageBadges, "Manage Driver Badges", "Gamification"),
+
+        // Phase 15: Driver Trip Expenses
+        new(PermissionKeys.DriverExpenses.View, "View Driver Expenses", "DriverExpenses"),
+        new(PermissionKeys.DriverExpenses.Submit, "Submit Driver Expenses", "DriverExpenses"),
+        new(PermissionKeys.DriverExpenses.Approve, "Approve Driver Expenses", "DriverExpenses"),
+        new(PermissionKeys.DriverExpenses.Reimburse, "Reimburse Driver Expenses", "DriverExpenses"),
+
+        // PHASE 16 - EXTERNAL INTEGRATIONS, WEBHOOKS & OPEN API GATEWAY
+        new(PermissionKeys.Integrations.View, "View External Integrations", "Integrations"),
+        new(PermissionKeys.Integrations.ManageWebhooks, "Manage Webhooks", "Integrations"),
+        new(PermissionKeys.Integrations.ManageApiKeys, "Manage API Keys", "Integrations"),
+        new(PermissionKeys.Integrations.ExportErp, "Export ERP General Ledger", "Integrations"),
+        new(PermissionKeys.Integrations.SyncFuelFeeds, "Sync Fuel Clearinghouse Feeds", "Integrations"),
+
+        // PHASE 17 - AI PREDICTIVE FLEET MAINTENANCE & SUBSYSTEM HEALTH
+        new(PermissionKeys.PredictiveMaintenance.View, "View Predictive Maintenance", "PredictiveMaintenance"),
+        new(PermissionKeys.PredictiveMaintenance.RunDiagnostics, "Run Fleet AI Diagnostics", "PredictiveMaintenance"),
+        new(PermissionKeys.PredictiveMaintenance.GenerateWorkOrder, "Promote to Work Order", "PredictiveMaintenance"),
+        new(PermissionKeys.PredictiveMaintenance.Dismiss, "Dismiss Predictive Alerts", "PredictiveMaintenance")
     ];
 
     public static async Task SeedAsync(

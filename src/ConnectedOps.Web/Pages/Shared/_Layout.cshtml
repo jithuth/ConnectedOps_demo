@@ -571,6 +571,32 @@
                             </a>
                         </li>
 
+                        <li class="nav-header">DRIVER &amp; CUSTOMER EXPERIENCE</li>
+                        <li class="nav-item">
+                            <a href="/Hos/Logbook" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Hos") ? "active" : "")">
+                                <i class="nav-icon bi bi-stopwatch text-warning"></i>
+                                <p>HOS &amp; ELD Logbook</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Gamification/Leaderboard" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Gamification") ? "active" : "")">
+                                <i class="nav-icon bi bi-trophy-fill text-warning"></i>
+                                <p>Leaderboard &amp; Badges</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Expenses/DriverExpenses" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Expenses") ? "active" : "")">
+                                <i class="nav-icon bi bi-wallet2 text-success"></i>
+                                <p>Trip Expenses</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Tracking/Live" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Tracking") ? "active" : "")">
+                                <i class="nav-icon bi bi-geo-alt-fill text-info"></i>
+                                <p>Public Live Tracking</p>
+                            </a>
+                        </li>
+
                         <li class="nav-header">MAPS &amp; GEOFENCING</li>
                         <li class="nav-item">
                             <a href="/Maps/Live" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Maps/Live") ? "active" : "")">
@@ -622,6 +648,12 @@
                             <a href="/Maintenance/Dashboard" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Maintenance/Dashboard") ? "active" : "")">
                                 <i class="nav-icon bi bi-speedometer2"></i>
                                 <p>Dashboard</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Predictive/DigitalTwin" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Predictive") ? "active" : "")">
+                                <i class="nav-icon bi bi-cpu text-info"></i>
+                                <p>AI Predictive Health</p>
                             </a>
                         </li>
                         <li class="nav-item">
@@ -855,6 +887,32 @@
                             </a>
                         </li>
 
+                        <li class="nav-header">DEVELOPER & INTEGRATIONS</li>
+                        <li class="nav-item">
+                            <a href="/Integrations/Webhooks" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Integrations/Webhooks") ? "active" : "")">
+                                <i class="nav-icon bi bi-broadcast-pin"></i>
+                                <p>Webhooks</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Integrations/ApiKeys" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Integrations/ApiKeys") ? "active" : "")">
+                                <i class="nav-icon bi bi-key"></i>
+                                <p>API Keys</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Integrations/ErpExport" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Integrations/ErpExport") ? "active" : "")">
+                                <i class="nav-icon bi bi-file-earmark-spreadsheet"></i>
+                                <p>ERP & Accounting</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/Integrations/FuelFeeds" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Integrations/FuelFeeds") ? "active" : "")">
+                                <i class="nav-icon bi bi-fuel-pump"></i>
+                                <p>Fuel Clearinghouse</p>
+                            </a>
+                        </li>
+
                         <li class="nav-header">MONITORING</li>
                         <li class="nav-item">
                             <a href="/Platform/AuditLogs" class="nav-link @(ViewContext.HttpContext.Request.Path.StartsWithSegments("/Platform/AuditLogs") ? "active" : "")">
@@ -955,6 +1013,11 @@
                 <a href="/Platform/AuditLogs" class="dropdown-item py-2 px-3 rounded d-flex align-items-center gap-2"><i class="bi bi-journal-text text-warning"></i> Audit Logs</a>
                 <a href="/Platform/SecurityLogs" class="dropdown-item py-2 px-3 rounded d-flex align-items-center gap-2"><i class="bi bi-shield-lock text-danger"></i> Security Center</a>
                 <a href="/Platform/Settings" class="dropdown-item py-2 px-3 rounded d-flex align-items-center gap-2"><i class="bi bi-sliders2 text-secondary"></i> System Settings</a>
+                <a href="/Integrations/Webhooks" class="dropdown-item py-2 px-3 rounded d-flex align-items-center gap-2"><i class="bi bi-broadcast-pin text-primary"></i> Developer Webhooks</a>
+                <a href="/Integrations/ApiKeys" class="dropdown-item py-2 px-3 rounded d-flex align-items-center gap-2"><i class="bi bi-key text-success"></i> Open API Keys</a>
+                <a href="/Integrations/ErpExport" class="dropdown-item py-2 px-3 rounded d-flex align-items-center gap-2"><i class="bi bi-file-earmark-spreadsheet text-info"></i> ERP Exports</a>
+                <a href="/Integrations/FuelFeeds" class="dropdown-item py-2 px-3 rounded d-flex align-items-center gap-2"><i class="bi bi-fuel-pump text-warning"></i> Fuel ACH Feeds</a>
+                <a href="/Predictive/DigitalTwin" class="dropdown-item py-2 px-3 rounded d-flex align-items-center gap-2"><i class="bi bi-cpu text-info"></i> AI Predictive Maintenance</a>
             </div>
         </div>
     </div>

@@ -600,4 +600,45 @@ public static class PermissionKeys
         public const string ViewExcursions = "ColdChain.ViewExcursions";
         public const string ConfigureThresholds = "ColdChain.ConfigureThresholds";
     }
+
+    public static class Hos
+    {
+        public const string View = "Hos.View";
+        public const string LogDuty = "Hos.LogDuty";
+        public const string ConfigurePolicy = "Hos.ConfigurePolicy";
+        public const string ViewViolations = "Hos.ViewViolations";
+        public const string RoadsideInspection = "Hos.RoadsideInspection";
+    }
+
+    public static class Gamification
+    {
+        public const string ViewLeaderboard = "Gamification.ViewLeaderboard";
+        public const string ViewScorecards = "Gamification.ViewScorecards";
+        public const string ManageBadges = "Gamification.ManageBadges";
+    }
+
+    public static class DriverExpenses
+    {
+        public const string View = "DriverExpenses.View";
+        public const string Submit = "DriverExpenses.Submit";
+        public const string Approve = "DriverExpenses.Approve";
+        public const string Reimburse = "DriverExpenses.Reimburse";
+    }
+
+    public static class Integrations
+    {
+        public const string View = "Integrations.View";
+        public const string ManageWebhooks = "Integrations.ManageWebhooks";
+        public const string ManageApiKeys = "Integrations.ManageApiKeys";
+        public const string ExportErp = "Integrations.ExportErp";
+        public const string SyncFuelFeeds = "Integrations.SyncFuelFeeds";
+    }
+
+    public static class PredictiveMaintenance
+    {
+        public const string View = "PredictiveMaintenance.View";
+        public const string RunDiagnostics = "PredictiveMaintenance.RunDiagnostics";
+        public const string GenerateWorkOrder = "PredictiveMaintenance.GenerateWorkOrder";
+        public const string Dismiss = "PredictiveMaintenance.Dismiss";
+    }
 }
