@@ -33,6 +33,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__DefaultConnection: "Server=sql-server,1433;Database=ConnectedOpsDb;User Id=sa;Password=${MSSQL_SA_PASSWORD:-ConnectedOps_StrongP@ssw0rd!2026};TrustServerCertificate=True;MultipleActiveResultSets=True;"
+      Jwt__SigningKey: "${JWT_SECRET:-SuperSecretKey_ConnectedOpsEnterprisePlatformKey2026_Minimum32BytesLong!}"
       Jwt__Key: "${JWT_SECRET:-SuperSecretKey_ConnectedOpsEnterprisePlatformKey2026_Minimum32BytesLong!}"
       Jwt__Issuer: "https://connectedops.io"
       Jwt__Audience: "https://connectedops.io"
@@ -53,6 +54,10 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__DefaultConnection: "Server=sql-server,1433;Database=ConnectedOpsDb;User Id=sa;Password=${MSSQL_SA_PASSWORD:-ConnectedOps_StrongP@ssw0rd!2026};TrustServerCertificate=True;MultipleActiveResultSets=True;"
+      Jwt__SigningKey: "${JWT_SECRET:-SuperSecretKey_ConnectedOpsEnterprisePlatformKey2026_Minimum32BytesLong!}"
+      Jwt__Key: "${JWT_SECRET:-SuperSecretKey_ConnectedOpsEnterprisePlatformKey2026_Minimum32BytesLong!}"
+      Jwt__Issuer: "https://connectedops.io"
+      Jwt__Audience: "https://connectedops.io"
       ApiUrl: "http://connectedops-api:8080"
     ports:
       - "5001:8080"
