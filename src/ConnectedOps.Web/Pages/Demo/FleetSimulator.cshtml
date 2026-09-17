@@ -50,6 +50,10 @@ else
 
                 <!-- Simulation Action Controls -->
                 <div class="d-flex align-items-center flex-wrap gap-2">
+                    <button type="button" class="btn btn-warning d-flex align-items-center gap-1 shadow-sm text-dark fw-bold" id="btn-seed-all" onclick="seedEnterpriseDemo()">
+                        <i class="bi bi-stars"></i>
+                        <span>Seed All 20 Phases (Apex Global)</span>
+                    </button>
                     <button type="button" class="btn btn-outline-primary d-flex align-items-center gap-1 shadow-sm" id="btn-create-fleet" onclick="createDemoFleet()">
                         <i class="bi bi-plus-circle"></i>
                         <span>Create / Seed Fleet (10 Vehicles)</span>
@@ -349,6 +353,31 @@ else
                 });
                 if (res.ok) await pollStatus();
             } catch (e) {}
+        }
+
+        async function seedEnterpriseDemo() {
+            const btn = document.getElementById('btn-seed-all');
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Seeding All 20 Phases...';
+            try {
+                const res = await fetch(`?handler=SeedEnterpriseDemo`, {
+                    method: 'POST',
+                    headers: { 'RequestVerificationToken': antiforgeryToken }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('Enterprise Demo Data seeded successfully! ' + data.result.message);
+                    await pollStatus();
+                } else {
+                    alert('Seeding error: ' + (data.errors ? data.errors.join(', ') : 'Unknown error'));
+                }
+            } catch (e) {
+                alert('Request failed: ' + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
         }
 
         function escapeHtml(str) {

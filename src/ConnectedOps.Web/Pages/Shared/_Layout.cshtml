@@ -229,6 +229,13 @@
 
                 <!-- Right Nav -->
                 <ul class="navbar-nav ms-auto align-items-center gap-1">
+                    <!-- SignalR Real-Time Telemetry Indicator -->
+                    <li class="nav-item d-none d-md-block me-1">
+                        <span id="signalr-status-indicator" class="badge bg-secondary-subtle text-secondary border d-inline-flex align-items-center gap-1" style="font-size: 0.72rem; padding: 0.35rem 0.6rem;">
+                            <i class="bi bi-broadcast"></i> Connecting...
+                        </span>
+                    </li>
+
                     <!-- RTL Toggle -->
                     <li class="nav-item">
                         <button class="btn btn-sm btn-link text-body nav-link" id="btn-rtl-toggle" title="Toggle RTL / LTR layout">
@@ -1047,11 +1054,16 @@
         </div>
     </div>
 
+    <!-- Toast Container for Real-Time Alerts -->
+    <div id="fleet-toast-container" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1100;"></div>
+
     <!-- Vendor Scripts -->
     <script src="~/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="~/vendor/adminlte/js/adminlte.min.js"></script>
     <script src="~/vendor/chartjs/chart.umd.js"></script>
     <script src="~/vendor/tabulator/js/tabulator.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+    <script src="~/js/fleet-realtime.js"></script>
 
     <!-- Global App Script -->
     <script>

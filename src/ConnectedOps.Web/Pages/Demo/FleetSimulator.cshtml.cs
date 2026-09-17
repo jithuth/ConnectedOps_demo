@@ -11,13 +11,16 @@ namespace ConnectedOps.Web.Pages.Demo;
 public sealed class FleetSimulatorModel : PageModel
 {
     private readonly IDemoFleetSimulator _simulator;
+    private readonly IMasterEnterpriseDemoSeeder _masterDemoSeeder;
     private readonly DemoFleetSettings _settings;
 
     public FleetSimulatorModel(
         IDemoFleetSimulator simulator,
+        IMasterEnterpriseDemoSeeder masterDemoSeeder,
         IOptions<DemoFleetSettings> settings)
     {
         _simulator = simulator;
+        _masterDemoSeeder = masterDemoSeeder;
         _settings = settings.Value;
     }
 
@@ -119,6 +122,20 @@ public sealed class FleetSimulatorModel : PageModel
         {
             var result = await _simulator.ToggleVehicleOfflineSimulationAsync(vehicleId, ct);
             return new JsonResult(new { success = true, isSimulatingOffline = result });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { errors = new[] { ex.Message } });
+        }
+    }
+
+    public async Task<IActionResult> OnPostSeedEnterpriseDemoAsync()
+    {
+        var ct = HttpContext.RequestAborted;
+        try
+        {
+            var result = await _masterDemoSeeder.SeedEnterpriseDemoDataAsync(null, ct);
+            return new JsonResult(new { success = true, result });
         }
         catch (Exception ex)
         {

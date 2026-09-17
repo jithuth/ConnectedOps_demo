@@ -831,6 +831,7 @@ public static class DependencyInjection
         services.AddScoped<IGeofenceService, GeofenceService>();
         services.AddScoped<IGeofenceEvaluationService, GeofenceEvaluationService>();
         services.AddScoped<IDemoFleetSimulator, DemoFleetSimulator>();
+        services.AddScoped<IMasterEnterpriseDemoSeeder, MasterEnterpriseDemoSeeder>();
         services.AddHostedService<DemoFleetBackgroundService>();
     }
 

@@ -157,6 +157,7 @@ builder.Services
 // ============================================================
 
 builder.Services.AddAuthorization();
+builder.Services.AddSignalR();
 
 // ============================================================
 // BUILD
@@ -192,6 +193,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<ConnectedOps.Api.Hubs.FleetHub>("/hubs/fleet");
 
 app.MapAppHealthChecks();
 

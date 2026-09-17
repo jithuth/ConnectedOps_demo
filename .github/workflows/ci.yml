@@ -1,0 +1,33 @@
+name: ConnectedOps CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main", "master", "develop" ]
+  pull_request:
+    branches: [ "main", "master", "develop" ]
+
+jobs:
+  build-and-test:
+    name: Build, Analyze & Test
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Codebase
+      uses: actions/checkout@v4
+
+    - name: Setup .NET 10 SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Restore Dependencies
+      run: dotnet restore ConnectedOps.slnx
+
+    - name: Build Solution (Release)
+      run: dotnet build ConnectedOps.slnx -c Release --no-restore
+
+    - name: Execute Automated Unit & Integration Tests
+      run: dotnet test ConnectedOps.slnx -c Release --no-build --verbosity normal --collect:"XPlat Code Coverage"
+
+    - name: Validate Docker Compose Configuration
+      run: docker compose config -q

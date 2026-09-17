@@ -37,6 +37,9 @@ builder.Services.AddRazorPages(options =>
     options.Conventions.AllowAnonymousToPage("/Account/AccessDenied");
 });
 
+// Add SignalR for Real-time Fleet Telemetry
+builder.Services.AddSignalR();
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
@@ -81,6 +84,7 @@ app.Use(async (context, next) =>
 app.MapGet("/", () => Results.Redirect("/Platform/Dashboard"));
 
 app.MapRazorPages();
+app.MapHub<ConnectedOps.Web.Hubs.FleetHub>("/hubs/fleet");
 
 // Ensure platform superadmin and default tenant are initialized
 await app.Services.BootstrapPlatformAsync();
