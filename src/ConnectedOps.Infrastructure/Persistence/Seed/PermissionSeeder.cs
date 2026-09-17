@@ -987,7 +987,25 @@ public static class PermissionSeeder
         new(PermissionKeys.PredictiveMaintenance.View, "View Predictive Maintenance", "PredictiveMaintenance"),
         new(PermissionKeys.PredictiveMaintenance.RunDiagnostics, "Run Fleet AI Diagnostics", "PredictiveMaintenance"),
         new(PermissionKeys.PredictiveMaintenance.GenerateWorkOrder, "Promote to Work Order", "PredictiveMaintenance"),
-        new(PermissionKeys.PredictiveMaintenance.Dismiss, "Dismiss Predictive Alerts", "PredictiveMaintenance")
+        new(PermissionKeys.PredictiveMaintenance.Dismiss, "Dismiss Predictive Alerts", "PredictiveMaintenance"),
+
+        // PHASE 18 - EV FLEET MANAGEMENT & BATTERY TELEMETRY
+        new(PermissionKeys.EvFleet.View, "View EV Fleet & Batteries", "EvFleet"),
+        new(PermissionKeys.EvFleet.ManageStations, "Manage EV Charging Stations", "EvFleet"),
+        new(PermissionKeys.EvFleet.ScheduleCharging, "Schedule Smart Charging", "EvFleet"),
+        new(PermissionKeys.EvFleet.ControlSessions, "Start/Stop Charging Sessions", "EvFleet"),
+
+        // PHASE 19 - AI ROUTE OPTIMIZATION & VRP SOLVER
+        new(PermissionKeys.RouteOptimization.View, "View Route Optimization Runs", "RouteOptimization"),
+        new(PermissionKeys.RouteOptimization.RunOptimization, "Run VRP Route Optimizer", "RouteOptimization"),
+        new(PermissionKeys.RouteOptimization.DispatchRoute, "Dispatch Optimized Routes", "RouteOptimization"),
+
+        // PHASE 20 - ENTERPRISE WHITE-LABELING & AUDIT COMPLIANCE
+        new(PermissionKeys.WhiteLabel.View, "View Tenant White-Labeling", "WhiteLabel"),
+        new(PermissionKeys.WhiteLabel.ManageBranding, "Manage Tenant Branding", "WhiteLabel"),
+        new(PermissionKeys.WhiteLabel.ManageDomains, "Manage Custom Domains", "WhiteLabel"),
+        new(PermissionKeys.AuditCompliance.View, "View Compliance Audit Packages", "AuditCompliance"),
+        new(PermissionKeys.AuditCompliance.GeneratePackage, "Generate SOC2/ISO Audit Package", "AuditCompliance")
     ];
 
     public static async Task SeedAsync(

@@ -641,4 +641,32 @@ public static class PermissionKeys
         public const string GenerateWorkOrder = "PredictiveMaintenance.GenerateWorkOrder";
         public const string Dismiss = "PredictiveMaintenance.Dismiss";
     }
+
+    public static class EvFleet
+    {
+        public const string View = "EvFleet.View";
+        public const string ManageStations = "EvFleet.ManageStations";
+        public const string ScheduleCharging = "EvFleet.ScheduleCharging";
+        public const string ControlSessions = "EvFleet.ControlSessions";
+    }
+
+    public static class RouteOptimization
+    {
+        public const string View = "RouteOptimization.View";
+        public const string RunOptimization = "RouteOptimization.RunOptimization";
+        public const string DispatchRoute = "RouteOptimization.DispatchRoute";
+    }
+
+    public static class WhiteLabel
+    {
+        public const string View = "WhiteLabel.View";
+        public const string ManageBranding = "WhiteLabel.ManageBranding";
+        public const string ManageDomains = "WhiteLabel.ManageDomains";
+    }
+
+    public static class AuditCompliance
+    {
+        public const string View = "AuditCompliance.View";
+        public const string GeneratePackage = "AuditCompliance.GeneratePackage";
+    }
 }

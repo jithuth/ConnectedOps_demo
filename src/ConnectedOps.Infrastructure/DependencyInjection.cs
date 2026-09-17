@@ -99,6 +99,12 @@ using ConnectedOps.Application.Integrations;
 using ConnectedOps.Infrastructure.Integrations;
 using ConnectedOps.Application.Predictive;
 using ConnectedOps.Infrastructure.Predictive;
+using ConnectedOps.Application.Ev;
+using ConnectedOps.Infrastructure.Ev;
+using ConnectedOps.Application.Optimization;
+using ConnectedOps.Infrastructure.Optimization;
+using ConnectedOps.Application.WhiteLabel;
+using ConnectedOps.Infrastructure.WhiteLabel;
 
 
 
@@ -203,6 +209,12 @@ public static class DependencyInjection
         AddIntegrationServices(services);
 
         AddPredictiveMaintenanceServices(services);
+
+        AddEvServices(services);
+
+        AddOptimizationServices(services);
+
+        AddWhiteLabelServices(services);
 
         AddValidation(
             services);
@@ -962,5 +974,32 @@ public static class DependencyInjection
         IServiceCollection services)
     {
         services.AddScoped<IPredictiveMaintenanceService, PredictiveMaintenanceService>();
+    }
+
+    // ================================================================
+    // PHASE 18 - EV FLEET MANAGEMENT & BATTERY TELEMETRY
+    // ================================================================
+    private static void AddEvServices(
+        IServiceCollection services)
+    {
+        services.AddScoped<IEvService, EvService>();
+    }
+
+    // ================================================================
+    // PHASE 19 - AI ROUTE OPTIMIZATION & VRP SOLVER
+    // ================================================================
+    private static void AddOptimizationServices(
+        IServiceCollection services)
+    {
+        services.AddScoped<IRouteOptimizationService, RouteOptimizationService>();
+    }
+
+    // ================================================================
+    // PHASE 20 - ENTERPRISE WHITE-LABELING & AUDIT COMPLIANCE
+    // ================================================================
+    private static void AddWhiteLabelServices(
+        IServiceCollection services)
+    {
+        services.AddScoped<IWhiteLabelService, WhiteLabelService>();
     }
 }

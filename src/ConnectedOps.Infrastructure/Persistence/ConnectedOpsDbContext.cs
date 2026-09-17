@@ -35,6 +35,9 @@ using ConnectedOps.Domain.Expenses;
 using ConnectedOps.Domain.Tracking;
 using ConnectedOps.Domain.Integrations;
 using ConnectedOps.Domain.Predictive;
+using ConnectedOps.Domain.Ev;
+using ConnectedOps.Domain.Optimization;
+using ConnectedOps.Domain.WhiteLabel;
 
 namespace ConnectedOps.Infrastructure.Persistence;
 
@@ -490,6 +493,36 @@ public sealed class ConnectedOpsDbContext
 
     public DbSet<PredictiveMaintenanceAlert> PredictiveMaintenanceAlerts =>
         Set<PredictiveMaintenanceAlert>();
+
+    // Phase 18 - Electric Vehicle (EV) Fleet Management & Battery Telemetry
+    public DbSet<ChargingStation> ChargingStations =>
+        Set<ChargingStation>();
+
+    public DbSet<VehicleBatteryState> VehicleBatteryStates =>
+        Set<VehicleBatteryState>();
+
+    public DbSet<ChargingSession> ChargingSessions =>
+        Set<ChargingSession>();
+
+    // Phase 19 - AI Route Optimization & Multi-Stop VRP
+    public DbSet<RouteOptimizationRun> RouteOptimizationRuns =>
+        Set<RouteOptimizationRun>();
+
+    public DbSet<OptimizedRoutePlan> OptimizedRoutePlans =>
+        Set<OptimizedRoutePlan>();
+
+    public DbSet<OptimizedStopSequence> OptimizedStopSequences =>
+        Set<OptimizedStopSequence>();
+
+    // Phase 20 - Enterprise White-Labeling, Custom Domains & Audit Compliance
+    public DbSet<TenantBranding> TenantBrandings =>
+        Set<TenantBranding>();
+
+    public DbSet<TenantCustomDomain> TenantCustomDomains =>
+        Set<TenantCustomDomain>();
+
+    public DbSet<AuditCompliancePackage> AuditCompliancePackages =>
+        Set<AuditCompliancePackage>();
 
     protected override void OnModelCreating(
         ModelBuilder modelBuilder)

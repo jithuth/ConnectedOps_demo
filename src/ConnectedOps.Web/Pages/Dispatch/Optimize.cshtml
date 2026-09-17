@@ -1,0 +1,267 @@
+@page
+@model ConnectedOps.Web.Pages.Dispatch.OptimizeModel
+@using ConnectedOps.Domain.Optimization
+@{
+    ViewData["Title"] = "AI Route Optimization & Multi-Stop VRP Engine";
+    ViewData["Subtitle"] = "Capacitated vehicle routing with time windows (CVRPTW), stop sequencing, and 1-click fleet dispatch";
+}
+
+@if (!string.IsNullOrEmpty(Model.SuccessMessage))
+{
+    <div class="alert alert-success alert-dismissible fade show d-flex align-items-center mb-4 shadow-sm" role="alert">
+        <i class="bi bi-check-circle-fill fs-5 me-2"></i>
+        <div>@Model.SuccessMessage</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center mb-4 shadow-sm" role="alert">
+        <i class="bi bi-exclamation-triangle-fill fs-5 me-2"></i>
+        <div>@Model.ErrorMessage</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- ACTION / LAUNCH PANEL -->
+<div class="card border-0 shadow-sm mb-4 bg-body">
+    <div class="card-body p-4">
+        <div class="row align-items-center">
+            <div class="col-lg-7">
+                <div class="d-flex align-items-center gap-3 mb-2">
+                    <div class="metric-icon bg-warning-subtle text-warning">
+                        <i class="bi bi-cpu fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">Dynamic Multi-Vehicle Route Solver</h5>
+                        <p class="text-secondary small mb-0">Solves NP-hard Capacitated VRP using high-performance heuristics, optimizing stops for minimal mileage, duration, and carbon emissions.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-5 text-lg-end mt-3 mt-lg-0">
+                <form method="post" asp-page-handler="Solve" class="d-inline-flex align-items-center gap-2 flex-wrap justify-content-lg-end">
+                    <select name="objective" class="form-select form-select-sm" style="width: auto;">
+                        <option value="@((int)OptimizationObjective.MinimizeDistance)">Minimize Distance</option>
+                        <option value="@((int)OptimizationObjective.MinimizeDuration)">Minimize Duration</option>
+                        <option value="@((int)OptimizationObjective.MinimizeCost)">Minimize Total Cost</option>
+                        <option value="@((int)OptimizationObjective.BalanceWorkload)">Balance Workload</option>
+                    </select>
+                    <input type="hidden" name="depotAddress" value="Central Distribution Warehouse, San Francisco" />
+                    <input type="hidden" name="depotLatitude" value="37.7749" />
+                    <input type="hidden" name="depotLongitude" value="-122.4194" />
+                    <button type="submit" class="btn btn-primary btn-sm px-3 shadow-sm">
+                        <i class="bi bi-play-circle-fill me-1"></i> Run AI Optimization
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (Model.SelectedRun != null)
+{
+    var r = Model.SelectedRun;
+    <!-- ACTIVE RUN DETAIL & METRICS -->
+    <div class="card border-0 shadow-sm mb-4 bg-body">
+        <div class="card-header bg-transparent py-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-3">
+                <span class="badge bg-primary-subtle text-primary fs-6 px-3 py-2 font-monospace">@r.RunNumber</span>
+                <div>
+                    <h6 class="fw-bold mb-0">Optimization Run Overview</h6>
+                    <span class="text-secondary small">Solved: @(r.SolvedAtUtc?.ToString("g") ?? r.CreatedAtUtc.ToString("g")) UTC &bull; Objective: @r.Objective</span>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                @if (r.Status == OptimizationRunStatus.Dispatched)
+                {
+                    <span class="badge bg-success px-3 py-2"><i class="bi bi-check2-all me-1"></i> Dispatched to Drivers</span>
+                }
+                else
+                {
+                    <form method="post" asp-page-handler="Dispatch" class="d-inline">
+                        <input type="hidden" name="runId" value="@r.Id" />
+                        <button type="submit" class="btn btn-success btn-sm shadow-sm px-3">
+                            <i class="bi bi-send-check-fill me-1"></i> 1-Click Dispatch All Routes
+                        </button>
+                    </form>
+                }
+            </div>
+        </div>
+
+        <div class="card-body p-3">
+            <div class="row g-3 text-center">
+                <div class="col-6 col-md-3">
+                    <div class="border rounded p-2">
+                        <span class="text-secondary small text-uppercase fw-semibold">Vehicles Allocated</span>
+                        <h4 class="fw-bold mt-1 text-primary mb-0">@r.VehiclesAllocated / @r.VehiclesAvailable</h4>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="border rounded p-2">
+                        <span class="text-secondary small text-uppercase fw-semibold">Total Mileage</span>
+                        <h4 class="fw-bold mt-1 text-success mb-0">@r.TotalDistanceKm <span class="fs-6 fw-normal">km</span></h4>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="border rounded p-2">
+                        <span class="text-secondary small text-uppercase fw-semibold">Estimated Duration</span>
+                        <h4 class="fw-bold mt-1 text-info mb-0">@(r.TotalDurationMinutes / 60)h @(r.TotalDurationMinutes % 60)m</h4>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="border rounded p-2">
+                        <span class="text-secondary small text-uppercase fw-semibold">Optimization Efficiency</span>
+                        <h4 class="fw-bold mt-1 text-warning mb-0">@r.EfficiencyScorePercent%</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ROUTE SEQUENCING TIMELINE -->
+    <h6 class="fw-bold mb-3"><i class="bi bi-signpost-2 text-primary me-2"></i>Multi-Vehicle Route Sequences &amp; Delivery Itineraries</h6>
+
+    <div class="row g-4 mb-4">
+        @foreach (var plan in r.RoutePlans)
+        {
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm h-100 bg-body">
+                    <div class="card-header bg-body-secondary py-2 px-3 d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="fw-bold text-primary">@plan.RouteName</span>
+                            <div class="text-secondary small">
+                                <i class="bi bi-person"></i> @plan.DriverName &bull; <i class="bi bi-truck"></i> @plan.VehicleName
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-primary px-2 py-1">@plan.DistanceKm km</span>
+                            <div class="text-secondary small">@(plan.DurationMinutes / 60)h @(plan.DurationMinutes % 60)m</div>
+                        </div>
+                    </div>
+
+                    <div class="card-body p-3">
+                        <div class="timeline position-relative ps-3" style="border-left: 2px solid var(--bs-border-color);">
+                            @foreach (var stop in plan.Stops)
+                            {
+                                <div class="position-relative mb-3 ps-3">
+                                    <!-- Stop Icon Marker -->
+                                    <div class="position-absolute" style="left: -23px; top: 0;">
+                                        @if (stop.StopType == OptimizedStopType.DepotStart)
+                                        {
+                                            <span class="badge rounded-pill bg-primary p-1"><i class="bi bi-house-door-fill" style="font-size: 0.7rem;"></i></span>
+                                        }
+                                        else if (stop.StopType == OptimizedStopType.DepotEnd)
+                                        {
+                                            <span class="badge rounded-pill bg-secondary p-1"><i class="bi bi-flag-fill" style="font-size: 0.7rem;"></i></span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge rounded-pill bg-success p-1"><i class="bi bi-geo-alt-fill" style="font-size: 0.7rem;"></i></span>
+                                        }
+                                    </div>
+
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <div class="fw-bold small">
+                                                Stop #@stop.SequenceOrder: @stop.LocationName
+                                                @if (stop.StopType == OptimizedStopType.DepotStart)
+                                                {
+                                                    <span class="badge bg-primary-subtle text-primary ms-1" style="font-size: 0.65rem;">Start Hub</span>
+                                                }
+                                                else if (stop.StopType == OptimizedStopType.DepotEnd)
+                                                {
+                                                    <span class="badge bg-secondary-subtle text-secondary ms-1" style="font-size: 0.65rem;">Return Hub</span>
+                                                }
+                                            </div>
+                                            <div class="text-secondary" style="font-size: 0.75rem;">@stop.Address</div>
+                                            @if (!string.IsNullOrEmpty(stop.CustomerContact))
+                                            {
+                                                <div class="text-info small mt-1"><i class="bi bi-telephone"></i> @stop.CustomerContact</div>
+                                            }
+                                        </div>
+                                        <div class="text-end" style="min-width: 90px;">
+                                            <span class="badge bg-light text-dark border small">@stop.PlannedArrivalUtc.ToString("t")</span>
+                                            <div class="text-secondary" style="font-size: 0.7rem;">Depart: @stop.PlannedDepartureUtc.ToString("t")</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<!-- HISTORICAL OPTIMIZATION RUNS TABLE -->
+<div class="card border-0 shadow-sm bg-body mb-4">
+    <div class="card-header bg-transparent py-3 border-bottom d-flex justify-content-between align-items-center">
+        <div>
+            <h6 class="fw-bold mb-0"><i class="bi bi-clock-history text-info me-2"></i>Optimization Runs History</h6>
+            <span class="text-secondary small">Previous VRP solver iterations, stop allocations, and dispatch records</span>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light small text-secondary">
+                    <tr>
+                        <th>RUN NUMBER</th>
+                        <th>DATE SOLVED</th>
+                        <th>OBJECTIVE</th>
+                        <th>STOPS</th>
+                        <th>VEHICLES</th>
+                        <th>DISTANCE</th>
+                        <th>EFFICIENCY</th>
+                        <th>STATUS</th>
+                        <th class="text-end">ACTION</th>
+                    </tr>
+                </thead>
+                <tbody class="small">
+                    @if (Model.Runs == null || Model.Runs.Items.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center py-3 text-secondary">No optimization runs found. Click "Run AI Optimization" to solve your first batch.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var run in Model.Runs.Items)
+                        {
+                            <tr class="@(Model.SelectedRun?.Id == run.Id ? "table-active" : "")">
+                                <td class="fw-bold font-monospace text-primary">@run.RunNumber</td>
+                                <td>@run.CreatedAtUtc.ToString("g")</td>
+                                <td>@run.Objective</td>
+                                <td>@run.TotalStopsInput</td>
+                                <td>@run.VehiclesAllocated / @run.VehiclesAvailable</td>
+                                <td>@run.TotalDistanceKm km</td>
+                                <td><span class="badge bg-warning-subtle text-warning fw-semibold">@run.EfficiencyScorePercent%</span></td>
+                                <td>
+                                    @if (run.Status == OptimizationRunStatus.Dispatched)
+                                    {
+                                        <span class="badge bg-success-subtle text-success"><i class="bi bi-check-all"></i> Dispatched</span>
+                                    }
+                                    else if (run.Status == OptimizationRunStatus.Completed)
+                                    {
+                                        <span class="badge bg-primary-subtle text-primary"><i class="bi bi-check"></i> Solved</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary-subtle text-secondary">@run.Status</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <a asp-page="./Optimize" asp-route-runId="@run.Id" class="btn btn-sm btn-outline-primary">
+                                        Inspect
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

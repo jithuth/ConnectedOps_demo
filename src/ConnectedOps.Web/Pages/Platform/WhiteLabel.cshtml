@@ -1,0 +1,390 @@
+@page
+@model ConnectedOps.Web.Pages.Platform.WhiteLabelModel
+@using ConnectedOps.Domain.WhiteLabel
+@{
+    ViewData["Title"] = "Enterprise White-Labeling & Audit Compliance";
+    ViewData["Subtitle"] = "Tenant brand theming, custom vanity domains, and automated SOC 2 Type II / ISO 27001 evidence packages";
+}
+
+@if (!string.IsNullOrEmpty(Model.SuccessMessage))
+{
+    <div class="alert alert-success alert-dismissible fade show d-flex align-items-center mb-4 shadow-sm" role="alert">
+        <i class="bi bi-check-circle-fill fs-5 me-2"></i>
+        <div>@Model.SuccessMessage</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center mb-4 shadow-sm" role="alert">
+        <i class="bi bi-exclamation-triangle-fill fs-5 me-2"></i>
+        <div>@Model.ErrorMessage</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="row g-4 mb-4">
+    <!-- LEFT: BRANDING SETTINGS -->
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm bg-body h-100">
+            <div class="card-header bg-transparent py-3 border-bottom">
+                <h6 class="fw-bold mb-0"><i class="bi bi-palette-fill text-primary me-2"></i>Tenant Brand Customization</h6>
+                <span class="text-secondary small">Define your enterprise organization's platform title, colors, logo, and login portal appearance</span>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" asp-page-handler="UpdateBranding">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Platform Portal Title</label>
+                            <input type="text" name="platformTitle" class="form-control form-control-sm" value="@Model.Overview.Branding.PlatformTitle" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Customer Support Email</label>
+                            <input type="email" name="supportEmail" class="form-control form-control-sm" value="@Model.Overview.Branding.SupportEmail" placeholder="support@yourcompany.com" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Primary Accent Color</label>
+                            <div class="input-group input-group-sm">
+                                <input type="color" class="form-control form-control-color" id="primaryColorPicker" value="@Model.Overview.Branding.PrimaryAccentColor" onchange="document.getElementById('primaryColorText').value = this.value; updatePreview();" />
+                                <input type="text" name="primaryAccentColor" id="primaryColorText" class="form-control font-monospace" value="@Model.Overview.Branding.PrimaryAccentColor" oninput="document.getElementById('primaryColorPicker').value = this.value; updatePreview();" required />
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Secondary Accent Color</label>
+                            <div class="input-group input-group-sm">
+                                <input type="color" class="form-control form-control-color" id="secondaryColorPicker" value="@Model.Overview.Branding.SecondaryAccentColor" onchange="document.getElementById('secondaryColorText').value = this.value; updatePreview();" />
+                                <input type="text" name="secondaryAccentColor" id="secondaryColorText" class="form-control font-monospace" value="@Model.Overview.Branding.SecondaryAccentColor" oninput="document.getElementById('secondaryColorPicker').value = this.value; updatePreview();" required />
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Company Logo Image URL</label>
+                            <input type="url" name="logoUrl" id="logoUrlInput" class="form-control form-control-sm" value="@Model.Overview.Branding.LogoUrl" placeholder="https://cdn.example.com/logo.png" oninput="updatePreview();" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Custom Favicon URL</label>
+                            <input type="url" name="faviconUrl" class="form-control form-control-sm" value="@Model.Overview.Branding.FaviconUrl" placeholder="https://cdn.example.com/favicon.ico" />
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Custom Login Page Banner Image URL</label>
+                            <input type="url" name="customLoginBannerUrl" class="form-control form-control-sm" value="@Model.Overview.Branding.CustomLoginBannerUrl" placeholder="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d" />
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Custom Portal Footer Notice</label>
+                            <input type="text" name="customFooterText" class="form-control form-control-sm" value="@Model.Overview.Branding.CustomFooterText" placeholder="Confidential &bull; Apex Logistics Enterprise Operations" />
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" name="isCustomBrandingEnabled" value="true" id="brandingEnabledSwitch" @(Model.Overview.Branding.IsCustomBrandingEnabled ? "checked" : "")>
+                                <label class="form-check-label small fw-semibold" for="brandingEnabledSwitch">Activate White-Label UI Overrides for All Tenant Users</label>
+                            </div>
+                        </div>
+
+                        <div class="col-12 text-end mt-4">
+                            <button type="submit" class="btn btn-primary btn-sm px-4 shadow-sm">
+                                <i class="bi bi-check2 me-1"></i> Save Branding Changes
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT: LIVE BRAND PREVIEW -->
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm bg-body h-100">
+            <div class="card-header bg-transparent py-3 border-bottom">
+                <h6 class="fw-bold mb-0"><i class="bi bi-eye-fill text-info me-2"></i>Live Brand Identity Preview</h6>
+                <span class="text-secondary small">Real-time simulation of your branded navigation, header, and themes</span>
+            </div>
+            <div class="card-body p-4">
+                <div class="border rounded-3 overflow-hidden shadow-sm" id="previewContainer" style="border-color: #e5e7eb;">
+                    <!-- MOCK HEADER -->
+                    <div class="p-3 text-white d-flex align-items-center justify-content-between" id="previewHeader" style="background-color: @Model.Overview.Branding.PrimaryAccentColor;">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="rounded bg-white p-1 d-flex align-items-center justify-content-center" style="width: 28px; height: 28px;">
+                                <i class="bi bi-lightning-charge-fill text-primary" style="font-size: 0.9rem;"></i>
+                            </div>
+                            <span class="fw-bold fs-6" id="previewTitle">@Model.Overview.Branding.PlatformTitle</span>
+                        </div>
+                        <span class="badge bg-white text-dark small" style="font-size: 0.7rem;">Enterprise</span>
+                    </div>
+
+                    <!-- MOCK BODY -->
+                    <div class="p-3 bg-light text-dark">
+                        <div class="card border-0 shadow-sm mb-3 bg-white p-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold small">Fleet Operations Status</span>
+                                <span class="badge" id="previewBadge" style="background-color: @Model.Overview.Branding.SecondaryAccentColor; color: white;">Active Live</span>
+                            </div>
+                            <div class="text-secondary small">Custom branded tenant portal is operational.</div>
+                            <button class="btn btn-sm text-white mt-3 w-100" id="previewBtn" style="background-color: @Model.Overview.Branding.PrimaryAccentColor;">
+                                Branded Action Button
+                            </button>
+                        </div>
+                        <div class="text-secondary text-center small" style="font-size: 0.7rem;">
+                            @(Model.Overview.Branding.CustomFooterText ?? "ConnectedOps Platform Enterprise")
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CUSTOM VANITY DOMAINS SECTION -->
+<div class="card border-0 shadow-sm bg-body mb-4">
+    <div class="card-header bg-transparent py-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h6 class="fw-bold mb-0"><i class="bi bi-globe text-primary me-2"></i>Custom Vanity Domains &amp; SSL Ingress</h6>
+            <span class="text-secondary small">Map your own company domain (e.g. <code>fleet.yourcompany.com</code>) with automatic TLS certificate provisioning</span>
+        </div>
+        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#newDomainModal">
+            <i class="bi bi-plus-circle me-1"></i> Register Domain
+        </button>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light small text-secondary">
+                    <tr>
+                        <th>HOSTNAME</th>
+                        <th>DNS VERIFICATION TOKEN</th>
+                        <th>STATUS</th>
+                        <th>SSL CERTIFICATE</th>
+                        <th>VERIFIED DATE</th>
+                        <th class="text-end">ACTION</th>
+                    </tr>
+                </thead>
+                <tbody class="small">
+                    @if (Model.Overview.CustomDomains.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-secondary">
+                                No custom vanity domains registered yet. Click "Register Domain" to map your corporate URL.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var d in Model.Overview.CustomDomains)
+                        {
+                            <tr>
+                                <td class="fw-bold">
+                                    <i class="bi bi-link-45deg text-primary me-1"></i>
+                                    https://@d.Hostname
+                                </td>
+                                <td>
+                                    <code class="text-primary bg-primary-subtle px-2 py-1 rounded small">CNAME ingress.connectedops.io</code>
+                                    <div class="text-secondary small mt-1 font-monospace">Token: @d.VerificationToken</div>
+                                </td>
+                                <td>
+                                    @if (d.Status == DomainVerificationStatus.Verified)
+                                    {
+                                        <span class="badge bg-success-subtle text-success"><i class="bi bi-check-circle-fill"></i> Verified</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning-subtle text-warning"><i class="bi bi-clock-history"></i> Pending DNS</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (d.SslProvisioned)
+                                    {
+                                        <span class="badge bg-success-subtle text-success"><i class="bi bi-lock-fill"></i> TLS 1.3 Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary-subtle text-secondary">Not Issued</span>
+                                    }
+                                </td>
+                                <td>@(d.VerifiedAtUtc?.ToString("g") ?? "Pending")</td>
+                                <td class="text-end">
+                                    <form method="post" asp-page-handler="VerifyDomain" class="d-inline">
+                                        <input type="hidden" name="domainId" value="@d.Id" />
+                                        <button type="submit" class="btn btn-sm btn-outline-success">
+                                            <i class="bi bi-arrow-repeat"></i> Verify DNS
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- AUDIT COMPLIANCE PACKAGES (SOC2 / ISO 27001) -->
+<div class="card border-0 shadow-sm bg-body mb-4">
+    <div class="card-header bg-transparent py-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h6 class="fw-bold mb-0"><i class="bi bi-shield-check text-success me-2"></i>Regulatory Audit Compliance Evidence Packages</h6>
+            <span class="text-secondary small">Cryptographically signed compliance packages for SOC 2 Type II, ISO 27001, and GDPR data isolation audits</span>
+        </div>
+        <div class="dropdown">
+            <button class="btn btn-sm btn-primary dropdown-toggle shadow-sm" type="button" data-bs-toggle="dropdown">
+                <i class="bi bi-file-earmark-lock-fill me-1"></i> Generate Evidence Pack
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                <li>
+                    <form method="post" asp-page-handler="GenerateAuditPackage">
+                        <input type="hidden" name="packageType" value="@((int)AuditPackageType.Soc2Type2)" />
+                        <button type="submit" class="dropdown-item py-2"><i class="bi bi-shield-fill text-primary me-2"></i> SOC 2 Type II Evidence Bundle</button>
+                    </form>
+                </li>
+                <li>
+                    <form method="post" asp-page-handler="GenerateAuditPackage">
+                        <input type="hidden" name="packageType" value="@((int)AuditPackageType.Iso27001)" />
+                        <button type="submit" class="dropdown-item py-2"><i class="bi bi-award-fill text-success me-2"></i> ISO 27001 ISMS Controls Pack</button>
+                    </form>
+                </li>
+                <li>
+                    <form method="post" asp-page-handler="GenerateAuditPackage">
+                        <input type="hidden" name="packageType" value="@((int)AuditPackageType.GdprPrivacy)" />
+                        <button type="submit" class="dropdown-item py-2"><i class="bi bi-person-lock text-info me-2"></i> GDPR Data Privacy Audit</button>
+                    </form>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <form method="post" asp-page-handler="GenerateAuditPackage">
+                        <input type="hidden" name="packageType" value="@((int)AuditPackageType.FullGovernancePack)" />
+                        <button type="submit" class="dropdown-item py-2"><i class="bi bi-folder-symlink-fill text-warning me-2"></i> Comprehensive Governance Suite</button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light small text-secondary">
+                    <tr>
+                        <th>PACKAGE NUMBER</th>
+                        <th>FRAMEWORK</th>
+                        <th>GENERATED (UTC)</th>
+                        <th>EVIDENCE COUNT</th>
+                        <th>INTEGRITY CHECKSUM (SHA-256)</th>
+                        <th>FILE SIZE</th>
+                        <th class="text-end">ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody class="small">
+                    @if (Model.Overview.RecentAuditPackages.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-secondary">
+                                No audit packages generated yet. Click "Generate Evidence Pack" to assemble your tenant compliance artifacts.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var p in Model.Overview.RecentAuditPackages)
+                        {
+                            <tr>
+                                <td class="fw-bold font-monospace text-primary">@p.PackageNumber</td>
+                                <td>
+                                    <span class="badge bg-primary-subtle text-primary">@p.PackageType</span>
+                                </td>
+                                <td>@p.GeneratedAtUtc.ToString("g")</td>
+                                <td><span class="badge bg-info-subtle text-info">@p.EvidenceItemsCount Artifacts</span></td>
+                                <td>
+                                    <code class="text-secondary" style="font-size: 0.75rem;">@p.ChecksumSha256[..16]...</code>
+                                </td>
+                                <td>@(p.FileSizeBytes / 1024) KB</td>
+                                <td class="text-end">
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="viewManifest(`@Html.Raw(p.ManifestJson.Replace("`", "\\`"))`)">
+                                        <i class="bi bi-file-code"></i> View Manifest
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: REGISTER DOMAIN -->
+<div class="modal fade" id="newDomainModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="RegisterDomain">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-globe me-2"></i>Map Custom Vanity Domain</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Fully Qualified Domain Name (FQDN)</label>
+                        <input type="text" name="hostname" class="form-control form-control-sm" placeholder="e.g. fleet.apexlogistics.com" required />
+                        <span class="text-secondary small">Provide the subdomain you wish to map. We will generate DNS CNAME verification tokens.</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Register Hostname</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: MANIFEST VIEWER -->
+<div class="modal fade" id="manifestModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="bi bi-file-code-fill me-2"></i>Audit Compliance Manifest</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <pre class="bg-dark text-light p-3 rounded font-monospace small" id="manifestContent" style="max-height: 400px; overflow-y: auto;"></pre>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function updatePreview() {
+        const titleInput = document.querySelector('input[name="platformTitle"]');
+        const primaryColor = document.getElementById('primaryColorText').value;
+        const secondaryColor = document.getElementById('secondaryColorText').value;
+
+        if (titleInput) document.getElementById('previewTitle').textContent = titleInput.value || 'ConnectedOps';
+        if (primaryColor) {
+            document.getElementById('previewHeader').style.backgroundColor = primaryColor;
+            document.getElementById('previewBtn').style.backgroundColor = primaryColor;
+        }
+        if (secondaryColor) {
+            document.getElementById('previewBadge').style.backgroundColor = secondaryColor;
+        }
+    }
+
+    function viewManifest(json) {
+        try {
+            const formatted = JSON.stringify(JSON.parse(json), null, 2);
+            document.getElementById('manifestContent').textContent = formatted;
+        } catch {
+            document.getElementById('manifestContent').textContent = json;
+        }
+        const modal = new bootstrap.Modal(document.getElementById('manifestModal'));
+        modal.show();
+    }
+</script>
+}
