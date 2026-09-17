@@ -58,6 +58,15 @@ if [[ "$OS" == "amzn" || "$OS" == "fedora" || "$OS" == "rhel" || "$OS" == "cento
     chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
     ln -sf /usr/local/lib/docker/cli-plugins/docker-compose /usr/bin/docker-compose
   fi
+  # Install Docker Buildx plugin if not present
+  if ! docker buildx version &> /dev/null; then
+    echo "Installing Docker Buildx plugin..."
+    mkdir -p /usr/local/lib/docker/cli-plugins
+    BUILDX_VER=$(curl -s https://api.github.com/repos/docker/buildx/releases/latest | jq -r .tag_name 2>/dev/null || echo "v0.19.3")
+    curl -SL "https://github.com/docker/buildx/releases/download/${BUILDX_VER}/buildx-${BUILDX_VER}.linux-$(uname -m)" -o /usr/local/lib/docker/cli-plugins/docker-buildx
+    chmod +x /usr/local/lib/docker/cli-plugins/docker-buildx
+    ln -sf /usr/local/lib/docker/cli-plugins/docker-buildx /usr/bin/docker-buildx
+  fi
 elif [[ "$OS" == "ubuntu" || "$OS" == "debian" ]]; then
   apt-get update -y
   apt-get install -y ca-certificates curl gnupg lsb-release git openssl jq
