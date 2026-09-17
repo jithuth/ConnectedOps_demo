@@ -115,12 +115,12 @@ public sealed class DispatchRouteConfiguration : IEntityTypeConfiguration<Dispat
         builder.HasOne(x => x.StartLocation)
             .WithMany()
             .HasForeignKey(x => x.StartLocationId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(x => x.EndLocation)
             .WithMany()
             .HasForeignKey(x => x.EndLocationId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany(x => x.Stops)
             .WithOne(s => s.Route)

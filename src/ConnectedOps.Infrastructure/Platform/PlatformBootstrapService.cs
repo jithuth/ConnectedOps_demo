@@ -36,6 +36,9 @@ public static class PlatformBootstrapService
             return;
         }
 
+        // Ensure database schema and migrations exist before running bootstrap queries
+        await serviceProvider.InitializeDatabaseAsync();
+
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var email = options.Email.Trim();
 

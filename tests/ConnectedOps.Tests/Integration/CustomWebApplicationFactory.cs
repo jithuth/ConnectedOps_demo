@@ -14,7 +14,8 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         {
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["PlatformBootstrap:Enabled"] = "false"
+                ["PlatformBootstrap:Enabled"] = "false",
+                ["Database:AutoMigrate"] = "false"
             });
         });
     }

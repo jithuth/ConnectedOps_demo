@@ -6,6 +6,7 @@ using ConnectedOps.Api.Filters;
 using ConnectedOps.Infrastructure;
 using ConnectedOps.Api.Security;
 using ConnectedOps.Infrastructure.Platform;
+using ConnectedOps.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
@@ -204,6 +205,9 @@ app.MapControllers();
 app.MapHub<ConnectedOps.Api.Hubs.FleetHub>("/hubs/fleet");
 
 app.MapAppHealthChecks();
+
+// Ensure database schema is migrated and seeded
+await app.Services.InitializeDatabaseAsync();
 
 await app.Services.BootstrapPlatformAsync();
 

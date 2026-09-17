@@ -1,5 +1,6 @@
 using ConnectedOps.Infrastructure;
 using ConnectedOps.Infrastructure.Platform;
+using ConnectedOps.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -93,6 +94,9 @@ app.MapGet("/", () => Results.Redirect("/Platform/Dashboard"));
 
 app.MapRazorPages();
 app.MapHub<ConnectedOps.Web.Hubs.FleetHub>("/hubs/fleet");
+
+// Ensure database schema is migrated and seeded
+await app.Services.InitializeDatabaseAsync();
 
 // Ensure platform superadmin and default tenant are initialized
 await app.Services.BootstrapPlatformAsync();

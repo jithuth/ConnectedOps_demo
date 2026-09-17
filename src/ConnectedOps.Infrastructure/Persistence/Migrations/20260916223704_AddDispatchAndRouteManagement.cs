@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -53,13 +53,13 @@ namespace ConnectedOps.Infrastructure.Persistence.Migrations
                         column: x => x.EndLocationId,
                         principalTable: "Locations",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_DispatchRoutes_Locations_StartLocationId",
                         column: x => x.StartLocationId,
                         principalTable: "Locations",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_DispatchRoutes_Vehicles_VehicleId",
                         column: x => x.VehicleId,
