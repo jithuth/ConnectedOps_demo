@@ -181,7 +181,8 @@ docker compose build connectedops-api
 echo "Building Web container (3/3)..."
 docker compose build connectedops-web
 echo "Starting all ConnectedOps containers and SQL Server 2022..."
-docker compose up -d
+docker compose down || true
+docker compose up -d --force-recreate
 
 # 7. Discover Public IP & Verify Deployment
 echo -e "${CYAN}[6/6] Verifying Deployment and Discovering Cloud IP...${NC}"

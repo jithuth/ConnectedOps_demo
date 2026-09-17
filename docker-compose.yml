@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: src/ConnectedOps.SqlServer/Dockerfile
+    image: connectedops-sqlserver:latest
     container_name: connectedops-sql
     restart: unless-stopped
     environment:
