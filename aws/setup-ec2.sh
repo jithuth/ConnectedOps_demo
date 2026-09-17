@@ -47,7 +47,7 @@ fi
 
 if [[ "$OS" == "amzn" || "$OS" == "fedora" || "$OS" == "rhel" || "$OS" == "centos" ]]; then
   dnf update -y || yum update -y
-  dnf install -y docker git openssl curl jq || yum install -y docker git openssl curl jq
+  dnf install -y --allowerasing docker git openssl jq || yum install -y docker git openssl jq
   systemctl enable --now docker
   # Install Docker Compose v2 plugin if not present
   if ! docker compose version &> /dev/null; then
