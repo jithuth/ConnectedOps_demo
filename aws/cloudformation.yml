@@ -4,7 +4,7 @@ Description: 'ConnectedOps Enterprise Cloud Platform - Automated Multi-Container
 Parameters:
   InstanceType:
     Type: String
-    Default: t2.medium
+    Default: t2.micro
     AllowedValues:
       - t2.micro
       - t2.small
@@ -17,7 +17,7 @@ Parameters:
       - t3.xlarge
       - c6i.large
       - m6i.large
-    Description: EC2 Instance Type. t2.medium provides 2 vCPUs and 4 GB RAM (ideal for SQL Server + .NET).
+    Description: EC2 Instance Type. t2.micro is 100% Free-Tier eligible and configured with swap & SQL Server memory hook.
 
   KeyName:
     Type: String
