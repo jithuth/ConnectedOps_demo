@@ -59,11 +59,21 @@ if [[ "$OS" == "amzn" || "$OS" == "fedora" || "$OS" == "rhel" || "$OS" == "cento
     ln -sf /usr/local/lib/docker/cli-plugins/docker-compose /usr/bin/docker-compose
   fi
   # Always ensure modern Docker Buildx plugin (>=0.17 required by Compose v2)
+  ARCH=$(uname -m)
+  if [ "$ARCH" = "x86_64" ]; then
+    CLI_ARCH="amd64"
+  elif [ "$ARCH" = "aarch64" ]; then
+    CLI_ARCH="arm64"
+  else
+    CLI_ARCH="$ARCH"
+  fi
+
   echo "Ensuring modern Docker Buildx plugin (v0.19.3)..."
-  mkdir -p /usr/local/lib/docker/cli-plugins /usr/lib/docker/cli-plugins
-  curl -SL "https://github.com/docker/buildx/releases/download/v0.19.3/buildx-v0.19.3.linux-$(uname -m)" -o /usr/local/lib/docker/cli-plugins/docker-buildx
+  mkdir -p /usr/local/lib/docker/cli-plugins /usr/lib/docker/cli-plugins /root/.docker/cli-plugins
+  curl -SL "https://github.com/docker/buildx/releases/download/v0.19.3/buildx-v0.19.3.linux-${CLI_ARCH}" -o /usr/local/lib/docker/cli-plugins/docker-buildx
   chmod +x /usr/local/lib/docker/cli-plugins/docker-buildx
   cp -f /usr/local/lib/docker/cli-plugins/docker-buildx /usr/lib/docker/cli-plugins/docker-buildx
+  cp -f /usr/local/lib/docker/cli-plugins/docker-buildx /root/.docker/cli-plugins/docker-buildx
   ln -sf /usr/local/lib/docker/cli-plugins/docker-buildx /usr/bin/docker-buildx
 elif [[ "$OS" == "ubuntu" || "$OS" == "debian" ]]; then
   apt-get update -y
