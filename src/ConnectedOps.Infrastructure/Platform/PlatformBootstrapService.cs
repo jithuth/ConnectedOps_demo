@@ -92,8 +92,17 @@ public static class PlatformBootstrapService
         }
         else if (existingUser.PlatformRole == PlatformRole.SuperAdmin)
         {
-            logger.LogInformation("SuperAdmin user {Email} already exists.", email);
+            logger.LogInformation("SuperAdmin user {Email} already exists. Synchronizing credentials.", email);
             superAdmin = existingUser;
+
+            if (!string.IsNullOrWhiteSpace(options.Password))
+            {
+                superAdmin.PasswordHash = userManager.PasswordHasher.HashPassword(superAdmin, options.Password);
+                superAdmin.LockoutEnd = null;
+                superAdmin.AccessFailedCount = 0;
+                await userManager.UpdateAsync(superAdmin);
+                logger.LogInformation("SuperAdmin user {Email} password synchronized successfully.", email);
+            }
         }
         else
         {

@@ -140,11 +140,16 @@ JWT_AUDIENCE=https://connectedops.io
 API_PORT=5000
 WEB_PORT=5001
 ASPNETCORE_ENVIRONMENT=Production
+
+SUPERADMIN_EMAIL=admin@connectedops.io
+SUPERADMIN_PASSWORD=Admin123!SafePass2026
 EOF
   chmod 600 .env
   echo -e "${GREEN}Created .env file with secure secrets.${NC}"
 else
-  echo -e "${YELLOW}.env file already exists. Preserving existing secrets.${NC}"
+  echo -e "${YELLOW}.env file already exists. Ensuring superadmin credentials are configured...${NC}"
+  grep -q "SUPERADMIN_EMAIL" .env || echo "SUPERADMIN_EMAIL=admin@connectedops.io" >> .env
+  grep -q "SUPERADMIN_PASSWORD" .env || echo "SUPERADMIN_PASSWORD=Admin123!SafePass2026" >> .env
 fi
 
 # 5. Create Resilient Systemd Service
@@ -206,6 +211,9 @@ echo -e "${NC}"
 echo -e "Web Management Portal:     ${CYAN}http://${PUBLIC_IP}:5001${NC}"
 echo -e "Open API Gateway Swagger:  ${CYAN}http://${PUBLIC_IP}:5000/swagger${NC}"
 echo -e "SignalR WebSocket Hub:     ${CYAN}ws://${PUBLIC_IP}:5001/hubs/fleet${NC}"
+echo ""
+echo -e "SuperAdmin Email:          ${GREEN}admin@connectedops.io${NC}"
+echo -e "SuperAdmin Password:       ${GREEN}Admin123!SafePass2026${NC}"
 echo ""
 echo -e "Database Host:             ${YELLOW}localhost:1433 (or container sql-server)${NC}"
 echo -e "Working Directory:         ${YELLOW}$WORK_DIR${NC}"

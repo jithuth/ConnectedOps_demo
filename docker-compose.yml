@@ -37,6 +37,9 @@ services:
       Jwt__Key: "${JWT_SECRET:-SuperSecretKey_ConnectedOpsEnterprisePlatformKey2026_Minimum32BytesLong!}"
       Jwt__Issuer: "https://connectedops.io"
       Jwt__Audience: "https://connectedops.io"
+      PlatformBootstrap__Enabled: "true"
+      PlatformBootstrap__Email: "${SUPERADMIN_EMAIL:-admin@connectedops.io}"
+      PlatformBootstrap__Password: "${SUPERADMIN_PASSWORD:-Admin123!SafePass2026}"
     ports:
       - "5000:8080"
     depends_on:
@@ -58,6 +61,9 @@ services:
       Jwt__Key: "${JWT_SECRET:-SuperSecretKey_ConnectedOpsEnterprisePlatformKey2026_Minimum32BytesLong!}"
       Jwt__Issuer: "https://connectedops.io"
       Jwt__Audience: "https://connectedops.io"
+      PlatformBootstrap__Enabled: "true"
+      PlatformBootstrap__Email: "${SUPERADMIN_EMAIL:-admin@connectedops.io}"
+      PlatformBootstrap__Password: "${SUPERADMIN_PASSWORD:-Admin123!SafePass2026}"
       ApiUrl: "http://connectedops-api:8080"
     ports:
       - "5001:8080"
