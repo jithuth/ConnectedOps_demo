@@ -1012,23 +1012,20 @@ public static class PermissionSeeder
         ConnectedOpsDbContext dbContext,
         CancellationToken cancellationToken = default)
     {
-        foreach (var item in Permissions)
+        var existingKeys = await dbContext.Permissions
+            .IgnoreQueryFilters()
+            .Select(x => x.Key)
+            .ToHashSetAsync(cancellationToken);
+
+        var newPermissions = Permissions
+            .DistinctBy(item => item.Key)
+            .Where(item => !existingKeys.Contains(item.Key))
+            .Select(item => new Permission(item.Key, item.Name, item.Module))
+            .ToList();
+
+        if (newPermissions.Count > 0)
         {
-            var exists =
-                await dbContext.Permissions
-                    .IgnoreQueryFilters()
-                    .AnyAsync(
-                        x => x.Key == item.Key,
-                        cancellationToken);
-
-            if (exists)
-                continue;
-
-            dbContext.Permissions.Add(
-                new Permission(
-                    item.Key,
-                    item.Name,
-                    item.Module));
+            dbContext.Permissions.AddRange(newPermissions);
         }
 
         // Seed default global tracking providers if not present
